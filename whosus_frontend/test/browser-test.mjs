@@ -1,6 +1,5 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { waitFor } from "./wait.mjs";
@@ -25,13 +24,9 @@ for (let i = 0; i < 48000 * 3; i++)
     44 + i * 2,
   );
 await writeFile("artifacts/test-tone.wav", wav);
-const installed =
-  "C:/Users/aritr/AppData/Local/ms-playwright/chromium-1208/chrome-win64/chrome.exe";
 const browser = await chromium.launch({
   headless: true,
-  executablePath:
-    process.env.WHOSUS_BROWSER ||
-    (existsSync(installed) ? installed : undefined),
+  executablePath: process.env.WHOSUS_BROWSER || undefined,
   args: [
     "--use-fake-ui-for-media-stream",
     "--use-fake-device-for-media-stream",
@@ -75,7 +70,10 @@ try {
       const { useGame } = await import("/src/store.ts");
       return useGame.getState().room;
     });
-  assert((await getRoom(page)).players[0].name === "Host Pilot", "Create form name must appear in the lobby");
+  assert(
+    (await getRoom(page)).players[0].name === "Host Pilot",
+    "Create form name must appear in the lobby",
+  );
   const code = (await getRoom(page)).code;
   const pages = [page];
   for (let i = 1; i < 4; i++) {
@@ -100,7 +98,9 @@ try {
     await p.getByRole("button", { name: "Join expedition" }).click();
     await p.getByText("The usual suspects.").waitFor();
     assert(
-      (await getRoom(p)).players.some((player) => player.name === `Explorer ${i}`),
+      (await getRoom(p)).players.some(
+        (player) => player.name === `Explorer ${i}`,
+      ),
       `Join form name must appear in the lobby for player ${i}`,
     );
     pages.push(p);
@@ -129,9 +129,13 @@ try {
     );
   await page.waitForTimeout(2500);
   await waitFor(pages[1], async () => {
-    const { voice } = await import('/src/voice.ts');
+    const { voice } = await import("/src/voice.ts");
     const d = await voice.getDiagnostics();
-    return d.inbound.some(row => row.bytes > 1000) && d.receivedLevel > .001 && !d.playbackPaused;
+    return (
+      d.inbound.some((row) => row.bytes > 1000) &&
+      d.receivedLevel > 0.001 &&
+      !d.playbackPaused
+    );
   });
   const audioStats = await pages[1].evaluate(async () => {
     const { voice } = await import("/src/voice.ts");

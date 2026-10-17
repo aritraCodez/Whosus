@@ -14,6 +14,7 @@ import {
   Mic,
   MicOff,
   Plus,
+  Pencil,
   Radio,
   Settings,
   Shield,
@@ -41,6 +42,8 @@ import { COLORS, type Player } from "./types";
 import { STATIONS } from "./world";
 import { sound } from "./audio";
 import { backendApiUrl } from "./backend";
+import { fillLobbyWithTestPlayers } from "./devPlayers";
+import { ELIMINATION_NAMES } from "./EliminationEffect";
 
 function BotIcon({
   color = "#f6bd4f",
@@ -101,7 +104,7 @@ function Modal({
 function interact() {
   const s = useGame.getState(),
     r = s.room;
-  if (!r || r.phase !== "playing") return;
+  if (!r || r.phase !== "playing" || r.challenge || r.movementLock > 0) return;
   const me = r.players.find((p) => p.id === s.id);
   if (!me) return;
   const near = STATIONS.find(
@@ -136,14 +139,82 @@ function report() {
 }
 function eliminate() {
   const s = useGame.getState();
+  if (
+    s.room?.phase !== "playing" ||
+    s.room.killCooldown > 0 ||
+    s.room.movementLock > 0
+  )
+    return;
+  const me = s.room.players.find((p) => p.id === s.id);
+  if (!me?.alive || me.role !== "impostor" || s.room.vent >= 0) return;
   const q = s.room?.players
-    .filter((p) => p.id !== s.id && p.alive && p.role !== "impostor")
+    .filter(
+      (p) =>
+        p.id !== s.id &&
+        p.alive &&
+        p.role !== "impostor" &&
+        Math.hypot(p.x - motion.x, p.z - motion.z) <= 1.8,
+    )
     .sort(
       (a, b) =>
         Math.hypot(a.x - motion.x, a.z - motion.z) -
         Math.hypot(b.x - motion.x, b.z - motion.z),
     )[0];
-  if (q) act("kill", q.id);
+  if (q) act("kill", q.id, s.eliminationStyle);
+}
+
+function HoldButton({
+  children,
+  onClick,
+  disabled,
+  className,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  className: string;
+}) {
+  const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const action = useRef(onClick);
+  action.current = onClick;
+  const stop = () => {
+    clearInterval(timer.current);
+    timer.current = undefined;
+  };
+  useEffect(() => {
+    if (disabled) stop();
+    return stop;
+  }, [disabled]);
+  useEffect(() => {
+    window.addEventListener("blur", stop);
+    document.addEventListener("visibilitychange", stop);
+    return () => {
+      stop();
+      window.removeEventListener("blur", stop);
+      document.removeEventListener("visibilitychange", stop);
+    };
+  }, []);
+  return (
+    <button
+      className={className}
+      disabled={disabled}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        stop();
+        action.current();
+        timer.current = setInterval(() => action.current(), 250);
+      }}
+      onPointerUp={stop}
+      onPointerCancel={stop}
+      onLostPointerCapture={stop}
+      onClick={(e) => {
+        if (e.detail === 0) action.current();
+      }}
+    >
+      {children}
+    </button>
+  );
 }
 
 function makeDefaultName() {
@@ -435,6 +506,11 @@ function Menu({
 }) {
   const [form, setForm] = useState<"create" | "join" | "find" | null>(null),
     [help, setHelp] = useState(false);
+  const nameInput = useRef<HTMLInputElement>(null);
+  const editName = () => {
+    nameInput.current?.focus();
+    nameInput.current?.select();
+  };
   return (
     <div className="menu">
       <header className="masthead">
@@ -475,19 +551,35 @@ function Menu({
             <br />
             <strong>Someone’s not who they say they are.</strong>
           </p>
-          <div className="player-custom">
+          <div
+            className="player-custom"
+            onClick={(e) => {
+              if (!(e.target instanceof HTMLInputElement)) editName();
+            }}
+          >
             <BotIcon color={COLORS[color]} />
             <div>
               <label htmlFor="name">YOUR EXPLORER</label>
               <input
+                ref={nameInput}
                 id="name"
                 aria-label="Explorer name"
                 value={name}
                 maxLength={18}
                 onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
               />
             </div>
-            <span className="pencil">✎</span>
+            <button
+              type="button"
+              className="pencil"
+              aria-label="Edit explorer name"
+              onClick={editName}
+            >
+              <Pencil size={20} />
+            </button>
           </div>
           <div className="custom-options">
             <div className="colors" aria-label="Character color">
@@ -885,31 +977,51 @@ function ChatPanel() {
 }
 function Joystick() {
   const [pos, setPos] = useState([0, 0]);
+  const pointer = useRef<number | null>(null);
   function update(e: React.PointerEvent<HTMLDivElement>) {
     const box = e.currentTarget.getBoundingClientRect();
     let x = e.clientX - box.left - box.width / 2,
       z = e.clientY - box.top - box.height / 2;
-    const n = Math.max(1, Math.hypot(x, z) / 36);
+    const radius = box.width * 0.32;
+    const n = Math.max(1, Math.hypot(x, z) / radius);
     x /= n;
     z /= n;
     setPos([x, z]);
-    motion.dx = x / 36;
-    motion.dz = z / 36;
+    const dead = Math.hypot(x, z) < 5;
+    motion.dx = dead ? 0 : x / radius;
+    motion.dz = dead ? 0 : z / radius;
   }
   function stop() {
+    pointer.current = null;
     setPos([0, 0]);
     motion.dx = motion.dz = 0;
   }
+  useEffect(() => {
+    window.addEventListener("blur", stop);
+    document.addEventListener("visibilitychange", stop);
+    return () => {
+      motion.dx = motion.dz = 0;
+      window.removeEventListener("blur", stop);
+      document.removeEventListener("visibilitychange", stop);
+    };
+  }, []);
   return (
     <div
       className="joystick"
       aria-label="Movement joystick"
       onPointerDown={(e) => {
+        if (pointer.current !== null) return;
+        e.preventDefault();
+        pointer.current = e.pointerId;
         e.currentTarget.setPointerCapture(e.pointerId);
         update(e);
       }}
       onPointerMove={(e) => {
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) update(e);
+        if (
+          pointer.current === e.pointerId &&
+          e.currentTarget.hasPointerCapture(e.pointerId)
+        )
+          update(e);
       }}
       onPointerUp={stop}
       onPointerCancel={stop}
@@ -925,70 +1037,179 @@ function Lobby() {
     r = s.room!,
     me = r.players.find((p) => p.id === s.id),
     host = s.id === r.host;
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false),
+    [addingTestPlayers, setAddingTestPlayers] = useState(false);
+  const [draftName, setDraftName] = useState(me?.name || "");
+  const lobbyName = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setDraftName(me?.name || "");
+  }, [me?.name]);
+  const saveName = () => {
+    const next = draftName.trim();
+    if (!next) {
+      setDraftName(me?.name || "");
+      return;
+    }
+    if (next !== me?.name) act("rename", next);
+    lobbyName.current?.blur();
+  };
+  async function addTestPlayers() {
+    setAddingTestPlayers(true);
+    try {
+      await fillLobbyWithTestPlayers(r.code, r.players);
+    } catch (error) {
+      s.set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Could not add test players.",
+      });
+    } finally {
+      setAddingTestPlayers(false);
+    }
+  }
   return (
-    <div className="lobby-deck">
-      <div className="lobby-title">
-        <div>
-          <span className="eyebrow">PRE-FLIGHT CHECK</span>
-          <h2>The usual suspects.</h2>
-          <p>Make yourself at home. Try not to look suspicious.</p>
-        </div>
+    <div className="waiting-ui">
+      <form
+        className="room-profile"
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveName();
+        }}
+      >
+        <BotIcon small color={me?.color} />
+        <label>
+          YOUR EXPLORER
+          <input
+            ref={lobbyName}
+            aria-label="Lobby explorer name"
+            maxLength={18}
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onBlur={saveName}
+          />
+        </label>
         <button
-          className="room-code"
+          type="button"
+          className="icon"
+          aria-label="Edit lobby name"
           onClick={() => {
-            void navigator.clipboard
-              .writeText(r.code)
-              .then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              })
-              .catch(() => s.set({ error: `Share this room code: ${r.code}` }));
+            lobbyName.current?.focus();
+            lobbyName.current?.select();
           }}
         >
-          <small>{copied ? "COPIED!" : "INVITE YOUR FRIENDS"}</small>
-          <strong>
-            {r.code} <Copy size={16} />
-          </strong>
+          <Pencil size={17} />
         </button>
-      </div>
-      <div className="crew-list">
-        {r.players.map((p) => (
-          <div className={`crew-card ${p.ready ? "ready" : ""}`} key={p.id}>
-            <BotIcon small color={p.color} />
-            <span>
-              <strong>
-                {p.name}
-                {p.id === s.id ? " (you)" : ""}
-              </strong>
-              <small>
-                {p.id === r.host ? "HOST · " : ""}
-                {!p.connected
-                  ? "Reconnecting…"
-                  : p.ready
-                    ? "Ready for trouble"
-                    : "Getting comfortable"}
-              </small>
-            </span>
-            {p.ready && <Check size={17} />}
+      </form>
+      <aside className="lobby-deck">
+        <div className="lobby-title">
+          <div>
+            <span className="eyebrow">DEPARTURE LOUNGE</span>
+            <h2>The usual suspects.</h2>
+            <p>Walk around, meet the crew, then ready up.</p>
           </div>
-        ))}
-        {Array.from(
-          { length: Math.max(0, Math.min(4, r.capacity) - r.population) },
-          (_, i) => (
-            <div className="crew-card vacant" key={`empty${i}`}>
-              <Plus size={22} />
-              <span>Room for one more</span>
+          <button
+            className="room-code"
+            onClick={() => {
+              void navigator.clipboard
+                .writeText(r.code)
+                .then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                })
+                .catch(() =>
+                  s.set({ error: `Share this room code: ${r.code}` }),
+                );
+            }}
+          >
+            <small>{copied ? "COPIED!" : "INVITE YOUR FRIENDS"}</small>
+            <strong>
+              {r.code} <Copy size={16} />
+            </strong>
+          </button>
+        </div>
+        <div className="room-facts">
+          <span>
+            DESTINATION<strong>Cloudline Station</strong>
+          </span>
+          <span>
+            CREW
+            <strong>
+              {r.population} / {r.capacity}
+            </strong>
+          </span>
+          <span>
+            PRIVACY<strong>{r.public ? "Public" : "Private"}</strong>
+          </span>
+        </div>
+        <div className="crew-list">
+          {r.players.map((p) => (
+            <div className={`crew-card ${p.ready ? "ready" : ""}`} key={p.id}>
+              <BotIcon small color={p.color} />
+              <span>
+                <strong>
+                  {p.name}
+                  {p.id === s.id ? " (you)" : ""}
+                </strong>
+                <small>
+                  {p.id === r.host ? "HOST · " : ""}
+                  {!p.connected
+                    ? "Reconnecting…"
+                    : p.ready
+                      ? "Ready for trouble"
+                      : "Getting comfortable"}
+                </small>
+              </span>
+              {p.ready && <Check size={17} />}
             </div>
-          ),
-        )}
-      </div>
+          ))}
+          {Array.from(
+            { length: Math.max(0, Math.min(4, r.capacity) - r.population) },
+            (_, i) => (
+              <div className="crew-card vacant" key={`empty${i}`}>
+                <Plus size={22} />
+                <span>Room for one more</span>
+              </div>
+            ),
+          )}
+        </div>
+        <label className="style-picker">
+          ELIMINATION ANIMATION
+          <select
+            aria-label="Elimination animation"
+            value={s.eliminationStyle}
+            onChange={(e) =>
+              s.set({ eliminationStyle: Number(e.target.value) })
+            }
+          >
+            <option value={-1}>Surprise me</option>
+            {ELIMINATION_NAMES.map((name, i) => (
+              <option key={name} value={i}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </aside>
       <div className="lobby-bottom">
         <span>
           <Users size={16} /> {r.population}/{r.capacity} explorers <i />{" "}
           {r.impostors} impostor{r.impostors > 1 ? "s" : ""}
         </span>
         <div>
+          {import.meta.env.VITE_TEST_BOTS?.toLowerCase() === "true" && host && (
+            <button
+              className="secondary"
+              disabled={addingTestPlayers}
+              onClick={() => void addTestPlayers()}
+            >
+              {addingTestPlayers
+                ? "Adding test players…"
+                : r.population < 4
+                  ? "Fill to 4 test players"
+                  : "Ready test players"}
+            </button>
+          )}
           <button
             className={me?.ready ? "secondary" : "primary"}
             onClick={() => act("ready")}
@@ -1016,6 +1237,9 @@ function Lobby() {
             </button>
           )}
         </div>
+      </div>
+      <div className="bay-hint">
+        HOLD WASD / ARROWS OR DRAG THE STICK TO MOVE
       </div>
     </div>
   );
@@ -1155,6 +1379,28 @@ function GameHUD() {
     me = r.players.find((p) => p.id === s.id);
   if (!me) return null;
   const impostor = me.role === "impostor";
+  const nearbyTarget = r.players.some(
+    (p) =>
+      p.id !== s.id &&
+      p.alive &&
+      p.role !== "impostor" &&
+      Math.hypot(p.x - me.x, p.z - me.z) <= 1.8,
+  );
+  const nearTask = r.tasks.find(
+    (t) => !t.done && Math.hypot(t.x - me.x, t.z - me.z) < 2,
+  );
+  const nearBeacon =
+    me.alive &&
+    Math.hypot(me.x, me.z) < 2.5 &&
+    r.emergency > 0 &&
+    r.meetingCooldown <= 0 &&
+    !r.sabotage;
+  const canRepair =
+    me.alive && !!r.sabotage && Math.hypot(me.x - 2, me.z + 12) < 2;
+  const canInteract = !!nearTask || !!nearBeacon || canRepair;
+  const ownAnimation = r.eliminations?.find(
+    (e) => e.attacker.id === s.id || e.victim.id === s.id,
+  );
   return (
     <>
       <header className="game-top">
@@ -1163,7 +1409,9 @@ function GameHUD() {
         </a>
         <div className="game-location">
           <span className="live-dot" />
-          <strong>CLOUDLINE STATION</strong>
+          <strong>
+            {r.phase === "lobby" ? "DEPARTURE BAY" : "CLOUDLINE STATION"}
+          </strong>
           <small>
             {r.code} ·{" "}
             {r.phase === "lobby" ? "PRE-FLIGHT" : r.phase.toUpperCase()}
@@ -1174,6 +1422,7 @@ function GameHUD() {
             className={`icon ${s.map ? "active" : ""}`}
             aria-label="Toggle map"
             title="Map (Tab)"
+            disabled={r.phase === "lobby"}
             onClick={() => s.set({ map: !s.map })}
           >
             <Map size={20} />
@@ -1267,19 +1516,23 @@ function GameHUD() {
             <div className="action-buttons">
               {impostor && me.alive && (
                 <>
-                  <button
+                  <HoldButton
                     className="action danger"
-                    disabled={r.killCooldown > 0}
+                    disabled={
+                      r.killCooldown > 0 || !nearbyTarget || r.movementLock > 0
+                    }
                     onClick={eliminate}
                   >
                     <Skull />
                     <span>
                       {r.killCooldown > 0
                         ? `${Math.ceil(r.killCooldown)}s`
-                        : "Eliminate"}
+                        : nearbyTarget
+                          ? "Eliminate"
+                          : "Get closer"}
                     </span>
                     <kbd>F</kbd>
-                  </button>
+                  </HoldButton>
                   <button
                     className="action"
                     disabled={r.sabotageCooldown > 0 || r.sabotage > 0}
@@ -1309,17 +1562,38 @@ function GameHUD() {
                 </>
               )}
               {me.alive && (
-                <button className="action" onClick={report}>
+                <button
+                  className="action"
+                  onClick={report}
+                  disabled={
+                    r.movementLock > 0 ||
+                    !r.bodies.some(
+                      (b) => Math.hypot(b.x - me.x, b.z - me.z) <= 2.5,
+                    )
+                  }
+                >
                   <Radio />
                   <span>Report</span>
                   <kbd>R</kbd>
                 </button>
               )}
-              <button className="action use" onClick={interact}>
+              <HoldButton
+                className="action use"
+                onClick={interact}
+                disabled={!canInteract || r.movementLock > 0}
+              >
                 <Sparkles />
-                <span>Interact</span>
+                <span>
+                  {canRepair
+                    ? "Repair"
+                    : nearTask
+                      ? "Do task"
+                      : nearBeacon
+                        ? "Meeting"
+                        : "Interact"}
+                </span>
                 <kbd>E</kbd>
-              </button>
+              </HoldButton>
             </div>
           )}
         </>
@@ -1327,14 +1601,18 @@ function GameHUD() {
       <div className="game-bottom">
         <VoiceBar />
         <span className="movement-hint">
-          <kbd>W A S D</kbd> to wander <i /> <kbd>E</kbd> to interact
+          Hold <kbd>W A S D / ↑ ← ↓ →</kbd> to move <i /> <kbd>E</kbd> to
+          interact
         </span>
         <span className="connection">
           <Wifi size={14} />
           {s.status === "connected" ? "CONNECTED" : "RECONNECTING"}
         </span>
       </div>
-      <Joystick />
+      {["lobby", "playing"].includes(r.phase) &&
+        !r.challenge &&
+        !s.settings &&
+        !r.movementLock && <Joystick />}
       <ChatPanel />
       {r.phase === "reveal" && (
         <div className={`role-reveal ${impostor ? "traitor" : ""}`}>
@@ -1352,7 +1630,25 @@ function GameHUD() {
         </div>
       )}
       {["discussion", "voting", "results"].includes(r.phase) && <Meeting />}
-      {r.phase === "gameover" && (
+      {ownAnimation && (
+        <div
+          className={`elimination-caption ${ownAnimation.victim.id === s.id ? "victim" : ""}`}
+          role="status"
+        >
+          <span>{ELIMINATION_NAMES[ownAnimation.style]}</span>
+          <strong>
+            {ownAnimation.victim.id === s.id
+              ? `${ownAnimation.attacker.name} caught you!`
+              : `${ownAnimation.victim.name} eliminated`}
+          </strong>
+          <small>
+            {ownAnimation.victim.id === s.id
+              ? "Your ghost can still help the crew."
+              : "Better have a good alibi."}
+          </small>
+        </div>
+      )}
+      {r.phase === "gameover" && !r.eliminations?.length && (
         <div className="meeting-overlay">
           <section className="end-card">
             <div className="victory-icon">
@@ -1436,22 +1732,43 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("whosus-name", name);
   }, [name]);
+  const roomName = s.room?.players.find((p) => p.id === s.id)?.name;
+  useEffect(() => {
+    if (roomName) setName(roomName);
+  }, [roomName]);
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest("input,textarea,select,dialog"))
         return;
       if (e.code === "Tab") {
         e.preventDefault();
-        if (!e.repeat) useGame.setState({ map: !useGame.getState().map });
+        if (!e.repeat && useGame.getState().room?.phase !== "lobby")
+          useGame.setState({ map: !useGame.getState().map });
         return;
       }
+      if (
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(
+          e.code,
+        )
+      )
+        e.preventDefault();
       motion.keys.add(e.code);
+      if (e.code === "KeyF") {
+        eliminate();
+        return;
+      }
+      if (e.code === "KeyE") {
+        if (
+          !e.repeat ||
+          STATIONS.some((t) => Math.hypot(t.x - motion.x, t.z - motion.z) < 2)
+        )
+          interact();
+        return;
+      }
       if (e.repeat) return;
       if (e.code === "KeyV") voice.ptt(true);
       if (e.code === "KeyM") voice.mute();
-      if (e.code === "KeyE") interact();
       if (e.code === "KeyR") report();
-      if (e.code === "KeyF") eliminate();
       if (e.code === "KeyQ") act("vent");
       if (e.code === "Enter") useGame.setState({ chatOpen: true });
     };
@@ -1481,7 +1798,9 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [s.error]);
   return (
-    <div className={`app ${s.room ? "in-game" : "at-menu"}`}>
+    <div
+      className={`app ${s.room ? "in-game" : "at-menu"} ${s.room?.phase === "lobby" ? "in-lobby" : ""}`}
+    >
       <div className="scene-wrap">
         <SceneBoundary>
           <Scene menu={!s.room} color={color} hat={hat} />

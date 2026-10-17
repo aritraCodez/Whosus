@@ -1,6 +1,5 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { waitFor } from "./wait.mjs";
@@ -28,13 +27,9 @@ for (let i = 0; i < samples; i++)
     44 + i * 2,
   );
 await writeFile("artifacts/voice-tone.wav", wav);
-const installed =
-  "C:/Users/aritr/AppData/Local/ms-playwright/chromium-1208/chrome-win64/chrome.exe";
 const browser = await chromium.launch({
   headless: true,
-  executablePath:
-    process.env.WHOSUS_BROWSER ||
-    (existsSync(installed) ? installed : undefined),
+  executablePath: process.env.WHOSUS_BROWSER || undefined,
   args: [
     "--use-fake-ui-for-media-stream",
     "--use-fake-device-for-media-stream",

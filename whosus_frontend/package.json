@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test:browser": "node test/browser-test.mjs",
+    "test:scene": "node test/scene-test.mjs",
     "test:voice": "node test/voice-test.mjs"
   },
   "dependencies": {

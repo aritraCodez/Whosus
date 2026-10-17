@@ -18,6 +18,7 @@ type State = {
   chatOpen: boolean;
   quality: "high" | "low";
   sound: boolean;
+  eliminationStyle: number;
   set: (v: Partial<State>) => void;
 };
 export const useGame = create<State>((set) => ({
@@ -38,5 +39,6 @@ export const useGame = create<State>((set) => ({
   chatOpen: false,
   quality: "high",
   sound: true,
+  eliminationStyle: -1,
   set,
 }));

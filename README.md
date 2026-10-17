@@ -4,7 +4,7 @@ WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on
 
 This README is the single project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts.
 
-**Verification status:** all **34 backend tests** pass locally. The dedicated **five-browser voice suite** uses synthetic microphones and checks real decoded audio, permission/playback recovery, push-to-talk, reconnects and ghost isolation. Full game-UI validation is tracked separately below. Physical Android and internet NAT traversal testing are still outstanding.
+**Verification status:** all **43 backend tests** pass locally. The focused scene suite checks editable names, held movement, the waiting room, and elimination rendering. The dedicated **five-browser voice suite** uses synthetic microphones and checks real decoded audio, permission/playback recovery, push-to-talk, reconnects and ghost isolation. Full game-UI validation is tracked separately below. Physical Android and internet NAT traversal testing are still outstanding.
 
 ## Contents
 
@@ -129,7 +129,7 @@ Crewmates win by completing every assigned task or ejecting all impostors. Impos
 
 | Action | Desktop | Touch |
 | --- | --- | --- |
-| Movement | WASD | Virtual joystick |
+| Movement | Hold WASD or arrow keys; directions follow the screen | Hold and drag the joystick |
 | Task, meeting beacon, reactor repair | E | Interact |
 | Report a nearby body | R | Report |
 | Station overview | Tab | Map icon |
@@ -302,6 +302,14 @@ npm.cmd run build
 
 Success means TypeScript checking and Vite compilation finish with exit code zero and produce `dist/`. A build alone does not establish that multiplayer or microphone playback works. The current bundle may produce a size warning; inspect actual errors and the exit code separately.
 
+### Waiting room and elimination animations
+
+Click the explorer card or its pencil to edit your name before joining. In a room, the name field at the top left saves on Enter or when you leave the field. Names can be changed in the waiting room only.
+
+Joining opens a separate departure bay with seats, crates, room details, and a crew list. Walk around while waiting, then ready up. The host launches the match; the private role reveal counts down before exploration begins on the station map.
+
+The waiting-room animation selector offers **Surprise me**, **Plasma shot**, **Energy blade**, **Head spin**, and **Monster chomp**. Elimination range and cooldown are the same for every style. Server-confirmed effects last 2.4 seconds, briefly hold the participants in place, and are sent only to the participants and nearby witnesses. Results wait for the visible finishing animation before covering the map.
+
 ### 3. Run browser integration checks
 
 Keep the backend on **8000** and the Vite **development server** on **5173**, using the local setup commands above. Confirm both health requests succeed first. The browser script imports development modules and must not run against `vite preview` or the production bundle.
@@ -313,6 +321,7 @@ cd whosus_frontend
 npx.cmd playwright install chromium
 npm.cmd run test:voice
 npm.cmd run test:browser
+npm.cmd run test:scene
 ```
 
 If you already have a suitable Chromium executable, select it explicitly before the test:
@@ -326,9 +335,11 @@ npm.cmd run test:browser
 
 `test:browser` exercises the rendered UI and attempts room joining, text delivery, real incoming audio, movement, meetings, voting, crew victory, rematch, session recovery, and mobile layouts. It saves screenshots and `test-tone.wav` in `whosus_frontend/artifacts/`.
 
+`test:scene` checks name editing, held-key and joystick movement, responsive waiting-room layouts, launch, map overview, and all four elimination renderers. Rendering checks use synthetic elimination snapshots; backend tests separately validate kill rules, event visibility, and movement locks.
+
 A successful run must reach its final `PASS:` message and exit with code zero. Screenshots or a connected voice indicator alone do not constitute a pass. Each script stops at its first failure, so earlier evidence does not demonstrate later scenarios. Restart Vite before integration runs if you have edited its client modules, and keep source files unchanged during the tests: hot-reload module timestamps can create inconsistent direct-import test state.
 
-Both browser scripts accept `WHOSUS_TEST_URL` when using an isolated Vite instance on another port. Configure that instance's `/api` and `/ws` proxies and the backend's `ALLOWED_ORIGINS` to match. This does not automatically start or reconfigure either server. Restart both applications after changing the voice signaling protocol.
+The browser scripts accept `WHOSUS_TEST_URL` when using an isolated Vite instance on another port. Configure that instance's `/api` and `/ws` proxies and the backend's `ALLOWED_ORIGINS` to match. This does not automatically start or reconfigure either server. Restart both applications after changing the voice signaling protocol.
 
 **Verification boundary:** the dedicated five-browser voice suite passes on local ICE with synthetic microphones. The full rendered-game suite, physical-device audio, and internet NAT traversal require their own validation. Preserve failing output and screenshots instead of treating the focused media test as a complete product-release gate.
 
@@ -367,9 +378,10 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 | `WHOSUS_BROWSER` | Optional Chromium path consumed by frontend files in `test/` |
 | `WHOSUS_TEST_URL` | Optional frontend origin for both browser test commands; defaults to `http://127.0.0.1:5173` |
 | `VITE_BACKEND_ORIGIN` | Frontend build-time setting: the browser-reachable backend HTTP(S) origin, with no path or trailing slash; also selects the WebSocket host |
+| `VITE_TEST_BOTS` | Frontend build-time flag; set to `true` to show the lobby test-player button; unset or any other value disables it |
 | `PORT` | Container HTTP listener; defaults to 8080 for the frontend and 8000 for the backend; hosting runtime values override these defaults |
 
-Vite embeds `VITE_BACKEND_ORIGIN` into the frontend bundle at build time. It is a public URL, not a secret. For a Docker build, pass it with `--build-arg`; for Vite development, set it in the frontend `.env` file. Leave it unset to use the local Vite proxy. `PORT` remains an Nginx runtime setting.
+Vite embeds `VITE_BACKEND_ORIGIN` and `VITE_TEST_BOTS` into the frontend bundle at build time. The backend URL is public, not a secret. For a Docker build, pass them with `--build-arg`; for Vite development, set them in the frontend `.env` file. Leave `VITE_BACKEND_ORIGIN` unset to use the local Vite proxy. Test bots are disabled unless `VITE_TEST_BOTS=true` (case-insensitive). `PORT` remains an Nginx runtime setting.
 
 The backend uses fixed Google and Cloudflare STUN servers for WebRTC discovery. STUN URLs are not configurable through environment variables.
 
@@ -396,7 +408,7 @@ From the repository root:
 
 ```sh
 docker build -t whosus-backend ./whosus_backend
-docker build --build-arg VITE_BACKEND_ORIGIN=http://127.0.0.1:8000 -t whosus-frontend ./whosus_frontend
+docker build --build-arg VITE_BACKEND_ORIGIN=http://127.0.0.1:8000 --build-arg VITE_TEST_BOTS=true -t whosus-frontend ./whosus_frontend
 ```
 
 For the following **Linux host-network** example, configure the backend `.env` to allow `http://localhost:8080`, then run in separate terminals:
@@ -424,7 +436,7 @@ Render supports Docker web services and separate applications within one reposit
 | Docker Build Context | `.` | `.` |
 | Docker Command override | Leave empty; use the Dockerfile CMD | Leave empty; preserve the official Nginx entrypoint/CMD |
 | Health Check Path | `/api/health` | `/healthz` |
-| Required app configuration | `ALLOWED_ORIGINS=https://your-frontend.onrender.com` | Build-time `VITE_BACKEND_ORIGIN=https://your-backend.onrender.com` |
+| Required app configuration | `ALLOWED_ORIGINS=https://your-frontend.onrender.com` | Build-time `VITE_BACKEND_ORIGIN=https://your-backend.onrender.com`; optional `VITE_TEST_BOTS=true` for testing deployments |
 
 Deploy the backend to obtain its public URL, then set it as the frontend's `VITE_BACKEND_ORIGIN` build-time environment value and rebuild/redeploy the frontend. Set the backend's `ALLOWED_ORIGINS` to the exact frontend origin and redeploy the backend. Keep both service instance counts at one for the current in-memory design.
 

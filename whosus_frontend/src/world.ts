@@ -32,7 +32,23 @@ export const VENTS = [
   [0, -11],
   [11, 0],
 ];
-export function walkable(x: number, z: number) {
+export const LOBBY_OBSTACLES = [
+  [-4.5, -2.7, -1.6, 0.2],
+  [2.7, 4.5, -1.6, 0.2],
+  [-1, 1, -4.4, -3.2],
+];
+export function walkable(x: number, z: number, lobby = false) {
+  if (lobby)
+    return (
+      x >= -5.7 &&
+      x <= 5.7 &&
+      z >= -4.7 &&
+      z <= 4.7 &&
+      !LOBBY_OBSTACLES.some(
+        ([a, b, c, d]) =>
+          x > a - 0.3 && x < b + 0.3 && z > c - 0.3 && z < d + 0.3,
+      )
+    );
   return (
     FLOORS.some(
       ([a, b, c, d]) =>
@@ -50,13 +66,15 @@ export function move(
   dx: number,
   dz: number,
   ghost = false,
+  lobby = false,
+  step = 1,
 ) {
   const n = Math.max(1, Math.hypot(dx, dz));
-  const nx = x + (dx / n) * 0.21,
-    nz = z + (dz / n) * 0.21;
+  const nx = x + (dx / n) * 0.21 * step,
+    nz = z + (dz / n) * 0.21 * step;
   if (ghost)
     return [Math.max(-14, Math.min(14, nx)), Math.max(-14, Math.min(14, nz))];
-  if (walkable(nx, z)) x = nx;
-  if (walkable(x, nz)) z = nz;
+  if (walkable(nx, z, lobby)) x = nx;
+  if (walkable(x, nz, lobby)) z = nz;
   return [x, z];
 }
