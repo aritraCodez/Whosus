@@ -307,6 +307,30 @@ const rooms = [
   { x: 10, z: 10, name: "SHIELDS & NAV", color: "#9cbab6", accent: "#6bc4b5" },
 ];
 
+function FloorLabel({ name, x, z }: { name: string; x: number; z: number }) {
+  const label = useRef<HTMLSpanElement>(null);
+  useFrame(() => {
+    if (!label.current) return;
+    const near =
+      Math.hypot(motion.renderX - x, motion.renderZ - (z + 3.2)) < 2.5;
+    label.current.style.opacity = near ? "0" : "";
+  });
+  return (
+    <Html
+      position={[x, 0.05, z + 3.2]}
+      center
+      transform
+      rotation={[-Math.PI / 2, 0, 0]}
+      distanceFactor={4}
+      zIndexRange={[1, 0]}
+    >
+      <span ref={label} className="floor-label">
+        {name}
+      </span>
+    </Html>
+  );
+}
+
 function VisualTaskEffects() {
   const visuals = useGame((s) => s.room?.visuals ?? EMPTY_VISUALS);
   return (
@@ -428,16 +452,7 @@ const Station = memo(function Station() {
             </group>
           ))}
           <Box at={[0, -0.52, 4.18]} size={[4.6, 0.12, 0.04]} color={accent} />
-          <Html
-            position={[0, 0.05, 3.2]}
-            center
-            transform
-            rotation={[-Math.PI / 2, 0, 0]}
-            distanceFactor={4}
-            zIndexRange={[1, 0]}
-          >
-            <span className="floor-label">{name}</span>
-          </Html>
+          <FloorLabel name={name} x={x} z={z} />
           <Plant at={[-3, 0, -3]} scale={i === 1 ? 1.6 : 1} />
           <Plant at={[3, 0, 3]} scale={0.8} />
           {[
@@ -550,8 +565,8 @@ function MotionFrame() {
     const snap =
       revision.current !== motion.revision ||
       Math.hypot(x - motion.renderX, z - motion.renderZ) > 3;
-    motion.renderX = snap ? x : THREE.MathUtils.damp(motion.renderX, x, 35, dt);
-    motion.renderZ = snap ? z : THREE.MathUtils.damp(motion.renderZ, z, 35, dt);
+    motion.renderX = snap ? x : THREE.MathUtils.damp(motion.renderX, x, 60, dt);
+    motion.renderZ = snap ? z : THREE.MathUtils.damp(motion.renderZ, z, 60, dt);
     revision.current = motion.revision;
   }, -2);
   return null;
@@ -714,7 +729,7 @@ function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
       menu ? 0 : lobby ? -1 : map ? 0 : motion.renderZ,
     );
     const desired = target.clone().add(new THREE.Vector3(13, 19, 18));
-    cam.position.lerp(desired, 1 - Math.exp(-dt * 4));
+    cam.position.lerp(desired, 1 - Math.exp(-dt * 14));
     cam.lookAt(cam.position.x - 13, cam.position.y - 19, cam.position.z - 18);
     const zoom = menu
       ? Math.min(size.width / 35, size.height / 29)
@@ -723,7 +738,7 @@ function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
         : map
           ? Math.min(size.width / 34, size.height / 32)
           : size.width > 900
-            ? Math.min(size.width / 11, size.height / 8)
+            ? Math.min(size.width / 8.2, size.height / 5.9)
             : Math.max(size.width / 7.5, size.height / 13.5);
     cam.zoom = THREE.MathUtils.damp(cam.zoom, zoom, 5, dt);
     cam.updateProjectionMatrix();
@@ -846,8 +861,8 @@ function World({
         intensity={2.4}
         castShadow={quality === "high"}
         shadow-mapSize={[
-          quality === "high" ? 2048 : 512,
-          quality === "high" ? 2048 : 512,
+          quality === "high" ? 1024 : 512,
+          quality === "high" ? 1024 : 512,
         ]}
         shadow-camera-left={-22}
         shadow-camera-right={22}
@@ -908,7 +923,7 @@ export default memo(function Scene({
         rendererState = s;
       }}
       shadows={quality === "high"}
-      dpr={quality === "high" ? [1, 1.5] : 1}
+      dpr={quality === "high" ? [1, 1.25] : 1}
       gl={{
         antialias: quality === "high",
         powerPreference: "high-performance",

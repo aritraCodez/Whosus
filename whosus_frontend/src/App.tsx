@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Scene from "./Scene";
 import { Modal } from "./components/Modal";
+import { UniversalTaskPanel } from "./TaskMinigames";
 import { useGame } from "./store";
 import {
   act,
@@ -1054,6 +1055,7 @@ function Joystick() {
         if (pointer.current !== null) return;
         e.preventDefault();
         pointer.current = e.pointerId;
+        e.currentTarget.setPointerCapture(e.pointerId);
         updateCoords(e.clientX, e.clientY);
       }}
     >
@@ -1260,57 +1262,6 @@ function Lobby() {
         HOLD WASD / ARROWS OR DRAG THE STICK TO MOVE
       </div>
     </div>
-  );
-}
-function TaskPanel() {
-  const s = useGame(),
-    r = s.room!,
-    c = r.challenge!;
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    setBusy(false);
-  }, [c.step, c.nonce]);
-  return (
-    <Modal title={c.name} close={() => act("task_cancel")}>
-      <div className="task-console">
-        <span className="eyebrow">
-          {c.room.toUpperCase()} / CIRCUIT {c.step + 1} OF 4
-        </span>
-        <h3>Follow the signal.</h3>
-        <p>Tap the symbols in the order shown. Let each circuit settle.</p>
-        <div className="sequence">
-          {c.sequence.map((v, i) => (
-            <span
-              className={
-                i < c.step ? "complete" : i === c.step ? "current" : ""
-              }
-              key={i}
-            >
-              {["●", "◆", "▲", "✦"][v]}
-            </span>
-          ))}
-        </div>
-        <div className="circuit-buttons">
-          {["●", "◆", "▲", "✦"].map((v, i) => (
-            <button
-              key={v}
-              disabled={busy}
-              onClick={() => {
-                setBusy(true);
-                act("task_step", c.nonce, i);
-                setTimeout(() => setBusy(false), 400);
-              }}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-        <div className="progress">
-          <i style={{ width: `${(c.step / 4) * 100}%` }} />
-        </div>
-        <small>Stay close to the console to keep your connection.</small>
-      </div>
-    </Modal>
   );
 }
 function Meeting() {
@@ -1761,7 +1712,9 @@ function GameHUD() {
           </section>
         </div>
       )}
-      {r.challenge && r.phase === "playing" && <TaskPanel />}
+      {((r.challenge && r.phase === "playing") || s.fakeChallenge) && (
+        <UniversalTaskPanel />
+      )}
     </>
   );
 }
@@ -1853,13 +1806,13 @@ export default function App() {
       motion.dx = motion.dz = 0;
       voice.ptt(false);
     };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
+    window.addEventListener("keydown", down, true);
+    window.addEventListener("keyup", up, true);
     window.addEventListener("blur", reset);
     document.addEventListener("visibilitychange", reset);
     return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
+      window.removeEventListener("keydown", down, true);
+      window.removeEventListener("keyup", up, true);
       window.removeEventListener("blur", reset);
       document.removeEventListener("visibilitychange", reset);
     };

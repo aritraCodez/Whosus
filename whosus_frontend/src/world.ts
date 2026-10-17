@@ -209,10 +209,11 @@ export function walkable(x: number, z: number, lobby = false) {
       )
     );
   return (
-    FLOORS.some(
-      ([a, b, c, d]) =>
-        x >= a + 0.3 && x <= b - 0.3 && z >= c + 0.3 && z <= d - 0.3,
-    ) &&
+    x >= -13.7 &&
+    x <= 13.7 &&
+    z >= -13.7 &&
+    z <= 13.7 &&
+    FLOORS.some(([a, b, c, d]) => x >= a && x <= b && z >= c && z <= d) &&
     !OBSTACLES.some(
       ([a, b, c, d]) =>
         x > a - 0.3 && x < b + 0.3 && z > c - 0.3 && z < d + 0.3,

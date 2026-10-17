@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Challenge } from "./types";
 import { Modal } from "./components/Modal";
 import { act } from "./network";
@@ -355,7 +355,9 @@ function WiresGame({ finish }: { finish: () => void }) {
 
 // 4. ENTER ID CODE MINIGAME
 function KeypadGame({ finish }: { finish: () => void }) {
-  const targetCode = useRef("84920").current;
+  const [targetCode] = useState(() =>
+    String(Math.floor(10000 + Math.random() * 90000)),
+  );
   const [entered, setEntered] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -543,15 +545,24 @@ function AsteroidsGame({ finish }: { finish: () => void }) {
       y: 15 + Math.random() * 65,
       size: 26 + Math.random() * 16,
       hit: false,
+      exploding: false,
     }))
   );
+  const hitTargets = useRef(new Set<number>());
 
   const hitAsteroid = (id: number) => {
+    if (hitTargets.current.has(id)) return;
+    hitTargets.current.add(id);
     playTaskSound("laser");
     setAsteroids((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, hit: true } : a))
+      prev.map((a) => (a.id === id ? { ...a, exploding: true } : a))
     );
-    const nextCount = destroyed + 1;
+    setTimeout(() => {
+      setAsteroids((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, hit: true } : a))
+      );
+    }, 450);
+    const nextCount = hitTargets.current.size;
     setDestroyed(nextCount);
 
     if (nextCount >= total) {
@@ -576,14 +587,17 @@ function AsteroidsGame({ finish }: { finish: () => void }) {
             !ast.hit && (
               <button
                 key={ast.id}
-                className="asteroid-btn"
                 style={{
                   left: `${ast.x}%`,
                   top: `${ast.y}%`,
                   width: `${ast.size}px`,
                   height: `${ast.size}px`,
+                  animationDelay: `${-ast.id * 0.65}s`,
                 }}
+                className={`asteroid-btn ${ast.exploding ? "exploding" : ""}`}
                 onClick={() => hitAsteroid(ast.id)}
+                disabled={ast.exploding}
+                aria-label="Destroy asteroid"
               >
                 ☄
               </button>
@@ -605,15 +619,24 @@ function CleanGame({ finish }: { finish: () => void }) {
       x: 20 + Math.random() * 55,
       y: 20 + Math.random() * 55,
       removed: false,
+      ejecting: false,
     }))
   );
+  const ejectedLeaves = useRef(new Set<number>());
 
   const ejectLeaf = (id: number) => {
+    if (ejectedLeaves.current.has(id)) return;
+    ejectedLeaves.current.add(id);
     playTaskSound("spark");
     setLeaves((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, removed: true } : l))
+      prev.map((l) => (l.id === id ? { ...l, ejecting: true } : l))
     );
-    const next = cleaned + 1;
+    setTimeout(() => {
+      setLeaves((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, removed: true } : l))
+      );
+    }, 550);
+    const next = ejectedLeaves.current.size;
     setCleaned(next);
 
     if (next >= total) {
@@ -639,8 +662,14 @@ function CleanGame({ finish }: { finish: () => void }) {
           !leaf.removed && (
             <button
               key={leaf.id}
-              className="debris-item floating"
-              style={{ left: `${leaf.x}%`, top: `${leaf.y}%` }}
+              className={`debris-item ${leaf.ejecting ? "ejecting" : "floating"}`}
+              style={{
+                left: `${leaf.x}%`,
+                top: `${leaf.y}%`,
+                animationDelay: `${-leaf.id * 0.8}s`,
+              }}
+              disabled={leaf.ejecting}
+              aria-label="Eject filter debris"
               onClick={() => ejectLeaf(leaf.id)}
             >
               🍂
@@ -866,15 +895,12 @@ export function UniversalTaskPanel() {
 
   const isFake = !!c.fake;
 
-  const closeTask = () => {
-    if (isFake) {
-      s.set({ fakeChallenge: null });
-    } else {
-      act("task_cancel");
-    }
-  };
+  const closeTask = useCallback(() => {
+    if (isFake) s.set({ fakeChallenge: null });
+    else act("task_cancel");
+  }, [isFake, s.set]);
 
-  const handleFinish = () => {
+  const handleFinish = useCallback(() => {
     if (isFake) {
       s.set({
         fakeChallenge: null,
@@ -883,12 +909,13 @@ export function UniversalTaskPanel() {
     } else {
       act("task_step", c.nonce);
     }
-  };
+  }, [isFake, s.set, s.fakeDone, c.id, c.nonce]);
 
   return (
     <Modal
       title={c.name}
       close={closeTask}
+      wide
     >
       <div className={`universal-task-console ${isFake ? "fake-task" : ""}`}>
         <div className="task-meta-bar">
