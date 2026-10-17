@@ -108,7 +108,7 @@ npm.cmd ci
 npm.cmd run dev -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Keep this terminal running and open **http://127.0.0.1:5173**. The strict port setting prevents Vite from silently selecting another port that the backend or browser tests do not expect. Vite forwards `/api` and `/ws` to `127.0.0.1:8000`.
+Keep this terminal running and open **http://127.0.0.1:5173**. The strict port setting prevents Vite from silently selecting another port that the backend or browser tests do not expect. When `VITE_BACKEND_ORIGIN` is unset, Vite forwards `/api` and `/ws` to `127.0.0.1:8000`. To use a direct backend origin in development, set `VITE_BACKEND_ORIGIN` in the frontend environment; the backend must allow the frontend origin in `ALLOWED_ORIGINS`.
 
 ### Terminal 3: readiness checks
 
@@ -117,7 +117,7 @@ Invoke-RestMethod http://127.0.0.1:8000/api/health
 Invoke-RestMethod http://127.0.0.1:5173/api/health
 ```
 
-Both requests should return `ok: true` and `game: WhoSus?`. The second request checks the frontend-to-backend proxy. `/api/rooms` returns discoverable public lobbies; an empty list is valid when no public room exists.
+Both requests should return `ok: true` and `game: WhoSus?`. The second request checks the local Vite proxy. `/api/rooms` returns discoverable public lobbies; an empty list is valid when no public room exists.
 
 On macOS/Linux, use `python3`, `.venv/bin/python`, and `npm` instead of the Windows command names. Create the backend `.env` with `cp .env.example .env` on first setup, then use the same uvicorn arguments. The application does not require a database or an account for local play.
 
@@ -366,10 +366,10 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 | `ALLOWED_ORIGINS` | Comma-separated exact browser origins, without trailing slashes; checked during the WebSocket handshake |
 | `WHOSUS_BROWSER` | Optional Chromium path consumed by frontend files in `test/` |
 | `WHOSUS_TEST_URL` | Optional frontend origin for both browser test commands; defaults to `http://127.0.0.1:5173` |
-| `BACKEND_ORIGIN` | Frontend Docker runtime setting: the API's reachable HTTP(S) origin, with no path or trailing slash |
+| `VITE_BACKEND_ORIGIN` | Frontend build-time setting: the browser-reachable backend HTTP(S) origin, with no path or trailing slash; also selects the WebSocket host |
 | `PORT` | Container HTTP listener; defaults to 8080 for the frontend and 8000 for the backend; hosting runtime values override these defaults |
 
-`whosus_frontend/.env.example` documents the Docker settings. Pass values with `docker run -e`, `--env-file`, or the hosting dashboard; Docker does not automatically read a project `.env` file. These are Nginx runtime settings. Vite development still uses its local proxy configuration.
+Vite embeds `VITE_BACKEND_ORIGIN` into the frontend bundle at build time. It is a public URL, not a secret. For a Docker build, pass it with `--build-arg`; for Vite development, set it in the frontend `.env` file. Leave it unset to use the local Vite proxy. `PORT` remains an Nginx runtime setting.
 
 The backend uses fixed Google and Cloudflare STUN servers for WebRTC discovery. STUN URLs are not configurable through environment variables.
 
@@ -377,26 +377,18 @@ The backend uses fixed Google and Cloudflare STUN servers for WebRTC discovery. 
 
 Both application directories contain a Dockerfile and can be built independently. **There is currently no Compose file in this repository.** The frontend image builds the React app and serves it with Nginx; the backend image runs FastAPI and the media router. Deploying only the frontend does not deploy the backend.
 
-### Frontend config location and backend URL
+### Frontend build configuration and backend URL
 
-The source config is **`whosus_frontend/nginx.conf`**, inside the frontend application. Its Dockerfile copies it to `/etc/nginx/templates/default.conf.template` inside the image. That absolute path belongs to the container filesystem; it does not write to the host computer's global Nginx configuration.
+The frontend browser calls the backend directly using `VITE_BACKEND_ORIGIN` for both HTTP requests and WebSocket signaling. The Nginx server only serves the built frontend; it does not proxy backend traffic. Its source config is **`whosus_frontend/nginx.conf`**, copied to `/etc/nginx/templates/default.conf.template` inside the image.
 
-The official Nginx entrypoint substitutes `${PORT}` and `${BACKEND_ORIGIN}` at startup and writes the effective config inside the container. The substitution filter preserves Nginx variables such as `$uri`, `$http_upgrade`, and `$proxy_host`. This uses the [official image's template mechanism](https://github.com/nginx/docker-nginx/blob/master/entrypoint/20-envsubst-on-templates.sh).
+The official Nginx entrypoint substitutes `${PORT}` at startup. The Docker build supplies `VITE_BACKEND_ORIGIN` to Vite, which compiles the chosen URL into the app.
 
-**`127.0.0.1` means the machine or container executing the request.** In the frontend container, `http://127.0.0.1:8000` looks for a backend in that same network namespace. It does not point to your development computer or a different Render service. The default is useful only when the backend shares that network namespace, such as the Linux host-network example below.
+Because requests come directly from the browser, set `VITE_BACKEND_ORIGIN` to a URL reachable by each player's browser, not a private container hostname. The backend must list the exact frontend origin in `ALLOWED_ORIGINS` for WebSocket connections and HTTP API CORS.
 
-Set `BACKEND_ORIGIN` to a URL the frontend server can reach:
-
-| Deployment | Example `BACKEND_ORIGIN` |
+| Deployment | Example `VITE_BACKEND_ORIGIN` |
 | --- | --- |
-| Both containers share a Linux host network | `http://127.0.0.1:8000` |
-| Separate containers on a shared Docker network | `http://whosus-backend:8000`, using the actual backend container/service name |
-| Backend exposed as a Render web service | `https://your-backend.onrender.com` |
-| Eligible Render services in the same workspace and region | `http://actual-internal-hostname:10000`, copied from the backend's Connect menu |
-
-Include `http://` or `https://`, and omit paths and trailing slashes. Nginx forwards `/api/health` as `/api/health` and upgrades `/ws` for gameplay, chat and voice signaling. Public HTTPS upstreams use the backend Host header, TLS SNI and certificate verification. See [Nginx proxy behavior](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass).
-
-Changing `BACKEND_ORIGIN` only requires restarting the frontend container, not rebuilding the JavaScript bundle. The browser keeps using the frontend's own origin, so no production backend URL needs to be hardcoded in React.
+| Local Docker using host networking | `http://127.0.0.1:8000` |
+| Backend exposed as a public service | `https://your-backend.example.com` |
 
 ### Build and run locally with Docker
 
@@ -404,7 +396,7 @@ From the repository root:
 
 ```sh
 docker build -t whosus-backend ./whosus_backend
-docker build -t whosus-frontend ./whosus_frontend
+docker build --build-arg VITE_BACKEND_ORIGIN=http://127.0.0.1:8000 -t whosus-frontend ./whosus_frontend
 ```
 
 For the following **Linux host-network** example, configure the backend `.env` to allow `http://localhost:8080`, then run in separate terminals:
@@ -414,10 +406,10 @@ docker run --rm --name whosus-backend --network host --env-file ./whosus_backend
 ```
 
 ```sh
-docker run --rm --name whosus-frontend --network host -e PORT=8080 -e BACKEND_ORIGIN=http://127.0.0.1:8000 whosus-frontend
+docker run --rm --name whosus-frontend --network host -e PORT=8080 whosus-frontend
 ```
 
-Open `http://localhost:8080`. `/healthz` checks frontend serving, and `/api/health` additionally checks the configured backend connection. Nginx does not terminate WebRTC media. Serve the frontend behind HTTPS for Android microphone access and permit the selected direct-media routes in the deployment network.
+Open `http://localhost:8080`. `/healthz` checks frontend serving; check the backend separately at `http://127.0.0.1:8000/api/health`. Nginx does not proxy backend requests or terminate WebRTC media. Serve the frontend behind HTTPS for Android microphone access and permit the selected direct-media routes in the deployment network.
 
 ### Deploy the Dockerfiles on Render
 
@@ -432,11 +424,11 @@ Render supports Docker web services and separate applications within one reposit
 | Docker Build Context | `.` | `.` |
 | Docker Command override | Leave empty; use the Dockerfile CMD | Leave empty; preserve the official Nginx entrypoint/CMD |
 | Health Check Path | `/api/health` | `/healthz` |
-| Required app configuration | `ALLOWED_ORIGINS=https://your-frontend.onrender.com` | `BACKEND_ORIGIN=https://your-backend.onrender.com` |
+| Required app configuration | `ALLOWED_ORIGINS=https://your-frontend.onrender.com` | Build-time `VITE_BACKEND_ORIGIN=https://your-backend.onrender.com` |
 
-Deploy the backend to obtain its real URL, then set that URL as the frontend's `BACKEND_ORIGIN`. Once the frontend URL is known, update the backend's `ALLOWED_ORIGINS` to that exact frontend origin and redeploy the backend. Keep both service instance counts at one for the current in-memory design.
+Deploy the backend to obtain its public URL, then set it as the frontend's `VITE_BACKEND_ORIGIN` build-time environment value and rebuild/redeploy the frontend. Set the backend's `ALLOWED_ORIGINS` to the exact frontend origin and redeploy the backend. Keep both service instance counts at one for the current in-memory design.
 
-Both Dockerfiles honor the runtime `PORT`. Render supplies its HTTP port and HTTPS endpoint; the public URL does not need `:8000` or `:8080`. Frontend browsers use HTTPS/WSS; Nginx forwards to the configured backend origin. Render supports WebSocket upgrades on the same public HTTP endpoint. See [port binding](https://render.com/docs/web-services#port-binding) and [WebSockets](https://render.com/docs/websocket).
+Both Dockerfiles honor the runtime `PORT`. Render supplies its HTTP port and HTTPS endpoint; the public URL does not need `:8000` or `:8080`. Frontend browsers use HTTPS/WSS to connect directly to the configured backend origin. Render supports WebSocket connections on its public endpoint. See [port binding](https://render.com/docs/web-services#port-binding) and [WebSockets](https://render.com/docs/websocket).
 
 You can also use a Render internal backend hostname when the service plan supports receiving private traffic. Use the actual address from **Connect > Internal**, keep services in the same workspace and region, and use its real port. Free web services cannot receive private-network requests, so a public backend URL is the applicable option for that case. See [Render private networking](https://render.com/docs/private-network).
 
@@ -444,7 +436,7 @@ You can also use a Render internal backend hostname when the service plan suppor
 
 The existing browser rendering/audio verification gaps still apply after deployment. No Render deployment was performed as part of these configuration changes.
 
-Use native Python and Vite commands for ordinary Windows development. A frontend-only static deployment must still route `/api` and `/ws` to the backend on the browser's origin. `npm.cmd run preview` is a build preview; the current Vite configuration does not define its API/WebSocket proxy.
+Use native Python and Vite commands for ordinary Windows development. For a static frontend deployment, build with `VITE_BACKEND_ORIGIN` set to the browser-reachable backend URL and allow the static site's origin in the backend configuration. `npm.cmd run preview` does not proxy API or WebSocket requests.
 
 The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input queues, and media connections reside in that process. Scaling requires room affinity plus coordinated room discovery and media capacity; adding Redis alone does not distribute active WebRTC transports. There is no persistent account store or PostgreSQL integration. Backend restarts lose matches, and concurrent-room capacity requires load testing. Budget mixer CPU for a separate outgoing audio stream for each connected recipient.
 
@@ -455,11 +447,10 @@ The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input que
 | `python` opens the Store or is inaccessible | Use the installed Python executable or `py -3.13`; create the virtual environment locally. |
 | PowerShell blocks `npm.ps1` | Use the documented `npm.cmd` commands. |
 | Port 8000 or 5173 is already in use | Stop the earlier server in its terminal. Restart from the correct application directory; do not run multiple servers against the same test ports. |
-| Backend health works but frontend health fails | Confirm Vite is on 5173 and its proxy target is `127.0.0.1:8000`. |
+| Backend health works but frontend can't load rooms | If `VITE_BACKEND_ORIGIN` is set, check the URL and backend CORS origin. Otherwise confirm Vite is on 5173 and its proxy target is `127.0.0.1:8000`. |
 | Room connection closes immediately | Confirm the exact frontend origin is in `ALLOWED_ORIGINS`; restart the backend after editing `.env`. |
 | Docker build cannot find `nginx.conf` | Use `whosus_frontend` as the build context. The Dockerfile copies its local `nginx.conf`; it does not read a repository-global config. |
-| Deployed frontend loads, but API/room requests return 502 | Set the frontend container's `BACKEND_ORIGIN` to the actual reachable backend origin. Loopback does not reach a separate service. |
-| Frontend `/healthz` works but `/api/health` fails | Check the backend URL, service status, DNS, upstream TLS and backend listener port. |
+| Deployed frontend loads, but API/room requests fail | Rebuild with `VITE_BACKEND_ORIGIN` set to the browser-reachable backend origin, and allow the frontend origin in backend `ALLOWED_ORIGINS`. |
 | Several windows become the same player | Use independent browser contexts instead of duplicated tabs; reconnect tokens are stored in `sessionStorage`. |
 | Microphone access is unavailable on Android | Use HTTPS with a trusted certificate. Plain HTTP to a LAN IP is insufficient for microphone access. |
 | Voice is connected but inaudible | Check mute, deafen, channel eligibility, distance, playback unlocking, capture device and received audio energy. Connection state alone does not prove audio delivery. |

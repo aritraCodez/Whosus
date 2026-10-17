@@ -3,8 +3,9 @@ import contextlib
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI,APIRouter
-from .config import rooms, sessions, voice
+from fastapi import FastAPI, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
+from .config import ORIGINS, rooms, sessions, voice
 from .game import DT
 from app.routes import websocket
 router = APIRouter()
@@ -81,4 +82,11 @@ def public_rooms():
 
 
 app = FastAPI(title='WhoSus? authority', lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list(ORIGINS),
+    allow_methods=['GET'],
+    allow_headers=[],
+)
+app.include_router(router)
 app.include_router(websocket.router)
