@@ -8,10 +8,76 @@ from dataclasses import dataclass, field
 DT = 1 / 20
 SPEED = 4.2
 COLORS = ['#f6bd4f', '#6ad9c5', '#f47785', '#a99af4', '#75b8ed', '#f59e6d', '#c5db79', '#e69ed0', '#ded9cc', '#73a49c', '#cb8b75', '#8e9bd1']
-FLOORS = [(-4, 4, -4, 4), (-14, -6, -4, 4), (6, 14, -4, 4), (-4, 4, -14, -6), (-4, 4, 6, 14), (-10, 10, -1.6, 1.6), (-1.6, 1.6, -10, 10)]
-OBSTACLES = [(-12.5, -10.5, 1.5, 3), (10.5, 12.5, 1.5, 3), (-3, -1.5, -12.5, -10.5), (1.5, 3, 10.5, 12.5), (-.8, .8, -10.8, -9.2), (-.9, .9, -.9, .9)]
-STATIONS = [{'id': 'garden', 'name': 'Balance the biofilter', 'room': 'Botanical', 'x': -12, 'z': -2, 'kind': 'sequence'}, {'id': 'relay', 'name': 'Align the relay', 'room': 'Comms', 'x': 12, 'z': -2, 'kind': 'dial'}, {'id': 'reactor', 'name': 'Restore the core', 'room': 'Reactor', 'x': 2, 'z': -12, 'kind': 'sequence'}, {'id': 'cargo', 'name': 'Sort the samples', 'room': 'Cargo', 'x': -2, 'z': 12, 'kind': 'sequence'}]
-VENTS = [(-11, 0), (0, -11), (11, 0)]
+FLOORS = [
+    # 1. The Commons (Center)
+    (-4, 4, -4, 4),
+    # 2. MedBay / Botanical (West)
+    (-14, -6, -4, 4),
+    # 3. Reactor (North)
+    (-4, 4, -14, -6),
+    # 4. Comms & Admin (East)
+    (6, 14, -4, 4),
+    # 5. Storage (South)
+    (-4, 4, 6, 14),
+    # 6. Security (Northwest)
+    (-14, -6, -14, -6),
+    # 7. Weapons & O2 (Northeast)
+    (6, 14, -14, -6),
+    # 8. Electrical (Southwest)
+    (-14, -6, 6, 14),
+    # 9. Shields & Navigation (Southeast)
+    (6, 14, 6, 14),
+    # --- Connecting Corridors & Loops ---
+    (-10, 10, -1.6, 1.6),
+    (-1.6, 1.6, -10, 10),
+    # Outer Loop Hallways:
+    (-10, -6, -10, -10),
+    (-6, -4, -10.8, -9.2),
+    (4, 6, -10.8, -9.2),
+    (-10.8, -9.2, -6, -4),
+    (9.2, 10.8, -6, -4),
+    (-10.8, -9.2, 4, 6),
+    (9.2, 10.8, 4, 6),
+    (-6, -4, 9.2, 10.8),
+    (4, 6, 9.2, 10.8),
+]
+OBSTACLES = [
+    (-0.9, 0.9, -0.9, 0.9),
+    (-12.5, -10.5, 1.5, 3),
+    (10.5, 12.5, 1.5, 3),
+    (-3, -1.5, -12.5, -10.5),
+    (1.5, 3, 10.5, 12.5),
+    (-0.8, 0.8, -10.8, -9.2),
+    (-12.5, -10.5, -8.5, -7),
+    (10.5, 12.5, -8.5, -7),
+    (-12.5, -10.5, 7, 8.5),
+    (10.5, 12.5, 7, 8.5),
+]
+STATIONS = [
+    {'id': 'garden', 'name': 'Balance the biofilter', 'room': 'Botanical', 'x': -12, 'z': -2, 'category': 'long', 'kind': 'sequence', 'visual': False},
+    {'id': 'swipe', 'name': 'Swipe Card', 'room': 'The Commons', 'x': 2, 'z': -3, 'category': 'common', 'kind': 'swipe', 'visual': False},
+    {'id': 'id_code', 'name': 'Enter ID Code', 'room': 'Comms', 'x': 12, 'z': 2, 'category': 'common', 'kind': 'keypad', 'visual': False},
+    {'id': 'wires', 'name': 'Fix Wiring', 'room': 'Electrical', 'x': -11, 'z': 12, 'category': 'common', 'kind': 'wires', 'visual': False},
+    {'id': 'relay', 'name': 'Align the Relay', 'room': 'Comms', 'x': 12, 'z': -2, 'category': 'short', 'kind': 'dial', 'visual': False},
+    {'id': 'prime_shields', 'name': 'Prime Shields', 'room': 'Shields', 'x': 12, 'z': 8, 'category': 'short', 'kind': 'shields', 'visual': True, 'visual_kind': 'shields'},
+    {'id': 'chart_course', 'name': 'Chart Course', 'room': 'Navigation', 'x': 8, 'z': 12, 'category': 'short', 'kind': 'course', 'visual': False},
+    {'id': 'clear_asteroids', 'name': 'Clear Asteroids', 'room': 'Weapons', 'x': 12, 'z': -10, 'category': 'short', 'kind': 'asteroids', 'visual': True, 'visual_kind': 'asteroids'},
+    {'id': 'clean_filter', 'name': 'Clean O2 Filter', 'room': 'Life Support', 'x': 8, 'z': -12, 'category': 'short', 'kind': 'clean', 'visual': False},
+    {'id': 'start_reactor', 'name': 'Start Reactor', 'room': 'Reactor', 'x': -2, 'z': -12, 'category': 'long', 'kind': 'sequence', 'visual': False},
+    {'id': 'submit_scan', 'name': 'Submit Scan', 'room': 'MedBay', 'x': -8, 'z': 2, 'category': 'long', 'kind': 'scan', 'visual': True, 'visual_kind': 'scan'},
+    {'id': 'divert_power', 'name': 'Divert Power', 'room': 'Electrical', 'x': -8, 'z': 10, 'category': 'long', 'kind': 'divert', 'visual': False},
+    {'id': 'fuel_engines', 'name': 'Fuel Engines', 'room': 'Storage', 'x': -2, 'z': 12, 'category': 'long', 'kind': 'fuel', 'visual': False},
+]
+VENTS = [
+    (-11, 0),
+    (0, -11),
+    (11, 0),
+    (-10, -10),
+    (10, -10),
+    (-10, 10),
+    (0, 10),
+    (10, 10),
+]
 LOBBY_OBSTACLES = [(-4.5, -2.7, -1.6, .2), (2.7, 4.5, -1.6, .2), (-1, 1, -4.4, -3.2)]
 
 def distance(a, b):
@@ -81,6 +147,10 @@ class Room:
         self.meeting_at = 0
         self.chat = deque(maxlen=100)
         self.eliminations = []
+        self.visual_tasks = True
+        self.task_bar_mode = 'always'
+        self.meeting_progress = 0.0
+        self.active_visuals = []
 
     def add(self, name, color=0, hat='sprout'):
         if self.phase != 'lobby': raise GameError('This expedition has already launched.')
@@ -105,11 +175,34 @@ class Room:
         self.winner = self.result = ''
         self.bodies.clear(); self.votes.clear()
         self.eliminations.clear()
+        self.active_visuals.clear()
         self.sabotage_until = 0; self.sabotage_at = self.now + 20
+        common_candidates = [s for s in STATIONS if s.get('category') == 'common']
+        short_candidates = [s for s in STATIONS if s.get('category') == 'short']
+        long_candidates = [s for s in STATIONS if s.get('category') == 'long']
+        selected_common = secrets.choice(common_candidates)['id'] if common_candidates else 'swipe'
+
         for i, p in enumerate(active):
             p.role = 'impostor' if p.id in traitors else 'crew'
             p.alive = True; p.done.clear(); p.vent = -1; p.emergency = 1; p.challenge = None; p.animation_until = 0
-            p.tasks = [s['id'] for s in STATIONS] if p.role == 'crew' else []
+            if p.role == 'crew':
+                assigned = [selected_common]
+                for s in secrets.SystemRandom().sample(short_candidates, min(2, len(short_candidates))):
+                    if s['id'] not in assigned: assigned.append(s['id'])
+                if long_candidates:
+                    l_task = secrets.choice(long_candidates)['id']
+                    if l_task not in assigned: assigned.append(l_task)
+                if 'garden' not in assigned: assigned.append('garden')
+                p.tasks = assigned
+            else:
+                fake = [selected_common]
+                for s in secrets.SystemRandom().sample(short_candidates, min(2, len(short_candidates))):
+                    if s['id'] not in fake: fake.append(s['id'])
+                if long_candidates:
+                    l_task = secrets.choice(long_candidates)['id']
+                    if l_task not in fake: fake.append(l_task)
+                if 'garden' not in fake: fake.append('garden')
+                p.tasks = fake
             p.kill_at = self.now + self.kill_cooldown
             p.inputs.clear(); p.x = math.cos(i * math.tau / len(active)) * 2; p.z = math.sin(i * math.tau / len(active)) * 2
         self.phase = 'reveal'; self.deadline = self.now + 5
@@ -121,7 +214,7 @@ class Room:
         if self.phase not in ('lobby', 'playing') or not p.connected or p.vent >= 0 or self.now < p.animation_until: return
         if seq <= p.last_seq: return
         p.last_seq = seq
-        if len(p.inputs) < 20: p.inputs.append((seq, dx, dz))
+        if len(p.inputs) < 50: p.inputs.append((seq, dx, dz))
 
     def tick(self, now=None):
         self.now = time.monotonic() if now is None else now
@@ -233,19 +326,35 @@ class Room:
             else:
                 idx = min(range(len(VENTS)), key=lambda i: math.hypot(p.x-VENTS[i][0],p.z-VENTS[i][1]))
                 self.require(math.hypot(p.x-VENTS[idx][0],p.z-VENTS[idx][1]) <= 1.7,'Approach a service duct.'); p.vent = idx; p.x,p.z = VENTS[idx]
+        elif action == 'settings':
+            self.require(pid == self.host, 'Only the host can modify mission settings.')
+            if target == 'taskBarMode' and str(value) in ('always', 'meetings', 'never'):
+                self.task_bar_mode = str(value)
+            elif target == 'visualTasks':
+                self.visual_tasks = bool(value)
         elif action == 'task_cancel': p.challenge = None
         elif action == 'task_begin':
             s = next((s for s in STATIONS if s['id'] == target), None)
-            self.require(p.role == 'crew' and target in p.tasks and target not in p.done and s and math.hypot(p.x-s['x'],p.z-s['z']) <= 2, 'Approach an unfinished task station.')
-            sequence = [secrets.randbelow(4) for _ in range(4)]
+            self.require(p.role == 'crew' and target in p.tasks and target not in p.done and s and math.hypot(p.x-s['x'],p.z-s['z']) <= 2.5, 'Approach an unfinished task station.')
+            sequence = [secrets.randbelow(4) for _ in range(4)] if s.get('kind') == 'sequence' else []
             p.challenge = {**s,'nonce':secrets.token_hex(12),'sequence':sequence,'step':0,'started':self.now}
         elif action == 'task_step':
             c = p.challenge
-            self.require(c and target == c['nonce'] and math.hypot(p.x-c['x'],p.z-c['z']) <= 2, 'This task has expired.')
-            self.require(type(value) is int and value == c['sequence'][c['step']], 'Wrong circuit. Follow the illuminated sequence.')
-            self.require(self.now - c['started'] >= (c['step']+1)*.3, 'Slow down and let the circuit settle.')
-            c['step'] += 1
-            if c['step'] == 4: p.done.add(c['id']); p.challenge = None; self.check_win()
+            self.require(c and target == c['nonce'] and math.hypot(p.x-c['x'],p.z-c['z']) <= 2.5, 'This task has expired.')
+            if c.get('kind') == 'sequence':
+                self.require(type(value) is int and value == c['sequence'][c['step']], 'Wrong circuit. Follow the illuminated sequence.')
+                self.require(self.now - c['started'] >= (c['step']+1)*.3, 'Slow down and let the circuit settle.')
+                c['step'] += 1
+                if c['step'] == len(c['sequence']):
+                    p.done.add(c['id']); p.challenge = None
+                    if c.get('visual') and self.visual_tasks:
+                        self.active_visuals.append({'player': p.id, 'task': c['id'], 'kind': c.get('visual_kind', 'glow'), 'until': self.now + 4})
+                    self.check_win()
+            else:
+                p.done.add(c['id']); p.challenge = None
+                if c.get('visual') and self.visual_tasks:
+                    self.active_visuals.append({'player': p.id, 'task': c['id'], 'kind': c.get('visual_kind', 'glow'), 'until': self.now + 4})
+                self.check_win()
         else: raise GameError('Unknown action.')
 
     def voice_gain(self, source, recipient):
@@ -262,11 +371,11 @@ class Room:
         a,b = self.players[source],self.players[recipient]
         if self.phase in ('lobby','gameover'): return True
         if a.alive != b.alive: return False
-        return not a.alive or self.phase in ('discussion','voting','results')
+        return True
 
     def add_chat(self, pid, text):
         p = self.players[pid]
-        self.require(self.can_chat(pid,pid), 'Living players can text during meetings. Use proximity voice while exploring.')
+        self.require(self.can_chat(pid,pid), 'You cannot chat right now.')
         self.require(self.now-p.last_chat >= 1, 'Please wait a moment between messages.')
         p.last_chat = self.now
         msg = {'id':secrets.token_hex(6),'name':p.name,'player':pid,'text':text,'time':int(time.time()*1000),'channel':'ghost' if not p.alive and self.phase != 'gameover' else self.phase,'recipients':[i for i in self.players if self.can_chat(pid,i)]}
@@ -284,5 +393,30 @@ class Room:
             row['voted'] = p.id in self.votes
             players.append(row)
         crew = [p for p in self.players.values() if p.role == 'crew']
+        real_progress = sum(len(p.done) for p in crew)/max(1,sum(len(p.tasks) for p in crew))
+        if self.phase in ('discussion', 'voting', 'results', 'gameover'):
+            self.meeting_progress = real_progress
+
+        if self.task_bar_mode == 'always':
+            prog = real_progress
+        elif self.task_bar_mode == 'meetings':
+            prog = self.meeting_progress
+        else:
+            prog = -1.0
+
+        self.active_visuals = [v for v in self.active_visuals if self.now < v['until']]
         eliminations = [{k: v for k, v in e.items() if k not in ('recipients', 'started')} | {'elapsed': self.now-e['started']} for e in self.eliminations if pid in e['recipients'] and self.now-e['started'] < 2.4]
-        return {'code':self.code,'host':self.host,'public':self.public,'capacity':self.capacity,'impostors':self.impostors,'phase':self.phase,'round':self.round,'players':players,'bodies':self.bodies,'remaining':max(0,self.deadline-self.now),'result':self.result,'winner':self.winner,'sabotage':max(0,self.sabotage_until-self.now),'killCooldown':max(0,me.kill_at-self.now),'sabotageCooldown':max(0,self.sabotage_at-self.now),'meetingCooldown':max(0,self.meeting_at-self.now),'emergency':me.emergency,'vent':me.vent,'tasks':[{**s,'done':s['id'] in me.done} for s in STATIONS if s['id'] in me.tasks],'challenge':me.challenge,'progress':sum(len(p.done) for p in crew)/max(1,sum(len(p.tasks) for p in crew)),'tally':dict(Counter(self.votes.values())) if self.phase in ('results','gameover') else {},'population':len(self.players),'eliminations':eliminations,'movementLock':max(0,me.animation_until-self.now)}
+        return {
+            'code': self.code, 'host': self.host, 'public': self.public, 'capacity': self.capacity,
+            'impostors': self.impostors, 'phase': self.phase, 'round': self.round, 'players': players,
+            'bodies': self.bodies, 'remaining': max(0, self.deadline - self.now), 'result': self.result,
+            'winner': self.winner, 'sabotage': max(0, self.sabotage_until - self.now),
+            'killCooldown': max(0, me.kill_at - self.now), 'sabotageCooldown': max(0, self.sabotage_at - self.now),
+            'meetingCooldown': max(0, self.meeting_at - self.now), 'emergency': me.emergency, 'vent': me.vent,
+            'tasks': [{**s, 'done': s['id'] in me.done} for s in STATIONS if s['id'] in me.tasks],
+            'challenge': me.challenge, 'progress': prog, 'taskBarMode': self.task_bar_mode,
+            'visualTasks': self.visual_tasks, 'visuals': self.active_visuals,
+            'tally': dict(Counter(self.votes.values())) if self.phase in ('results', 'gameover') else {},
+            'population': len(self.players), 'eliminations': eliminations,
+            'movementLock': max(0, me.animation_until - self.now)
+        }

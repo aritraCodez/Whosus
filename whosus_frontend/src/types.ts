@@ -19,6 +19,9 @@ export interface Task {
   x: number;
   z: number;
   kind: string;
+  category?: string;
+  visual?: boolean;
+  visual_kind?: string;
   done: boolean;
 }
 export interface Challenge extends Task {
@@ -26,6 +29,13 @@ export interface Challenge extends Task {
   sequence: number[];
   step: number;
   started: number;
+  fake?: boolean;
+}
+export interface VisualEffect {
+  player: string;
+  task: string;
+  kind: string;
+  until: number;
 }
 export interface Snapshot {
   eliminations: Elimination[];
@@ -51,6 +61,9 @@ export interface Snapshot {
   tasks: Task[];
   challenge: Challenge | null;
   progress: number;
+  taskBarMode?: "always" | "meetings" | "never";
+  visualTasks?: boolean;
+  visuals?: VisualEffect[];
   tally: Record<string, number>;
   population: number;
 }

@@ -142,7 +142,7 @@ def test_vents_require_impostor_and_range():
 
 def test_chat_permissions_and_rate_limit():
     r=game();imp,crew=parties(r);a,b=crew[:2];a.alive=False
-    with pytest.raises(GameError):r.add_chat(b.id,'living exploration chat')
+    msg_living=r.add_chat(b.id,'living exploration chat');assert a.id not in msg_living['recipients']
     msg=r.add_chat(a.id,'ghost secret');assert b.id not in msg['recipients']
     with pytest.raises(GameError):r.add_chat(a.id,'spam')
     r.phase='discussion';r.now+=2
