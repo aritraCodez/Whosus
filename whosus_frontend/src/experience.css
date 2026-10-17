@@ -1,0 +1,426 @@
+.player-custom:focus-within {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px #f5c56816;
+}
+.player-custom .pencil {
+  padding: 9px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.player-custom .pencil:hover {
+  background: #ffffff10;
+}
+.waiting-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+.waiting-ui button,
+.waiting-ui input,
+.waiting-ui select {
+  pointer-events: auto;
+}
+.waiting-ui .lobby-deck {
+  position: absolute;
+  top: 100px;
+  right: 28px;
+  bottom: 110px;
+  left: auto;
+  transform: none;
+  width: 285px;
+  padding: 20px;
+  border-radius: 15px;
+  backdrop-filter: none;
+  background: #19323cf2;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+.waiting-ui .lobby-title {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.waiting-ui .lobby-title h2 {
+  font-size: 22px;
+  margin: 7px 0;
+}
+.waiting-ui .lobby-title p {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.waiting-ui .room-code {
+  width: 100%;
+  background: #bde1c80a;
+}
+.waiting-ui .room-code strong {
+  color: #a6edcf;
+  font-size: 27px;
+}
+.room-facts {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.room-facts > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9px;
+  color: #8ba99d;
+  letter-spacing: 0.8px;
+}
+.room-facts strong {
+  font-size: 11px;
+  color: #dae5d7;
+  letter-spacing: 0;
+}
+.waiting-ui .crew-list {
+  grid-template-columns: 1fr;
+  margin: 16px 0;
+  gap: 6px;
+}
+.waiting-ui .crew-card {
+  min-height: 47px;
+  padding: 4px 7px;
+}
+.waiting-ui .crew-card strong {
+  max-width: 155px;
+}
+.waiting-ui .crew-card.vacant {
+  min-height: 34px;
+}
+.style-picker {
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.style-picker select {
+  font-size: 12px;
+  padding: 9px;
+  letter-spacing: 0;
+  width: 100%;
+}
+.room-profile {
+  pointer-events: auto;
+  position: absolute;
+  left: 28px;
+  top: 100px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 290px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #19323ce8;
+}
+.room-profile label {
+  font-size: 8px;
+  letter-spacing: 1.4px;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+}
+.room-profile input {
+  width: 100%;
+  font-weight: 700;
+  font-size: 14px;
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+}
+.room-profile .icon {
+  width: 32px;
+  height: 32px;
+}
+.waiting-ui .lobby-bottom {
+  position: absolute;
+  bottom: 110px;
+  left: calc((100% - 320px) / 2);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 360px);
+  padding: 15px 20px;
+  border: 1px solid #bde1c82a;
+  border-radius: 12px;
+  background: #19323ce8;
+}
+.waiting-ui .lobby-bottom > div {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.waiting-ui .lobby-bottom button {
+  min-height: 42px;
+  padding: 10px 16px;
+}
+.waiting-ui .lobby-bottom > span {
+  font-size: 11px;
+}
+.bay-hint {
+  position: absolute;
+  bottom: 83px;
+  left: calc((100% - 320px) / 2);
+  transform: translateX(-50%);
+  font-size: 8px;
+  letter-spacing: 1.4px;
+  color: #a7c7ba;
+  white-space: nowrap;
+}
+.bay-sign {
+  border: 1px solid #9ac6b942;
+  background: #1b343df0;
+  border-radius: 5px;
+  padding: 7px 12px;
+  letter-spacing: 2px;
+  font-size: 9px;
+  white-space: nowrap;
+  color: #a8e4ce;
+}
+.in-lobby .movement-hint {
+  display: none;
+}
+.joystick {
+  display: block;
+  opacity: 0.85;
+  width: 112px;
+  height: 112px;
+  bottom: 110px;
+  left: 28px;
+  cursor: grab;
+}
+.joystick:active {
+  cursor: grabbing;
+  opacity: 1;
+  background: #234d58aa;
+}
+.joystick > div {
+  left: calc(50% - 23px);
+  top: calc(50% - 23px);
+}
+.action-buttons button {
+  touch-action: none;
+  user-select: none;
+}
+.action-buttons .action:disabled {
+  opacity: 0.42;
+}
+.elimination-caption {
+  position: absolute;
+  bottom: 135px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 34;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 35px;
+  border: 1px solid #f5c56870;
+  border-radius: 14px;
+  background: #192e3bf2;
+  box-shadow: 0 0 60px #f5c5681a;
+  pointer-events: none;
+  animation: reveal 0.2s ease-out;
+}
+.elimination-caption > span {
+  text-transform: uppercase;
+  color: #f5c568;
+  font-size: 10px;
+  letter-spacing: 3px;
+}
+.elimination-caption strong {
+  font-size: 21px;
+}
+.elimination-caption small {
+  color: #aec5bd;
+}
+.elimination-caption.victim {
+  border-color: #f47785;
+  box-shadow: 0 0 90px #f4778540;
+}
+@media (max-width: 1000px) {
+  .waiting-ui .lobby-deck {
+    width: 245px;
+    right: 16px;
+    top: 84px;
+    padding: 14px;
+  }
+  .room-profile {
+    left: 16px;
+    top: 84px;
+    width: 245px;
+  }
+  .waiting-ui .lobby-bottom {
+    left: calc((100% - 245px) / 2);
+    max-width: calc(100% - 290px);
+    padding: 10px 12px;
+  }
+  .waiting-ui .lobby-bottom button {
+    font-size: 11px;
+  }
+  .bay-hint {
+    display: none;
+  }
+}
+@media (max-width: 650px) and (orientation: portrait) {
+  .room-profile {
+    left: 12px;
+    top: 76px;
+    width: calc(100% - 24px);
+    padding: 5px 10px;
+  }
+  .waiting-ui .lobby-deck {
+    top: 142px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    width: auto;
+    max-height: 180px;
+    padding: 12px;
+  }
+  .waiting-ui .lobby-title {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .waiting-ui .lobby-title > div {
+    flex: 1;
+  }
+  .waiting-ui .lobby-title h2 {
+    font-size: 17px;
+  }
+  .waiting-ui .lobby-title p {
+    display: none;
+  }
+  .waiting-ui .room-code {
+    width: auto;
+    padding: 8px;
+  }
+  .waiting-ui .room-code strong {
+    font-size: 18px;
+  }
+  .waiting-ui .room-code small {
+    font-size: 6px;
+    letter-spacing: 0.6px;
+  }
+  .room-facts {
+    grid-template-columns: 1fr 1fr;
+    margin: 12px 0;
+  }
+  .room-facts > span:first-child {
+    display: none;
+  }
+  .waiting-ui .crew-list {
+    grid-template-columns: 1fr 1fr;
+    margin: 8px 0;
+  }
+  .waiting-ui .crew-card strong {
+    font-size: 9px;
+    max-width: 105px;
+  }
+  .waiting-ui .crew-card.vacant {
+    display: none;
+  }
+  .waiting-ui .lobby-bottom {
+    left: auto;
+    right: 12px;
+    bottom: 112px;
+    transform: none;
+    max-width: 205px;
+    padding: 10px;
+  }
+  .waiting-ui .lobby-bottom > div {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .waiting-ui .lobby-bottom > span {
+    font-size: 8px;
+  }
+  .joystick {
+    left: 16px;
+    width: 100px;
+    height: 100px;
+    bottom: 126px;
+  }
+  .elimination-caption {
+    bottom: 220px;
+    width: 90%;
+    padding: 15px;
+    text-align: center;
+  }
+}
+@media (max-height: 550px) and (orientation: landscape) {
+  .waiting-ui .lobby-deck {
+    top: 64px;
+    bottom: 72px;
+    width: 220px;
+    right: 12px;
+    padding: 12px;
+  }
+  .waiting-ui .lobby-title {
+    gap: 8px;
+  }
+  .waiting-ui .lobby-title h2 {
+    font-size: 17px;
+  }
+  .waiting-ui .lobby-title p,
+  .waiting-ui .lobby-title .eyebrow {
+    display: none;
+  }
+  .waiting-ui .room-code {
+    padding: 7px;
+  }
+  .room-facts {
+    gap: 6px;
+    margin: 12px 0;
+  }
+  .waiting-ui .crew-list {
+    margin: 8px 0;
+  }
+  .room-profile {
+    top: 64px;
+    left: 12px;
+    width: 220px;
+    padding: 5px 8px;
+  }
+  .room-profile input {
+    font-size: 12px;
+  }
+  .waiting-ui .lobby-bottom {
+    bottom: 75px;
+    left: calc((100% - 225px) / 2);
+    max-width: calc(100% - 375px);
+    padding: 8px;
+    gap: 5px;
+  }
+  .waiting-ui .lobby-bottom > div {
+    gap: 5px;
+  }
+  .waiting-ui .lobby-bottom button {
+    min-height: 32px;
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+  .waiting-ui .lobby-bottom > span {
+    font-size: 8px;
+  }
+  .joystick {
+    left: 18px;
+    bottom: 85px;
+    width: 88px;
+    height: 88px;
+  }
+  .elimination-caption {
+    bottom: 78px;
+    padding: 12px 20px;
+  }
+  .elimination-caption strong {
+    font-size: 17px;
+  }
+}

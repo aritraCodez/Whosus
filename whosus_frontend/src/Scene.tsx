@@ -10,9 +10,10 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import { useGame } from "./store";
-import { motion } from "./network";
+import { motion, renderPosition } from "./network";
 import { COLORS, type Player } from "./types";
-import { OBSTACLES, STATIONS, VENTS } from "./world";
+import { LOBBY_OBSTACLES, OBSTACLES, STATIONS, VENTS } from "./world";
+import { EliminationEffect } from "./EliminationEffect";
 let rendererState: RootState | undefined;
 export function sceneDiagnostics() {
   const s = rendererState?.get();
@@ -57,15 +58,26 @@ function Pip({
   hat = "sprout",
   ghost = false,
   walking = false,
+  headTurn,
 }: {
   color: string;
   hat?: string;
   ghost?: boolean;
   walking?: boolean | React.RefObject<boolean>;
+  headTurn?: React.RefObject<number>;
 }) {
   const { scene } = useGLTF("/models/pip.glb");
   const model = useMemo(() => {
     const c = scene.clone(true);
+    const pivot = new THREE.Group();
+    pivot.name = "HeadPivot";
+    pivot.position.y = 1.2;
+    c.add(pivot);
+    c.updateMatrixWorld(true);
+    for (const name of ["Head", "Face", "Eye", "Eye001"]) {
+      const part = c.getObjectByName(name);
+      if (part) pivot.attach(part);
+    }
     c.traverse((o) => {
       if (o instanceof THREE.Mesh) {
         o.castShadow = true;
@@ -82,6 +94,18 @@ function Pip({
     return c;
   }, [scene, color, ghost]);
   const group = useRef<THREE.Group>(null);
+  const accessory = useRef<THREE.Group>(null);
+  const headPivot = useMemo(() => model.getObjectByName("HeadPivot"), [model]);
+  const limbs = useMemo(
+    () =>
+      [
+        [model.getObjectByName("FootL"), 1],
+        [model.getObjectByName("FootR"), -1],
+        [model.getObjectByName("ArmL"), -1],
+        [model.getObjectByName("ArmR"), 1],
+      ] as const,
+    [model],
+  );
   useEffect(
     () => () => {
       model.traverse((o) => {
@@ -93,13 +117,10 @@ function Pip({
   useFrame(({ clock }) => {
     const t = clock.elapsedTime,
       moving = typeof walking === "boolean" ? walking : walking.current;
-    for (const [name, sign] of [
-      ["FootL", 1],
-      ["FootR", -1],
-      ["ArmL", -1],
-      ["ArmR", 1],
-    ] as const) {
-      const limb = model.getObjectByName(name);
+    if (headPivot) headPivot.rotation.y = headTurn?.current || 0;
+    if (accessory.current)
+      accessory.current.rotation.y = headTurn?.current || 0;
+    for (const [limb, sign] of limbs) {
       if (limb) limb.rotation.x = moving ? Math.sin(t * 12) * 0.45 * sign : 0;
     }
     if (group.current)
@@ -112,66 +133,71 @@ function Pip({
   return (
     <group ref={group}>
       <primitive object={model} />
-      {hat === "sprout" && (
-        <group position={[0, 1.52, 0]}>
-          <mesh>
-            <cylinderGeometry args={[0.025, 0.035, 0.23, 6]} />
-            <meshStandardMaterial color="#658c52" />
-          </mesh>
-          <mesh
-            position={[0.11, 0.09, 0]}
-            rotation={[0, 0, -0.6]}
-            scale={[0.2, 0.08, 0.1]}
-          >
-            <sphereGeometry args={[1, 12, 6]} />
-            <meshStandardMaterial color="#9cce74" />
-          </mesh>
-          <mesh
-            position={[-0.1, 0.04, 0]}
-            rotation={[0, 0, 0.5]}
-            scale={[0.16, 0.07, 0.09]}
-          >
-            <sphereGeometry args={[1, 12, 6]} />
-            <meshStandardMaterial color="#73ae5d" />
-          </mesh>
-        </group>
-      )}
-      {hat === "antenna" && (
-        <group position={[0, 1.6, 0]}>
-          <mesh>
-            <cylinderGeometry args={[0.025, 0.025, 0.25, 8]} />
-            <meshStandardMaterial color="#3d535c" />
-          </mesh>
-          <mesh position={[0, 0.15, 0]}>
-            <sphereGeometry args={[0.09, 12, 8]} />
-            <meshStandardMaterial
-              color="#f47785"
-              emissive="#f47785"
-              emissiveIntensity={0.5}
-            />
-          </mesh>
-        </group>
-      )}
+      <group ref={accessory}>
+        {hat === "sprout" && (
+          <group position={[0, 1.52, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.025, 0.035, 0.23, 6]} />
+              <meshStandardMaterial color="#658c52" />
+            </mesh>
+            <mesh
+              position={[0.11, 0.09, 0]}
+              rotation={[0, 0, -0.6]}
+              scale={[0.2, 0.08, 0.1]}
+            >
+              <sphereGeometry args={[1, 12, 6]} />
+              <meshStandardMaterial color="#9cce74" />
+            </mesh>
+            <mesh
+              position={[-0.1, 0.04, 0]}
+              rotation={[0, 0, 0.5]}
+              scale={[0.16, 0.07, 0.09]}
+            >
+              <sphereGeometry args={[1, 12, 6]} />
+              <meshStandardMaterial color="#73ae5d" />
+            </mesh>
+          </group>
+        )}
+        {hat === "antenna" && (
+          <group position={[0, 1.6, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.025, 0.025, 0.25, 8]} />
+              <meshStandardMaterial color="#3d535c" />
+            </mesh>
+            <mesh position={[0, 0.15, 0]}>
+              <sphereGeometry args={[0.09, 12, 8]} />
+              <meshStandardMaterial
+                color="#f47785"
+                emissive="#f47785"
+                emissiveIntensity={0.5}
+              />
+            </mesh>
+          </group>
+        )}
+      </group>
     </group>
   );
 }
 function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
   const group = useRef<THREE.Group>(null),
     previous = useRef([p.x, p.z]);
+  const initialPosition = useRef<[number, number, number]>([p.x, 0, p.z]);
   const walking = useRef(false);
   const speaking = useGame((s) => s.speaking.includes(p.id));
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
-    const x = local ? motion.x : p.x,
-      z = local ? motion.z : p.z;
+    const x = local ? motion.renderX : p.x,
+      z = local ? motion.renderZ : p.z;
     const dx = x - g.position.x,
       dz = z - g.position.z;
-    walking.current = Math.hypot(dx, dz) > 0.02;
-    g.position.x = THREE.MathUtils.damp(g.position.x, x, local ? 22 : 13, dt);
-    g.position.z = THREE.MathUtils.damp(g.position.z, z, local ? 22 : 13, dt);
+    walking.current =
+      Math.hypot(x - previous.current[0], z - previous.current[1]) > 0.001 ||
+      Math.hypot(dx, dz) > 0.035;
+    g.position.x = local ? x : THREE.MathUtils.damp(g.position.x, x, 16, dt);
+    g.position.z = local ? z : THREE.MathUtils.damp(g.position.z, z, 16, dt);
     if (walking.current) {
-      const target = Math.atan2(-dx, -dz);
+      const target = Math.atan2(dx, dz);
       g.rotation.y +=
         Math.atan2(
           Math.sin(target - g.rotation.y),
@@ -181,17 +207,18 @@ function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
     previous.current = [x, z];
   });
   return (
-    <group ref={group} position={[p.x, 0, p.z]}>
+    <group ref={group} position={initialPosition.current}>
       <AnimatedPip
         color={p.color}
         hat={p.hat}
         ghost={!p.alive}
         walking={walking}
       />
+      {/* Keep nameplates in screen pixels; distanceFactor multiplies orthographic zoom. */}
       <Html
         position={[0, 2.05, 0]}
         center
-        distanceFactor={28}
+        pointerEvents="none"
         zIndexRange={[10, 0]}
       >
         <div
@@ -443,27 +470,166 @@ const Station = memo(function Station() {
     </group>
   );
 });
-function CameraRig({ menu }: { menu: boolean }) {
+function MotionFrame() {
+  const revision = useRef(-1);
+  useFrame((_, dt) => {
+    const [x, z] = renderPosition();
+    const snap =
+      revision.current !== motion.revision ||
+      Math.hypot(x - motion.renderX, z - motion.renderZ) > 3;
+    motion.renderX = snap ? x : THREE.MathUtils.damp(motion.renderX, x, 35, dt);
+    motion.renderZ = snap ? z : THREE.MathUtils.damp(motion.renderZ, z, 35, dt);
+    revision.current = motion.revision;
+  }, -2);
+  return null;
+}
+
+const WaitingRoom = memo(function WaitingRoom() {
+  return (
+    <group>
+      <Box
+        at={[0, -0.45, 0]}
+        size={[12.6, 0.8, 10.6]}
+        color="#263e4d"
+        round={0.22}
+      />
+      <Box
+        at={[0, -0.04, 0]}
+        size={[12, 0.1, 10]}
+        color="#788e91"
+        round={0.03}
+      />
+      {Array.from({ length: 11 }, (_, i) => (
+        <Box
+          key={`x${i}`}
+          at={[i - 5, 0.02, 0]}
+          size={[0.025, 0.015, 9.8]}
+          color="#acc4b5"
+          round={0}
+        />
+      ))}
+      {Array.from({ length: 9 }, (_, i) => (
+        <Box
+          key={`z${i}`}
+          at={[0, 0.02, i - 4]}
+          size={[11.8, 0.015, 0.025]}
+          color="#acc4b5"
+          round={0}
+        />
+      ))}
+      <Box at={[0, 1.1, -5]} size={[12.4, 2.2, 0.3]} color="#354e5b" />
+      {[-1, 1].map((sign) => (
+        <group key={sign}>
+          <Box at={[sign * 6, 0.65, 0]} size={[0.3, 1.3, 10]} color="#354e5b" />
+          <Box
+            at={[sign * 4, 0.06, 4.8]}
+            size={[3.7, 0.12, 0.12]}
+            color="#f5c568"
+            round={0.03}
+          />
+          <Box
+            at={[sign * 3.8, 1.7, -4.78]}
+            size={[3.1, 0.12, 0.1]}
+            color="#a7e4d5"
+            round={0.03}
+          />
+          {[-3, -1.5, 0, 1.5, 3].map((z) => (
+            <group key={z} position={[sign * 5.3, 0, z]}>
+              <Box at={[0, 0.4, 0]} size={[0.65, 0.22, 0.85]} color="#5a91a1" />
+              <Box
+                at={[sign * 0.23, 0.8, 0]}
+                size={[0.18, 0.8, 0.85]}
+                color="#73a7ad"
+              />
+              <Box at={[0, 0.17, 0]} size={[0.3, 0.35, 0.55]} color="#2a414e" />
+            </group>
+          ))}
+        </group>
+      ))}
+      <Box at={[0, 1, -4.8]} size={[2.2, 2, 0.15]} color="#1c303e" />
+      {[-0.52, 0.52].map((x) => (
+        <Box
+          key={x}
+          at={[x, 1, -4.68]}
+          size={[0.98, 1.8, 0.1]}
+          color="#708991"
+        />
+      ))}
+      <Box
+        at={[0, 2.1, -4.6]}
+        size={[1.8, 0.1, 0.1]}
+        color="#bde1c8"
+        round={0.03}
+      />
+      {LOBBY_OBSTACLES.slice(0, 2).map(([a, b, c, d], i) => (
+        <group key={i}>
+          <Box
+            at={[(a + b) / 2, 0.6, (c + d) / 2]}
+            size={[b - a, 1.2, d - c]}
+            color="#4d716b"
+          />
+          <Box
+            at={[(a + b) / 2, 1.23, (c + d) / 2]}
+            size={[b - a + 0.08, 0.08, d - c + 0.08]}
+            color="#86aa91"
+            round={0.03}
+          />
+          <Box
+            at={[(a + b) / 2, 0.65, d + 0.02]}
+            size={[0.15, 1.1, 0.04]}
+            color="#e8c37b"
+            round={0.01}
+          />
+        </group>
+      ))}
+      <Console x={0} z={-3.8} color="#a8e4b3" />
+      <Html
+        position={[0, 2.5, -5]}
+        center
+        pointerEvents="none"
+        zIndexRange={[2, 0]}
+      >
+        <span className="bay-sign">CLOUDLINE / DEPARTURE BAY</span>
+      </Html>
+      <mesh position={[0, 0.035, 1.5]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[2.2, 2.24, 64]} />
+        <meshBasicMaterial color="#d9c38d" transparent opacity={0.6} />
+      </mesh>
+    </group>
+  );
+});
+
+function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
   const { camera, size } = useThree();
   const map = useGame((s) => s.map);
   useFrame((_, dt) => {
     const cam = camera as THREE.OrthographicCamera;
     const target = new THREE.Vector3(
-      menu ? -2 : map ? 0 : motion.x,
+      menu
+        ? -2
+        : lobby
+          ? size.width > 900
+            ? 1.8
+            : 0
+          : map
+            ? 0
+            : motion.renderX,
       0,
-      menu ? 0 : map ? 0 : motion.z,
+      menu ? 0 : lobby ? -1 : map ? 0 : motion.renderZ,
     );
     const desired = target.clone().add(new THREE.Vector3(13, 19, 18));
     cam.position.lerp(desired, 1 - Math.exp(-dt * 4));
-    cam.lookAt(target);
+    cam.lookAt(cam.position.x - 13, cam.position.y - 19, cam.position.z - 18);
     const zoom = menu
       ? Math.min(size.width / 35, size.height / 29)
-      : map
-        ? Math.min(size.width / 34, size.height / 32)
-        : Math.min(size.width / 18, size.height / 14);
+      : lobby
+        ? Math.min(size.width / (size.width > 900 ? 22 : 19), size.height / 16)
+        : map
+          ? Math.min(size.width / 34, size.height / 32)
+          : Math.min(size.width / 18, size.height / 14);
     cam.zoom = THREE.MathUtils.damp(cam.zoom, zoom, 5, dt);
     cam.updateProjectionMatrix();
-  });
+  }, -1);
   return null;
 }
 const showcase: Player[] = Array.from({ length: 5 }, (_, i) => ({
@@ -490,9 +656,14 @@ function Actors({
 }) {
   const r = useGame((s) => s.room),
     id = useGame((s) => s.id);
+  const events = r?.eliminations || [];
+  const animated = new Set(events.flatMap((e) => [e.attacker.id, e.victim.id]));
   return (
     <>
-      {(menu ? showcase : r?.players || []).map((p, i) =>
+      {(menu
+        ? showcase
+        : (r?.players || []).filter((p) => !animated.has(p.id))
+      ).map((p, i) =>
         menu ? (
           <group
             key={p.id}
@@ -509,15 +680,20 @@ function Actors({
           <Avatar key={p.id} p={p} local={p.id === id} />
         ),
       )}
-      {r?.bodies.map((b) => (
-        <group
-          key={b.id}
-          position={[b.x, 0.24, b.z]}
-          rotation={[0, 0, Math.PI / 2]}
-        >
-          <Pip color={b.color} hat="none" />
-        </group>
+      {events.map((e) => (
+        <EliminationEffect key={e.id} event={e} Actor={Pip} />
       ))}
+      {r?.bodies
+        .filter((b) => !animated.has(b.id))
+        .map((b) => (
+          <group
+            key={b.id}
+            position={[b.x, 0.24, b.z]}
+            rotation={[0, 0, Math.PI / 2]}
+          >
+            <Pip color={b.color} hat="none" />
+          </group>
+        ))}
     </>
   );
 }
@@ -530,6 +706,7 @@ function World({
   color: number;
   hat: string;
 }) {
+  const lobby = useGame((s) => s.room?.phase === "lobby");
   return (
     <>
       <color attach="background" args={["#152b35"]} />
@@ -541,7 +718,8 @@ function World({
         near={0.1}
         far={150}
       />
-      <CameraRig menu={menu} />
+      <MotionFrame />
+      <CameraRig menu={menu} lobby={lobby} />
       <ambientLight intensity={1.1} />
       <hemisphereLight args={["#f4e7c9", "#426574", 1.4]} />
       <directionalLight
@@ -555,7 +733,7 @@ function World({
         shadow-camera-bottom={-22}
         shadow-bias={-0.001}
       />
-      <Station />
+      {lobby ? <WaitingRoom /> : <Station />}
       <Actors menu={menu} color={color} hat={hat} />
       {Array.from({ length: 12 }, (_, i) => (
         <Float key={i} speed={0.4} floatIntensity={0.5}>

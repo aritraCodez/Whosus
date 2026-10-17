@@ -285,6 +285,7 @@ h1 > svg {
   color: #d6ded5;
 }
 .player-custom {
+  cursor: text;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -297,6 +298,7 @@ h1 > svg {
 }
 .player-custom > div:nth-child(2) {
   flex: 1;
+  min-width: 0;
 }
 .player-custom label {
   font-size: 9px;

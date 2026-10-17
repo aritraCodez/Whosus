@@ -28,6 +28,8 @@ export interface Challenge extends Task {
   started: number;
 }
 export interface Snapshot {
+  eliminations: Elimination[];
+  movementLock: number;
   code: string;
   host: string;
   public: boolean;
@@ -52,6 +54,13 @@ export interface Snapshot {
   tally: Record<string, number>;
   population: number;
 }
+export type Elimination = {
+  id: string;
+  style: number;
+  elapsed: number;
+  attacker: Pick<Player, "id" | "name" | "color" | "hat" | "x" | "z">;
+  victim: Pick<Player, "id" | "name" | "color" | "hat" | "x" | "z">;
+};
 export interface Chat {
   id: string;
   name: string;

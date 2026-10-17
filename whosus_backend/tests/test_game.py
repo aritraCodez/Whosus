@@ -43,7 +43,27 @@ def test_server_movement_is_bounded_per_tick_and_no_teleports():
     assert math.hypot(p.x,p.z-2)==pytest.approx(.21)
     assert len(p.inputs)<=5
     old=(p.x,p.z);r.enqueue(p,1,-1,-1,r.round);assert (p.x,p.z)==old
-    with pytest.raises(GameError):r.enqueue(p,101,0,0,r.round-1)
+    queued=list(p.inputs)
+    r.enqueue(p,101,0,0,r.round-1)
+    assert list(p.inputs)==queued and p.last_seq==100
+
+
+def test_lobby_inputs_in_flight_at_launch_are_discarded():
+    r=Room('TESTAB')
+    for i in range(4):r.add(f'Player {i}').ready=True
+    p=r.players[r.host]
+    old_round=r.round
+    r.enqueue(p,1,1,0,old_round)
+    r.start(p.id)
+    spawn=(p.x,p.z)
+    r.enqueue(p,2,1,0,old_round)
+    r.enqueue(p,3,1,0,r.round)
+    assert not p.inputs and p.last_seq==1
+    r.tick(r.deadline)
+    assert (p.x,p.z)==spawn
+    r.enqueue(p,4,1,0,r.round)
+    r.tick(r.now+DT)
+    assert p.ack==4 and (p.x,p.z)==move(*spawn,1,0)
 
 def test_collisions_and_ghost_bounds():
     x,z=3.5,3.5

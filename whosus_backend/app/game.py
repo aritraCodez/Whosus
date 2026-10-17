@@ -12,6 +12,7 @@ FLOORS = [(-4, 4, -4, 4), (-14, -6, -4, 4), (6, 14, -4, 4), (-4, 4, -14, -6), (-
 OBSTACLES = [(-12.5, -10.5, 1.5, 3), (10.5, 12.5, 1.5, 3), (-3, -1.5, -12.5, -10.5), (1.5, 3, 10.5, 12.5), (-.8, .8, -10.8, -9.2), (-.9, .9, -.9, .9)]
 STATIONS = [{'id': 'garden', 'name': 'Balance the biofilter', 'room': 'Botanical', 'x': -12, 'z': -2, 'kind': 'sequence'}, {'id': 'relay', 'name': 'Align the relay', 'room': 'Comms', 'x': 12, 'z': -2, 'kind': 'dial'}, {'id': 'reactor', 'name': 'Restore the core', 'room': 'Reactor', 'x': 2, 'z': -12, 'kind': 'sequence'}, {'id': 'cargo', 'name': 'Sort the samples', 'room': 'Cargo', 'x': -2, 'z': 12, 'kind': 'sequence'}]
 VENTS = [(-11, 0), (0, -11), (11, 0)]
+LOBBY_OBSTACLES = [(-4.5, -2.7, -1.6, .2), (2.7, 4.5, -1.6, .2), (-1, 1, -4.4, -3.2)]
 
 def distance(a, b):
     return math.hypot(a.x - b.x, a.z - b.z)
@@ -19,13 +20,17 @@ def distance(a, b):
 def walkable(x, z):
     return any(a + .3 <= x <= b - .3 and c + .3 <= z <= d - .3 for a, b, c, d in FLOORS) and not any(a - .3 < x < b + .3 and c - .3 < z < d + .3 for a, b, c, d in OBSTACLES)
 
-def move(x, z, dx, dz, ghost=False):
+def move(x, z, dx, dz, ghost=False, lobby=False):
     norm = max(1, math.hypot(dx, dz))
     nx, nz = x + dx / norm * SPEED * DT, z + dz / norm * SPEED * DT
     if ghost:
         return max(-14, min(14, nx)), max(-14, min(14, nz))
-    if walkable(nx, z): x = nx
-    if walkable(x, nz): z = nz
+    def allowed(a, b):
+        if lobby:
+            return -5.7 <= a <= 5.7 and -4.7 <= b <= 4.7 and not any(l-.3 < a < r+.3 and t-.3 < b < d+.3 for l,r,t,d in LOBBY_OBSTACLES)
+        return walkable(a, b)
+    if allowed(nx, z): x = nx
+    if allowed(x, nz): z = nz
     return x, z
 
 @dataclass
@@ -53,6 +58,7 @@ class Player:
     muted: bool = True
     deafened: bool = False
     disconnected_at: float = 0
+    animation_until: float = 0
 
 class GameError(ValueError): pass
 
@@ -74,6 +80,7 @@ class Room:
         self.sabotage_at = 0
         self.meeting_at = 0
         self.chat = deque(maxlen=100)
+        self.eliminations = []
 
     def add(self, name, color=0, hat='sprout'):
         if self.phase != 'lobby': raise GameError('This expedition has already launched.')
@@ -97,27 +104,32 @@ class Room:
         self.round += 1
         self.winner = self.result = ''
         self.bodies.clear(); self.votes.clear()
+        self.eliminations.clear()
         self.sabotage_until = 0; self.sabotage_at = self.now + 20
         for i, p in enumerate(active):
             p.role = 'impostor' if p.id in traitors else 'crew'
-            p.alive = True; p.done.clear(); p.vent = -1; p.emergency = 1; p.challenge = None
+            p.alive = True; p.done.clear(); p.vent = -1; p.emergency = 1; p.challenge = None; p.animation_until = 0
             p.tasks = [s['id'] for s in STATIONS] if p.role == 'crew' else []
             p.kill_at = self.now + self.kill_cooldown
             p.inputs.clear(); p.x = math.cos(i * math.tau / len(active)) * 2; p.z = math.sin(i * math.tau / len(active)) * 2
         self.phase = 'reveal'; self.deadline = self.now + 5
 
     def enqueue(self, p, seq, dx, dz, round_id):
-        self.require(round_id == self.round, 'Stale movement.')
+        # Inputs already in flight at launch still refer to the lobby round.
+        # Discard them without turning a normal snapshot race into a UI error.
+        if round_id != self.round: return
+        if self.phase not in ('lobby', 'playing') or not p.connected or p.vent >= 0 or self.now < p.animation_until: return
         if seq <= p.last_seq: return
         p.last_seq = seq
         if len(p.inputs) < 6: p.inputs.append((seq, dx, dz))
 
     def tick(self, now=None):
         self.now = time.monotonic() if now is None else now
+        self.eliminations = [e for e in self.eliminations if self.now - e['started'] < 2.4]
         for p in self.players.values():
-            if self.phase in ('lobby', 'playing') and p.connected and p.vent < 0 and p.inputs:
+            if self.phase in ('lobby', 'playing') and p.connected and p.vent < 0 and self.now >= p.animation_until and p.inputs:
                 p.ack, dx, dz = p.inputs.popleft()
-                p.x, p.z = move(p.x, p.z, dx, dz, not p.alive)
+                p.x, p.z = move(p.x, p.z, dx, dz, not p.alive, self.phase == 'lobby')
             else: p.inputs.clear()
             if p.challenge and math.hypot(p.x-p.challenge['x'],p.z-p.challenge['z']) > 2: p.challenge = None
             if not p.connected and self.now - p.disconnected_at > 45 and self.phase not in ('lobby','gameover'):
@@ -167,22 +179,41 @@ class Room:
 
     def action(self, pid, action, target='', value=None):
         p = self.players[pid]
+        if action == 'rename':
+            self.require(self.phase == 'lobby', 'Change your name in the waiting room.')
+            name = ''.join(c for c in target.strip() if c.isprintable())
+            self.require(1 <= len(name) <= 18, 'Choose a name with 1–18 characters.')
+            p.name = name
+            return
         if action == 'ready':
             self.require(self.phase == 'lobby', 'Already launched.'); p.ready = not p.ready; return
         if action == 'start': self.start(pid); return
         if action == 'rematch':
             self.require(pid == self.host and self.phase == 'gameover', 'Only the host can return everyone to the lobby.')
-            self.phase = 'lobby'; self.bodies.clear(); self.votes.clear()
-            for q in self.players.values(): q.ready = False; q.alive = True; q.role = 'crew'; q.vent = -1; q.x = 0; q.z = 2; q.challenge = None
+            self.phase = 'lobby'; self.bodies.clear(); self.votes.clear(); self.eliminations.clear()
+            for i, q in enumerate(self.players.values()):
+                q.ready = False; q.alive = True; q.role = 'crew'; q.vent = -1; q.x = (i % 4 - 1.5) * 1.1; q.z = 2 + i // 4 * .6; q.challenge = None; q.animation_until = 0; q.inputs.clear()
             return
         if action == 'vote':
             self.require(self.phase == 'voting' and p.alive and pid not in self.votes, 'You cannot vote now.')
             self.require(target == 'skip' or target in self.players and self.players[target].alive, 'Invalid vote.')
             self.votes[pid] = target; return
         self.require(self.phase == 'playing', 'Wait for exploration to begin.')
+        self.require(self.now >= p.animation_until, 'Elimination animation is finishing.')
         if action == 'kill':
             q = self.players.get(target)
             self.require(p.alive and p.role == 'impostor' and p.vent < 0 and self.now >= p.kill_at and q is not None and q.alive and q.role == 'crew' and q.vent < 0 and distance(p,q) <= 1.8, 'No eligible target in range, or eliminator cooling down.')
+            self.require(self.now >= q.animation_until, 'That explorer is busy.')
+            style = secrets.randbelow(4) if value is None or value == -1 else value
+            self.require(type(style) is int and 0 <= style <= 3, 'Unknown elimination style.')
+            self.eliminations.append({
+                'id': secrets.token_hex(8), 'started': self.now, 'style': style,
+                'attacker': {k: getattr(p, k) for k in ('id', 'name', 'color', 'hat', 'x', 'z')},
+                'victim': {k: getattr(q, k) for k in ('id', 'name', 'color', 'hat', 'x', 'z')},
+                'recipients': [v.id for v in self.players.values() if v.id in (p.id, q.id) or distance(v, q) <= 6],
+            })
+            p.animation_until = q.animation_until = self.now + 2.4
+            p.inputs.clear(); q.inputs.clear()
             q.alive = False; q.challenge = None
             self.bodies.append({'id':q.id,'x':q.x,'z':q.z,'color':q.color})
             p.kill_at = self.now + self.kill_cooldown; self.check_win()
@@ -253,4 +284,5 @@ class Room:
             row['voted'] = p.id in self.votes
             players.append(row)
         crew = [p for p in self.players.values() if p.role == 'crew']
-        return {'code':self.code,'host':self.host,'public':self.public,'capacity':self.capacity,'impostors':self.impostors,'phase':self.phase,'round':self.round,'players':players,'bodies':self.bodies,'remaining':max(0,self.deadline-self.now),'result':self.result,'winner':self.winner,'sabotage':max(0,self.sabotage_until-self.now),'killCooldown':max(0,me.kill_at-self.now),'sabotageCooldown':max(0,self.sabotage_at-self.now),'meetingCooldown':max(0,self.meeting_at-self.now),'emergency':me.emergency,'vent':me.vent,'tasks':[{**s,'done':s['id'] in me.done} for s in STATIONS if s['id'] in me.tasks],'challenge':me.challenge,'progress':sum(len(p.done) for p in crew)/max(1,sum(len(p.tasks) for p in crew)),'tally':dict(Counter(self.votes.values())) if self.phase in ('results','gameover') else {},'population':len(self.players)}
+        eliminations = [{k: v for k, v in e.items() if k not in ('recipients', 'started')} | {'elapsed': self.now-e['started']} for e in self.eliminations if pid in e['recipients'] and self.now-e['started'] < 2.4]
+        return {'code':self.code,'host':self.host,'public':self.public,'capacity':self.capacity,'impostors':self.impostors,'phase':self.phase,'round':self.round,'players':players,'bodies':self.bodies,'remaining':max(0,self.deadline-self.now),'result':self.result,'winner':self.winner,'sabotage':max(0,self.sabotage_until-self.now),'killCooldown':max(0,me.kill_at-self.now),'sabotageCooldown':max(0,self.sabotage_at-self.now),'meetingCooldown':max(0,self.meeting_at-self.now),'emergency':me.emergency,'vent':me.vent,'tasks':[{**s,'done':s['id'] in me.done} for s in STATIONS if s['id'] in me.tasks],'challenge':me.challenge,'progress':sum(len(p.done) for p in crew)/max(1,sum(len(p.tasks) for p in crew)),'tally':dict(Counter(self.votes.values())) if self.phase in ('results','gameover') else {},'population':len(self.players),'eliminations':eliminations,'movementLock':max(0,me.animation_until-self.now)}
