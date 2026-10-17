@@ -37,7 +37,11 @@ export const useGame = create<State>((set) => ({
   map: false,
   settings: false,
   chatOpen: false,
-  quality: "high",
+  quality:
+    typeof window !== "undefined" &&
+    (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 700)
+      ? "low"
+      : "high",
   sound: true,
   eliminationStyle: -1,
   set,

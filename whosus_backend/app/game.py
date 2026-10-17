@@ -47,7 +47,7 @@ class Player:
     ready: bool = False
     tasks: list = field(default_factory=list)
     done: set = field(default_factory=set)
-    inputs: deque = field(default_factory=lambda: deque(maxlen=6))
+    inputs: deque = field(default_factory=lambda: deque(maxlen=20))
     ack: int = 0
     last_seq: int = 0
     kill_at: float = 0
@@ -121,7 +121,7 @@ class Room:
         if self.phase not in ('lobby', 'playing') or not p.connected or p.vent >= 0 or self.now < p.animation_until: return
         if seq <= p.last_seq: return
         p.last_seq = seq
-        if len(p.inputs) < 6: p.inputs.append((seq, dx, dz))
+        if len(p.inputs) < 20: p.inputs.append((seq, dx, dz))
 
     def tick(self, now=None):
         self.now = time.monotonic() if now is None else now
