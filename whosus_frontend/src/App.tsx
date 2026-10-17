@@ -40,6 +40,7 @@ import { voice } from "./voice";
 import { COLORS, type Player } from "./types";
 import { STATIONS } from "./world";
 import { sound } from "./audio";
+import { backendApiUrl } from "./backend";
 
 function BotIcon({
   color = "#f6bd4f",
@@ -181,7 +182,7 @@ function RoomForm({
   async function refresh() {
     setLoading(true);
     try {
-      const res = await fetch("/api/rooms");
+      const res = await fetch(backendApiUrl("/api/rooms"));
       if (!res.ok) throw Error();
       setList(await res.json());
       setError("");

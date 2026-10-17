@@ -51,3 +51,10 @@ def test_unknown_rooms_and_server_validation():
         ws.send_json({'type':'create','name':'Host'})
         until(ws,'joined');ws.send_json({'type':'action','action':'start'})
         assert 'four' in until(ws,'error')['message']
+
+def test_api_allows_configured_frontend_origin():
+    with TestClient(app) as client:
+        response = client.get('/api/rooms', headers=ORIGIN)
+
+    assert response.status_code == 200
+    assert response.headers['access-control-allow-origin'] == ORIGIN['origin']

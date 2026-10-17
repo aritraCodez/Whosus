@@ -2,6 +2,7 @@ import { useGame } from "./store";
 import { move } from "./world";
 import { voice } from "./voice";
 import { sound } from "./audio";
+import { backendWebSocketUrl } from "./backend";
 import type { Snapshot } from "./types";
 type Input = { seq: number; dx: number; dz: number };
 export const motion = {
@@ -48,9 +49,7 @@ export function connect(message?: Record<string, unknown>) {
     ws.close();
   }
   useGame.setState({ status: "connecting", error: "" });
-  const socket = new WebSocket(
-    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`,
-  );
+  const socket = new WebSocket(backendWebSocketUrl());
   ws = socket;
   socket.onopen = () => {
     lastPong = Date.now();
