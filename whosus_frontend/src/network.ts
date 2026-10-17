@@ -1,0 +1,205 @@
+import { useGame } from "./store";
+import { move } from "./world";
+import { voice } from "./voice";
+import { sound } from "./audio";
+import type { Snapshot } from "./types";
+type Input = { seq: number; dx: number; dz: number };
+export const motion = {
+  x: 0,
+  z: 2,
+  dx: 0,
+  dz: 0,
+  keys: new Set<string>(),
+  pending: [] as Input[],
+  seq: 0,
+};
+let ws: WebSocket | null = null,
+  retry: ReturnType<typeof setTimeout> | undefined,
+  stopped = true;
+let token = sessionStorage.getItem("whosus-session") || "";
+let queued: Record<string, unknown> | null = null,
+  lastRound = -1,
+  lastPhase = "",
+  lastPong = 0;
+export const send = (data: Record<string, unknown>) => {
+  if (ws?.readyState !== WebSocket.OPEN) return false;
+  ws.send(JSON.stringify(data));
+  return true;
+};
+export const act = (action: string, target = "", value?: number) => {
+  sound();
+  send({
+    type: "action",
+    action,
+    target,
+    ...(value === undefined ? {} : { value }),
+  });
+};
+export function connect(message?: Record<string, unknown>) {
+  if (message) {
+    queued = message;
+    token = "";
+    sessionStorage.removeItem("whosus-session");
+  }
+  stopped = false;
+  clearTimeout(retry);
+  if (ws) {
+    ws.onclose = null;
+    ws.close();
+  }
+  useGame.setState({ status: "connecting", error: "" });
+  const socket = new WebSocket(
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`,
+  );
+  ws = socket;
+  socket.onopen = () => {
+    lastPong = Date.now();
+    useGame.setState({ status: "connected" });
+    if (token) send({ type: "resume", token });
+    else if (queued) {
+      send(queued);
+      queued = null;
+    }
+  };
+  socket.onmessage = (event) => {
+    const m = JSON.parse(event.data);
+    if (m.type === "joined") {
+      token = m.token;
+      sessionStorage.setItem("whosus-session", token);
+      useGame.setState({ id: m.id, error: "" });
+      voice.configure(m.iceServers);
+      motion.pending = [];
+      void voice.reconnect();
+    }
+    if (m.type === "snapshot") {
+      const r = m.room as Snapshot,
+        me = r.players.find((p) => p.id === useGame.getState().id);
+      if (me) {
+        if (r.round !== lastRound || r.phase !== lastPhase) {
+          motion.pending = [];
+          lastRound = r.round;
+          if (r.phase === "discussion") sound("meeting");
+          if (r.phase === "gameover") sound("task");
+        }
+        motion.seq = Math.max(motion.seq, me.ack);
+        motion.pending = motion.pending.filter((i) => i.seq > me.ack);
+        let [x, z] = [me.x, me.z];
+        if (["playing", "lobby"].includes(r.phase) && r.vent < 0)
+          for (const i of motion.pending)
+            [x, z] = move(x, z, i.dx, i.dz, !me.alive);
+        motion.x = x;
+        motion.z = z;
+      }
+      lastPhase = r.phase;
+      useGame.setState({ room: r, speaking: m.speaking });
+    }
+    if (m.type === "chat") {
+      const s = useGame.getState();
+      useGame.setState({ chat: [...s.chat.slice(-99), m.message] });
+      if (!s.chatOpen) sound();
+    }
+    if (m.type === "voice_answer") void voice.answer(m.sdp, m.generation);
+    if (m.type === "voice_error") voice.fail(m.message, m.generation);
+    if (m.type === "error") useGame.setState({ error: m.message });
+    if (m.type === "expired") {
+      token = "";
+      sessionStorage.removeItem("whosus-session");
+      useGame.setState({ room: null, error: m.message });
+    }
+    if (m.type === "pong") lastPong = Date.now();
+  };
+  socket.onclose = (event) => {
+    voice.disconnect();
+    if (ws !== socket) return;
+    useGame.setState({ status: "offline" });
+    if (event.code === 4001) {
+      stopped = true;
+      useGame.setState({ error: "This session was opened in another tab." });
+    }
+    if (!stopped && token) retry = setTimeout(() => connect(), 2000);
+    else if (!stopped)
+      useGame.setState({
+        error:
+          "Cannot reach the game server. Start the FastAPI backend and try again.",
+      });
+  };
+  socket.onerror = () =>
+    useGame.setState({
+      error: "Connection unavailable. Check the game server.",
+    });
+}
+export function leave() {
+  stopped = true;
+  send({ type: "leave" });
+  token = "";
+  sessionStorage.removeItem("whosus-session");
+  voice.dispose();
+  ws?.close();
+  ws = null;
+  clearTimeout(retry);
+  motion.pending = [];
+  useGame.setState({
+    room: null,
+    id: "",
+    chat: [],
+    error: "",
+    status: "offline",
+  });
+}
+export function initializeNetwork() {
+  const detachVoice = voice.attach();
+  if (token) connect();
+  const timer = setInterval(() => {
+    const s = useGame.getState(),
+      r = s.room;
+    if (
+      !r ||
+      s.status !== "connected" ||
+      !["playing", "lobby"].includes(r.phase) ||
+      r.vent >= 0
+    )
+      return;
+    const typing =
+      document.activeElement?.matches("input,textarea,select") ||
+      s.settings ||
+      !!r.challenge;
+    const dx = typing
+        ? 0
+        : motion.dx +
+          (motion.keys.has("KeyD") ? 1 : 0) -
+          (motion.keys.has("KeyA") ? 1 : 0),
+      dz = typing
+        ? 0
+        : motion.dz +
+          (motion.keys.has("KeyS") ? 1 : 0) -
+          (motion.keys.has("KeyW") ? 1 : 0);
+    if (motion.pending.length >= 6) return;
+    const i = {
+      seq: ++motion.seq,
+      dx: Math.max(-1, Math.min(1, dx)),
+      dz: Math.max(-1, Math.min(1, dz)),
+    };
+    motion.pending.push(i);
+    const me = r.players.find((p) => p.id === s.id);
+    [motion.x, motion.z] = move(
+      motion.x,
+      motion.z,
+      i.dx,
+      i.dz,
+      me ? !me.alive : false,
+    );
+    send({ type: "input", round: r.round, ...i });
+  }, 50);
+  const ping = setInterval(() => {
+    if (ws?.readyState === WebSocket.OPEN) {
+      if (Date.now() - lastPong > 20000) ws.close();
+      else send({ type: "ping" });
+    }
+  }, 5000);
+  return () => {
+    detachVoice();
+    clearInterval(timer);
+    clearInterval(ping);
+    leave();
+  };
+}

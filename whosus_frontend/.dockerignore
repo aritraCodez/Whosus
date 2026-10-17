@@ -1,0 +1,11 @@
+node_modules
+artifacts
+.git
+.env
+**/__pycache__
+public/models/*.blend
+dist
+docs
+assets
+test
+*.tsbuildinfo
