@@ -707,6 +707,7 @@ function World({
   hat: string;
 }) {
   const lobby = useGame((s) => s.room?.phase === "lobby");
+  const quality = useGame((s) => s.quality);
   return (
     <>
       <color attach="background" args={["#152b35"]} />
@@ -725,8 +726,11 @@ function World({
       <directionalLight
         position={[-7, 20, 8]}
         intensity={2.4}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
+        castShadow={quality === "high"}
+        shadow-mapSize={[
+          quality === "high" ? 2048 : 512,
+          quality === "high" ? 2048 : 512,
+        ]}
         shadow-camera-left={-22}
         shadow-camera-right={22}
         shadow-camera-top={22}
@@ -735,35 +739,38 @@ function World({
       />
       {lobby ? <WaitingRoom /> : <Station />}
       <Actors menu={menu} color={color} hat={hat} />
-      {Array.from({ length: 12 }, (_, i) => (
-        <Float key={i} speed={0.4} floatIntensity={0.5}>
-          <mesh
-            position={[
-              Math.sin(i * 7) * 25,
-              -4 - (i % 3) * 2,
-              Math.cos(i * 7) * 25,
-            ]}
-            scale={[4 + (i % 3), 1, 2.8]}
-          >
-            <icosahedronGeometry args={[1, 1]} />
-            <meshStandardMaterial
-              color="#274550"
-              flatShading
-              transparent
-              opacity={0.45}
-            />
-          </mesh>
-        </Float>
-      ))}
-      <ContactShadows
-        position={[0, -2.2, 0]}
-        opacity={0.25}
-        scale={50}
-        blur={3}
-        far={8}
-        resolution={256}
-        frames={1}
-      />
+      {quality === "high" &&
+        Array.from({ length: 12 }, (_, i) => (
+          <Float key={i} speed={0.4} floatIntensity={0.5}>
+            <mesh
+              position={[
+                Math.sin(i * 7) * 25,
+                -4 - (i % 3) * 2,
+                Math.cos(i * 7) * 25,
+              ]}
+              scale={[4 + (i % 3), 1, 2.8]}
+            >
+              <icosahedronGeometry args={[1, 1]} />
+              <meshStandardMaterial
+                color="#274550"
+                flatShading
+                transparent
+                opacity={0.45}
+              />
+            </mesh>
+          </Float>
+        ))}
+      {quality === "high" && (
+        <ContactShadows
+          position={[0, -2.2, 0]}
+          opacity={0.25}
+          scale={50}
+          blur={3}
+          far={8}
+          resolution={256}
+          frames={1}
+        />
+      )}
     </>
   );
 }

@@ -1299,6 +1299,12 @@ function Meeting() {
   const s = useGame(),
     r = s.room!,
     me = r.players.find((p) => p.id === s.id);
+  const [selectedVote, setSelectedVote] = useState<string | null>(null);
+  useEffect(() => {
+    setSelectedVote(null);
+  }, [r.phase, me?.voted]);
+  const selectedPlayer = r.players.find((p) => p.id === selectedVote);
+  const canVote = r.phase === "voting" && !!me?.alive && !me.voted;
   return (
     <div className="meeting-overlay">
       <section className="meeting-card">
@@ -1328,11 +1334,12 @@ function Meeting() {
           {r.players.map((p) => (
             <button
               key={p.id}
-              className={`vote-card ${!p.alive ? "dead" : ""} ${p.voted ? "voted" : ""}`}
+              className={`vote-card ${!p.alive ? "dead" : ""} ${p.voted ? "voted" : ""} ${selectedVote === p.id ? "selected" : ""}`}
               disabled={
                 r.phase !== "voting" || !me?.alive || me.voted || !p.alive
               }
-              onClick={() => act("vote", p.id)}
+              aria-pressed={selectedVote === p.id}
+              onClick={() => setSelectedVote(p.id)}
             >
               <BotIcon color={p.color} />
               <strong>{p.name}</strong>
@@ -1342,7 +1349,9 @@ function Meeting() {
                   : p.voted
                     ? "Vote locked in"
                     : r.phase === "voting"
-                      ? "Cast your vote"
+                      ? selectedVote === p.id
+                        ? "Selected — confirm below"
+                        : "Select explorer"
                       : "Listening…"}
               </small>
               {r.phase === "results" && <b>{r.tally[p.id] || 0} votes</b>}
@@ -1357,16 +1366,28 @@ function Meeting() {
                 ? "Share your alibi. Voting begins after discussion."
                 : me.voted
                   ? "Your vote is locked in."
-                  : "Choose an explorer, or give everyone another chance."}
+                  : selectedVote
+                    ? `Confirm ${selectedPlayer?.name || "skipping the vote"}.`
+                    : "Choose an explorer, or give everyone another chance."}
           </span>
           {r.phase === "voting" && (
-            <button
-              className="secondary"
-              disabled={!me?.alive || me.voted}
-              onClick={() => act("vote", "skip")}
-            >
-              Skip vote <ArrowRight size={16} />
-            </button>
+            <div className="vote-actions">
+              <button
+                className={`secondary ${selectedVote === "skip" ? "selected" : ""}`}
+                disabled={!canVote}
+                aria-pressed={selectedVote === "skip"}
+                onClick={() => setSelectedVote("skip")}
+              >
+                Skip vote
+              </button>
+              <button
+                className="primary vote-confirm"
+                disabled={!canVote || !selectedVote}
+                onClick={() => selectedVote && act("vote", selectedVote)}
+              >
+                Confirm vote <ArrowRight size={16} />
+              </button>
+            </div>
           )}
         </div>
       </section>

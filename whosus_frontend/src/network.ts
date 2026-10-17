@@ -51,10 +51,7 @@ export function renderPosition() {
   const r = useGame.getState().room;
   const [dx, dz] = movementInput();
   const me = r?.players.find((p) => p.id === useGame.getState().id);
-  const fraction =
-    motion.pending.length >= 6
-      ? 0
-      : Math.min(1, (performance.now() - motion.steppedAt) / 50);
+  const fraction = Math.min(1, (performance.now() - motion.steppedAt) / 50);
   return move(
     motion.x,
     motion.z,
@@ -221,7 +218,9 @@ export function initializeNetwork() {
     const [dx, dz] = movementInput();
     motion.steppedAt = performance.now();
     if (!dx && !dz) return;
-    if (motion.pending.length >= 6) return;
+    // Keep enough prediction history for real-world latency. A six-frame cap
+    // caused a visible stop-start rhythm whenever acknowledgements took >300ms.
+    if (motion.pending.length >= 20) return;
     const i = {
       seq: ++motion.seq,
       dx: Math.max(-1, Math.min(1, dx)),

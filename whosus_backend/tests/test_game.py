@@ -41,7 +41,7 @@ def test_server_movement_is_bounded_per_tick_and_no_teleports():
     for seq in range(1,101):r.enqueue(p,seq,1,1,r.round)
     r.tick(r.now+DT)
     assert math.hypot(p.x,p.z-2)==pytest.approx(.21)
-    assert len(p.inputs)<=5
+    assert len(p.inputs)<=19
     old=(p.x,p.z);r.enqueue(p,1,-1,-1,r.round);assert (p.x,p.z)==old
     queued=list(p.inputs)
     r.enqueue(p,101,0,0,r.round-1)

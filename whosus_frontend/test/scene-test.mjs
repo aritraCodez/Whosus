@@ -32,6 +32,9 @@ try {
   await page.locator("dialog").getByLabel("Explorer name").fill("Map Pilot");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();
+  await page
+    .getByRole("button", { name: "Fill to 4 players", exact: true })
+    .waitFor();
   await page.getByLabel("Edit lobby name").click();
   await page.getByLabel("Lobby explorer name").fill("Renamed Pilot");
   await page.getByLabel("Lobby explorer name").press("Enter");
@@ -49,7 +52,16 @@ try {
     });
   const lobbyBefore = await position();
   await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(650);
+  await waitFor(
+    page,
+    async (before) => {
+      const { useGame } = await import("/src/store.ts");
+      const s = useGame.getState();
+      const player = s.room.players.find((p) => p.id === s.id);
+      return Math.hypot(player.x - before[0], player.z - before[1]) > 1.5;
+    },
+    lobbyBefore,
+  );
   await page.keyboard.up("ArrowRight");
   await page.waitForTimeout(200);
   const lobbyAfter = await position();
@@ -132,7 +144,16 @@ try {
     stick.x + stick.width / 2,
     stick.y + stick.height / 2 + 28,
   );
-  await page.waitForTimeout(550);
+  await waitFor(
+    page,
+    async (before) => {
+      const { useGame } = await import("/src/store.ts");
+      const s = useGame.getState();
+      const player = s.room.players.find((p) => p.id === s.id);
+      return Math.hypot(player.x - before[0], player.z - before[1]) > 0.7;
+    },
+    touchBefore,
+  );
   await page.mouse.up();
   const touchAfter = await position();
   assert(
@@ -140,8 +161,16 @@ try {
       0.7,
     "Joystick keeps moving while held",
   );
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: "artifacts/waiting-room-portrait.png" });
+  await page.setViewportSize({ width: 282, height: 630 });
+  await page.screenshot({ path: "artifacts/waiting-room-android.png" });
+  assert.equal(
+    await page.evaluate(() => {
+      const app = document.querySelector(".in-game").getBoundingClientRect();
+      return Math.round(app.height) === innerHeight;
+    }),
+    true,
+    "The game must fit the visible Android viewport",
+  );
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth,
@@ -192,6 +221,16 @@ try {
   await page.setViewportSize({ width: 844, height: 390 });
   await checkLabels();
   await page.screenshot({ path: "artifacts/scene-mobile.png" });
+  await page.setViewportSize({ width: 282, height: 630 });
+  await page.screenshot({ path: "artifacts/scene-android.png" });
+  assert.equal(
+    await page.evaluate(() => {
+      const canvas = document.querySelector("canvas").getBoundingClientRect();
+      return canvas.width > 0 && canvas.height === innerHeight;
+    }),
+    true,
+    "The station canvas must fill the Android viewport",
+  );
   assert.deepEqual(
     await page.evaluate(() => window.sceneTestErrors),
     [],
@@ -209,6 +248,27 @@ try {
     (await import("/src/network.ts")).leave();
   });
   await page.setViewportSize({ width: 1440, height: 900 });
+  await page.evaluate(async () => {
+    const { useGame } = await import("/src/store.ts");
+    const room = structuredClone(window.effectTestRoom);
+    room.phase = "voting";
+    room.remaining = 24;
+    room.result = "Choose carefully.";
+    room.players = room.players.map((player) => ({ ...player, voted: false }));
+    useGame.setState({ id: room.players[0].id, room });
+  });
+  await page.locator(".vote-card").first().click();
+  await page.getByRole("button", { name: /Confirm vote/ }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: /Confirm vote/ }).isEnabled(),
+    true,
+    "Selecting a player enables explicit vote confirmation",
+  );
+  assert.equal(
+    await page.locator(".vote-card").first().getAttribute("aria-pressed"),
+    "true",
+    "Selecting a player does not immediately submit the vote",
+  );
   // Exercise each renderer with the same shape as validated server events.
   for (let style = 0; style < 4; style++) {
     await page.evaluate(async (style) => {

@@ -1574,6 +1574,11 @@ dialog .muted {
   background: #bde1c813;
   border-color: var(--yellow);
 }
+.vote-card.selected {
+  background: #f5c56818;
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 2px #f5c56822;
+}
 .vote-card:disabled {
   opacity: 1;
   cursor: default;
@@ -1604,6 +1609,19 @@ dialog .muted {
   margin-top: 22px;
   font-size: 11px;
   color: #9eb5a5;
+}
+.vote-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.vote-actions .secondary.selected {
+  border-color: var(--yellow);
+  background: #f5c56816;
+  color: var(--yellow);
+}
+.vote-confirm:disabled {
+  opacity: 0.38;
 }
 .end-card {
   width: min(660px, 100%);
