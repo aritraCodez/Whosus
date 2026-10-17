@@ -84,7 +84,7 @@ def distance(a, b):
     return math.hypot(a.x - b.x, a.z - b.z)
 
 def walkable(x, z):
-    return any(a + .3 <= x <= b - .3 and c + .3 <= z <= d - .3 for a, b, c, d in FLOORS) and not any(a - .3 < x < b + .3 and c - .3 < z < d + .3 for a, b, c, d in OBSTACLES)
+    return -13.7 <= x <= 13.7 and -13.7 <= z <= 13.7 and any(a <= x <= b and c <= z <= d for a, b, c, d in FLOORS) and not any(a - .3 < x < b + .3 and c - .3 < z < d + .3 for a, b, c, d in OBSTACLES)
 
 def move(x, z, dx, dz, ghost=False, lobby=False):
     norm = max(1, math.hypot(dx, dz))

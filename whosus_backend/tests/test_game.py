@@ -72,6 +72,11 @@ def test_collisions_and_ghost_bounds():
     assert move(13.99,13.99,1,1,True)==(14,14)
     assert not walkable(0,0)
 
+def test_movement_crosses_room_and_hallway_floor_seams():
+    assert walkable(-10, -5.9)
+    x, z = move(-10, -5.9, 0, -1)
+    assert (x, z) == pytest.approx((-10, -6.11))
+
 def test_kills_enforce_role_range_cooldown_and_alive():
     r=game();imp,crew=parties(r);q=crew[0]
     with pytest.raises(GameError):r.action(q.id,'kill',crew[1].id)
