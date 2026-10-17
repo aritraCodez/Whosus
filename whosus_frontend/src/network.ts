@@ -3,6 +3,7 @@ import { move } from "./world";
 import { voice } from "./voice";
 import { sound } from "./audio";
 import { backendWebSocketUrl } from "./backend";
+import { closeTestPlayers } from "./devPlayers";
 import type { Snapshot } from "./types";
 type Input = { seq: number; dx: number; dz: number };
 export const motion = {
@@ -129,6 +130,7 @@ export function connect(message?: Record<string, unknown>) {
 }
 export function leave() {
   stopped = true;
+  closeTestPlayers();
   send({ type: "leave" });
   token = "";
   sessionStorage.removeItem("whosus-session");

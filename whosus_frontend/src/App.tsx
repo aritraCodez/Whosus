@@ -41,6 +41,7 @@ import { COLORS, type Player } from "./types";
 import { STATIONS } from "./world";
 import { sound } from "./audio";
 import { backendApiUrl } from "./backend";
+import { fillLobbyWithTestPlayers } from "./devPlayers";
 
 function BotIcon({
   color = "#f6bd4f",
@@ -925,7 +926,23 @@ function Lobby() {
     r = s.room!,
     me = r.players.find((p) => p.id === s.id),
     host = s.id === r.host;
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false),
+    [addingTestPlayers, setAddingTestPlayers] = useState(false);
+  async function addTestPlayers() {
+    setAddingTestPlayers(true);
+    try {
+      await fillLobbyWithTestPlayers(r.code, r.players);
+    } catch (error) {
+      s.set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Could not add test players.",
+      });
+    } finally {
+      setAddingTestPlayers(false);
+    }
+  }
   return (
     <div className="lobby-deck">
       <div className="lobby-title">
@@ -989,6 +1006,19 @@ function Lobby() {
           {r.impostors} impostor{r.impostors > 1 ? "s" : ""}
         </span>
         <div>
+          {import.meta.env.VITE_TEST_BOTS?.toLowerCase() === "true" && host && (
+            <button
+              className="secondary"
+              disabled={addingTestPlayers}
+              onClick={() => void addTestPlayers()}
+            >
+              {addingTestPlayers
+                ? "Adding test players…"
+                : r.population < 4
+                  ? "Fill to 4 test players"
+                  : "Ready test players"}
+            </button>
+          )}
           <button
             className={me?.ready ? "secondary" : "primary"}
             onClick={() => act("ready")}
