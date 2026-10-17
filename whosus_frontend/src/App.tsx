@@ -145,15 +145,24 @@ function eliminate() {
   if (q) act("kill", q.id);
 }
 
+function makeDefaultName() {
+  return `Explorer-${Math.floor(Math.random() * 0x10000)
+    .toString(16)
+    .padStart(4, "0")
+    .toUpperCase()}`;
+}
+
 function RoomForm({
   mode,
   name,
+  setName,
   color,
   hat,
   close,
 }: {
   mode: "create" | "join" | "find";
   name: string;
+  setName: (name: string) => void;
   color: number;
   hat: string;
   close: () => void;
@@ -188,9 +197,30 @@ function RoomForm({
     if (mode === "find") void refresh();
   }, [mode]);
   function join(roomCode: string) {
-    connect({ type: "join", name, color, hat, code: roomCode });
+    const playerName = name.trim();
+    if (!playerName) {
+      setError("Enter an explorer name before joining.");
+      return;
+    }
+    connect({ type: "join", name: playerName, color, hat, code: roomCode });
     close();
   }
+  const nameField = (
+    <label>
+      YOUR EXPLORER
+      <input
+        aria-label="Explorer name"
+        autoComplete="nickname"
+        maxLength={18}
+        required
+        value={name}
+        onChange={(e) => {
+          setName(e.target.value);
+          setError("");
+        }}
+      />
+    </label>
+  );
   return (
     <Modal
       title={
@@ -213,9 +243,14 @@ function RoomForm({
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            const playerName = name.trim();
+            if (!playerName) {
+              setError("Enter an explorer name before creating a room.");
+              return;
+            }
             connect({
               type: "create",
-              name,
+              name: playerName,
               color,
               hat,
               capacity,
@@ -227,6 +262,8 @@ function RoomForm({
             close();
           }}
         >
+          {nameField}
+          {error && <p className="error-text">{error}</p>}
           <div className="map-card">
             <div className="map-symbol">
               <Leaf />
@@ -318,6 +355,8 @@ function RoomForm({
             join(code);
           }}
         >
+          {nameField}
+          {error && <p className="error-text">{error}</p>}
           <label>
             ROOM CODE
             <input
@@ -340,6 +379,8 @@ function RoomForm({
         </form>
       ) : (
         <div>
+          {nameField}
+          {error && <p className="error-text">{error}</p>}
           {loading ? (
             <p>Looking for expeditions…</p>
           ) : error ? (
@@ -443,9 +484,6 @@ function Menu({
                 value={name}
                 maxLength={18}
                 onChange={(e) => setName(e.target.value)}
-                onBlur={() => {
-                  if (!name.trim()) setName("Miso");
-                }}
               />
             </div>
             <span className="pencil">✎</span>
@@ -553,7 +591,8 @@ function Menu({
       {form && (
         <RoomForm
           mode={form}
-          name={name.trim() || "Miso"}
+          name={name}
+          setName={setName}
           color={color}
           hat={hat}
           close={() => setForm(null)}
@@ -1386,7 +1425,10 @@ class SceneBoundary extends Component<
 }
 export default function App() {
   const s = useGame(),
-    [name, setName] = useState(localStorage.getItem("whosus-name") || "Miso"),
+    [name, setName] = useState(() => {
+      const savedName = localStorage.getItem("whosus-name");
+      return savedName && savedName !== "Miso" ? savedName : makeDefaultName();
+    }),
     [color, setColor] = useState(0),
     [hat, setHat] = useState("sprout");
   useEffect(() => initializeNetwork(), []);

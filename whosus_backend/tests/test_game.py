@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from app.game import Room,GameError,DT,STATIONS,move,walkable
 from app.voice import VoiceRouter
-from app.main import Message
+from app.models import Message
 from pydantic import ValidationError
 
 def game(n=6):

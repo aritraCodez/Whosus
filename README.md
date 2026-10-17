@@ -4,7 +4,7 @@ WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on
 
 This README is the single project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts.
 
-**Verification status:** the frontend production build, all **31 backend tests**, and the dedicated **five-browser voice suite** pass locally. The voice suite uses synthetic microphones and checks real decoded audio, permission/playback recovery, push-to-talk, reconnects and ghost isolation. Full game-UI validation is tracked separately below. Physical Android and internet TURN testing are still outstanding.
+**Verification status:** all **34 backend tests** pass locally. The dedicated **five-browser voice suite** uses synthetic microphones and checks real decoded audio, permission/playback recovery, push-to-talk, reconnects and ghost isolation. Full game-UI validation is tracked separately below. Physical Android and internet NAT traversal testing are still outstanding.
 
 ## Contents
 
@@ -26,10 +26,10 @@ whosus/
 |-- README.md                         Project documentation
 |-- whosus_backend/
 |   |-- app/
+|   |   |-- app.py                    Local backend runner
 |   |   |-- main.py                   FastAPI setup and simulation loop
-|   |   |-- config.py                 Pydantic environment settings
+|   |   |-- config.py                 Pydantic settings and shared app state
 |   |   |-- models.py                 Validated WebSocket message schemas
-|   |   |-- state.py                  Shared in-memory game and voice state
 |   |   |-- connection.py             WebSocket send queue
 |   |   |-- routes/
 |   |   |   |-- api.py                Health and public-room endpoints
@@ -95,7 +95,7 @@ cd whosus_backend
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -r requirements.txt
 if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
-.venv/Scripts/python.exe -m uvicorn app.main:app --env-file .env --host 127.0.0.1 --port 8000 --workers 1 --ws-max-size 20000
+.venv/Scripts/python.exe -m app.app
 ```
 
 Keep this terminal running. The backend should report that application startup completed and that it is listening on port **8000**. Python environments are machine-specific; create a fresh one when setting up another computer.
@@ -169,12 +169,12 @@ flowchart LR
         Policy --> Media
         API --> Media
     end
-    ICE[STUN / optional TURN relay]
+    ICE[Configured STUN servers]
     Net <-->|HTTP and WebSocket messages| Proxy
     Proxy <--> API
     Voice <-->|Encrypted WebRTC audio| Media
-    Voice -. ICE discovery or relay .-> ICE
-    Media -. ICE discovery or relay .-> ICE
+    Voice -. ICE discovery .-> ICE
+    Media -. ICE discovery .-> ICE
 ```
 
 The server trusts session identity established on the WebSocket, rather than a player ID supplied with each action. It assigns roles, validates actions, advances time, and creates a separate snapshot for each player. Clients submit movement inputs, task steps, action requests, votes, and chat messages; they cannot authoritatively set positions, roles, cooldowns, or outcomes.
@@ -246,7 +246,7 @@ Each participating browser has one WebRTC connection to the server. aiortc decod
 
 The policy checks membership, connection state, living/ghost state, match phase, microphone mute, recipient deafen, duct state, and distance before audio leaves the server. Changing browser volume is not the authorization mechanism. Previously transmitted audio may remain briefly in browser playout buffers after a phase transition; new output frames use the updated policy.
 
-The browser sends its SDP immediately and trickles ICE candidates over the authenticated WebSocket instead of waiting for STUN/TURN discovery to finish. The server queues up to 64 candidates while preparing the answer, validates their audio channel, and applies only candidates for that session's current transport generation. The server answer includes its gathered candidates.
+The browser sends its SDP immediately and trickles ICE candidates over the authenticated WebSocket instead of waiting for ICE discovery to finish. The server queues up to 64 candidates while preparing the answer, validates their audio channel, and applies only candidates for that session's current transport generation. The server answer includes its gathered candidates.
 
 Client generation guards reject stale signaling results, and reconnection creates a fresh transport. Microphone permission requests are serialized; a released push-to-talk button cannot open the microphone when permission arrives later. Track mute supports push-to-talk without renegotiation. Blur releases push-to-talk, and blocked autoplay exposes a playback-unlock button. Speaking indicators are derived from server-observed audio energy and filtered for the recipient.
 
@@ -289,7 +289,7 @@ The current suite contains **31 cases**. A successful run exits with code zero a
 | `test_webrtc.py` | Real ICE/DTLS/Opus transport; speech delivery, proximity suppression, deafen, meetings, post-game audio and ghost-audio revocation on an existing connection |
 | `test_voice_signaling.py` | Queued trickle ICE, rejection of stale generations and oversized/targeted candidate payloads, and origin-list parsing |
 
-The media test disables external STUN and TURN within the test and uses synthetic audio on local peer connections. It verifies the backend media path; it does not verify browser permissions, Android audio hardware, or internet NAT traversal.
+The media test disables external STUN within the test and uses synthetic audio on local peer connections. It verifies the backend media path; it does not verify browser permissions, Android audio hardware, or internet NAT traversal.
 
 ### 2. Type-check and build the frontend
 
@@ -330,7 +330,7 @@ A successful run must reach its final `PASS:` message and exit with code zero. S
 
 Both browser scripts accept `WHOSUS_TEST_URL` when using an isolated Vite instance on another port. Configure that instance's `/api` and `/ws` proxies and the backend's `ALLOWED_ORIGINS` to match. This does not automatically start or reconfigure either server. Restart both applications after changing the voice signaling protocol.
 
-**Verification boundary:** the dedicated five-browser voice suite passes on local ICE with synthetic microphones. The full rendered-game suite, physical-device audio, and external TURN paths require their own validation. Preserve failing output and screenshots instead of treating the focused media test as a complete product-release gate.
+**Verification boundary:** the dedicated five-browser voice suite passes on local ICE with synthetic microphones. The full rendered-game suite, physical-device audio, and internet NAT traversal require their own validation. Preserve failing output and screenshots instead of treating the focused media test as a complete product-release gate.
 
 ### 4. Perform a four-player manual acceptance test
 
@@ -355,7 +355,7 @@ Use four independent contexts named A, B, C and D. Start with headphones on sepa
 
 Also verify a crew task victory, impostor parity victory, and an unrepaired reactor timeout in separate rounds. Test microphone denial and playback unlocking as explicit error-recovery cases.
 
-For each failure, record browser/device, room phase, expected and actual behavior, reproduction steps, browser console output, backend logs, and available screenshots. Do not include reconnect tokens or TURN credentials in reports. Real TURN fallback requires a reachable relay and restrictive-network testing; same-computer tests do not establish it.
+For each failure, record browser/device, room phase, expected and actual behavior, reproduction steps, browser console output, backend logs, and available screenshots. Do not include reconnect tokens or private network configuration in reports. Restrictive-network testing requires a separately configured relay; same-computer tests do not establish internet connectivity.
 
 ## Configuration
 
@@ -364,9 +364,6 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 | Variable | Purpose |
 | --- | --- |
 | `ALLOWED_ORIGINS` | Comma-separated exact browser origins, without trailing slashes; checked during the WebSocket handshake |
-| `STUN_URL` | Comma-separated STUN discovery URLs; defaults to Cloudflare and Google STUN |
-| `TURN_URL` | Comma-separated TURN URLs used by the browser and server |
-| `TURN_SECRET` | Shared coturn authentication secret, kept on the backend |
 | `WHOSUS_BROWSER` | Optional Chromium path consumed by frontend files in `test/` |
 | `WHOSUS_TEST_URL` | Optional frontend origin for both browser test commands; defaults to `http://127.0.0.1:5173` |
 | `BACKEND_ORIGIN` | Frontend Docker runtime setting: the API's reachable HTTP(S) origin, with no path or trailing slash |
@@ -374,18 +371,7 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 
 `whosus_frontend/.env.example` documents the Docker settings. Pass values with `docker run -e`, `--env-file`, or the hosting dashboard; Docker does not automatically read a project `.env` file. These are Nginx runtime settings. Vite development still uses its local proxy configuration.
 
-For isolated local voice diagnostics where external STUN access is blocked, set `STUN_URL=` in the backend `.env`, leave TURN unconfigured, restart the backend, and rejoin the test room. This selects local ICE candidates; it does not provide internet connectivity or fix browser rendering issues. In PowerShell, an empty environment assignment may remove a variable, so use the `.env` file to specify an intentionally empty STUN value.
-
-For internet voice, configure a reachable coturn service with the same shared secret:
-
-```dotenv
-ALLOWED_ORIGINS=https://play.example.com
-STUN_URL=stun:stun.l.google.com:19302
-TURN_URL=turn:voice.example.com:3478?transport=udp,turn:voice.example.com:3478?transport=tcp
-TURN_SECRET=replace-with-a-long-random-secret
-```
-
-Joined sessions receive HMAC-derived TURN credentials valid for one hour. Rejoining refreshes the issued configuration; automatic credential rotation within an existing long-lived session is not implemented. Keep the shared secret out of frontend files. TURN service provisioning and any TLS certificates are deployment responsibilities; the backend does not start coturn itself.
+The backend uses fixed Google and Cloudflare STUN servers for WebRTC discovery. STUN URLs are not configurable through environment variables.
 
 ## Docker and deployment
 
@@ -431,7 +417,7 @@ docker run --rm --name whosus-backend --network host --env-file ./whosus_backend
 docker run --rm --name whosus-frontend --network host -e PORT=8080 -e BACKEND_ORIGIN=http://127.0.0.1:8000 whosus-frontend
 ```
 
-Open `http://localhost:8080`. `/healthz` checks frontend serving, and `/api/health` additionally checks the configured backend connection. Nginx does not terminate WebRTC media. Serve the frontend behind HTTPS for Android microphone access and permit the selected direct-media or TURN relay routes in the deployment network.
+Open `http://localhost:8080`. `/healthz` checks frontend serving, and `/api/health` additionally checks the configured backend connection. Nginx does not terminate WebRTC media. Serve the frontend behind HTTPS for Android microphone access and permit the selected direct-media routes in the deployment network.
 
 ### Deploy the Dockerfiles on Render
 
@@ -454,7 +440,7 @@ Both Dockerfiles honor the runtime `PORT`. Render supplies its HTTP port and HTT
 
 You can also use a Render internal backend hostname when the service plan supports receiving private traffic. Use the actual address from **Connect > Internal**, keep services in the same workspace and region, and use its real port. Free web services cannot receive private-network requests, so a public backend URL is the applicable option for that case. See [Render private networking](https://render.com/docs/private-network).
 
-**Voice is a separate deployment check.** Render's documented public ingress forwards HTTP/WebSockets to one service port. From that constraint, direct incoming UDP WebRTC traffic should not be assumed reachable through the web-service URL. The Nginx reverse proxy carries signaling, not audio. Configure an external TURN relay reachable by both the browser and the aiortc server, or host media on infrastructure with appropriate network access, then validate actual two-way audio and ghost isolation. An HTTP health check or a successful Docker deploy does not prove the media path works.
+**Voice is a separate deployment check.** Render's documented public ingress forwards HTTP/WebSockets to one service port. From that constraint, direct incoming UDP WebRTC traffic should not be assumed reachable through the web-service URL. The Nginx reverse proxy carries signaling, not audio. The current backend configures STUN discovery only; restrictive networks may require a relay or media infrastructure with appropriate network access, which is not configured here. Validate actual two-way audio and ghost isolation after deployment. An HTTP health check or a successful Docker deploy does not prove the media path works.
 
 The existing browser rendering/audio verification gaps still apply after deployment. No Render deployment was performed as part of these configuration changes.
 
@@ -477,7 +463,7 @@ The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input que
 | Several windows become the same player | Use independent browser contexts instead of duplicated tabs; reconnect tokens are stored in `sessionStorage`. |
 | Microphone access is unavailable on Android | Use HTTPS with a trusted certificate. Plain HTTP to a LAN IP is insufficient for microphone access. |
 | Voice is connected but inaudible | Check mute, deafen, channel eligibility, distance, playback unlocking, capture device and received audio energy. Connection state alone does not prove audio delivery. |
-| ICE gathering times out locally | Check outbound STUN/TURN access; use an empty `STUN_URL` for isolated same-host diagnostics. Internet tests need reachable ICE services. |
+| ICE gathering times out locally | Check outbound STUN access to the configured public STUN servers. Internet tests need reachable ICE services. |
 | Ghost audio is audible to a living player | Treat it as a failed permission check; capture the phase and transport evidence and run `test_webrtc.py` before further release validation. |
 | Browser test cannot find Chromium | Install Playwright Chromium or set `WHOSUS_BROWSER` to an existing executable. |
 | Browser scene is blank or too slow | Check WebGL/hardware acceleration and console errors, try low graphics, and retain evidence; unresolved rendering failures remain a release gap. |

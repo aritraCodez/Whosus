@@ -65,6 +65,7 @@ try {
   await page
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
+  await page.locator("dialog").getByLabel("Explorer name").fill("Host Pilot");
   await page.getByLabel("Elimination cooldown").selectOption("10");
   await page.getByLabel("Discussion time").selectOption("10");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
@@ -74,6 +75,7 @@ try {
       const { useGame } = await import("/src/store.ts");
       return useGame.getState().room;
     });
+  assert((await getRoom(page)).players[0].name === "Host Pilot", "Create form name must appear in the lobby");
   const code = (await getRoom(page)).code;
   const pages = [page];
   for (let i = 1; i < 4; i++) {
@@ -92,11 +94,15 @@ try {
       const { useGame } = await import("/src/store.ts");
       useGame.setState({ quality: "low" });
     });
-    await p.getByLabel("Explorer name").fill(`Explorer ${i}`);
     await p.getByRole("button", { name: "Join with code" }).click();
+    await p.locator("dialog").getByLabel("Explorer name").fill(`Explorer ${i}`);
     await p.getByLabel("ROOM CODE").fill(code);
     await p.getByRole("button", { name: "Join expedition" }).click();
     await p.getByText("The usual suspects.").waitFor();
+    assert(
+      (await getRoom(p)).players.some((player) => player.name === `Explorer ${i}`),
+      `Join form name must appear in the lobby for player ${i}`,
+    );
     pages.push(p);
     console.log("Joined player", i + 1);
   }

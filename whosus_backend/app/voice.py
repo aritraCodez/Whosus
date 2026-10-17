@@ -1,9 +1,5 @@
 """Trusted WebRTC audio routing: permissions applied before media leaves server."""
 import asyncio
-import base64
-import hashlib
-import hmac
-import os
 import time
 from fractions import Fraction
 import numpy as np
@@ -12,17 +8,14 @@ from aiortc import AudioStreamTrack, RTCConfiguration, RTCIceServer, RTCPeerConn
 from aiortc.mediastreams import MediaStreamError
 from aiortc.sdp import candidate_from_sdp
 
-def ice_config(identity):
-    servers = []
-    stun = os.getenv('STUN_URL', 'stun:stun.cloudflare.com:3478,stun:stun.l.google.com:19302')
-    for url in stun.split(','):
-        if url.strip(): servers.append({'urls':url.strip()})
-    turn, secret = os.getenv('TURN_URL',''), os.getenv('TURN_SECRET','')
-    if turn and secret:
-        username = f'{int(time.time())+3600}:{identity}'
-        credential = base64.b64encode(hmac.new(secret.encode(),username.encode(),hashlib.sha1).digest()).decode()
-        servers.append({'urls':turn.split(','),'username':username,'credential':credential})
-    return servers
+DEFAULT_STUN_URLS = [
+    'stun:stun.l.google.com:19302',
+    'stun:stun.cloudflare.com:3478',
+]
+
+
+def ice_config(stun_urls):
+    return [{'urls': url} for url in stun_urls]
 
 class AuthorizedMix(AudioStreamTrack):
     def __init__(self, router, room, pid):
@@ -42,7 +35,8 @@ class AuthorizedMix(AudioStreamTrack):
         return frame
 
 class VoiceRouter:
-    def __init__(self):
+    def __init__(self, stun_urls=None):
+        self.stun_urls = list(DEFAULT_STUN_URLS) if stun_urls is None else stun_urls
         self.peers = {}; self.frames = {}; self.readers = {}; self.generations = {}; self.serial = 0
 
     def mix(self, room, pid, seen):
@@ -77,7 +71,9 @@ class VoiceRouter:
 
     async def offer(self, room, pid, sdp, generation=0):
         await self.close(pid)
-        pc = RTCPeerConnection(RTCConfiguration(iceServers=[RTCIceServer(**s) for s in ice_config(pid)]))
+        pc = RTCPeerConnection(
+            RTCConfiguration(iceServers=[RTCIceServer(**server) for server in ice_config(self.stun_urls)])
+        )
         self.peers[pid] = pc
         self.generations[pid] = generation
         @pc.on('track')

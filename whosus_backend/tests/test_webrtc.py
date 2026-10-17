@@ -18,10 +18,9 @@ class Tone(AudioStreamTrack):
         f=AudioFrame.from_ndarray(values.reshape(1,-1),format='s16',layout='mono');f.sample_rate=48000;f.time_base=Fraction(1,48000);f.pts=self.pts;self.pts+=960;return f
 
 @pytest.mark.asyncio
-async def test_live_media_permissions(monkeypatch):
-    monkeypatch.setenv('STUN_URL','');monkeypatch.setenv('TURN_URL','')
+async def test_live_media_permissions():
     r=Room('AUDIOX');a=r.add('Alice');b=r.add('Bob');a.muted=b.muted=False
-    router=VoiceRouter();clients=[];readers=[];energy=[]
+    router=VoiceRouter(stun_urls=[]);clients=[];readers=[];energy=[]
     async def receive(track):
         try:
             while True:

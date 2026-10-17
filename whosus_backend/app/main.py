@@ -3,13 +3,11 @@ import contextlib
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-
+from fastapi import FastAPI,APIRouter
+from .config import rooms, sessions, voice
 from .game import DT
-from .models import IceCandidate, Message
-from .routes import api_router, websocket_router
-from .state import ORIGINS, rooms, sessions, voice
-
+from app.routes import websocket
+router = APIRouter()
 
 async def simulation():
     next_tick = time.monotonic()
@@ -62,7 +60,25 @@ async def lifespan(app):
     rooms.clear()
     sessions.clear()
 
+@router.get('/api/health')
+def health():
+    return {'ok': True, 'game': 'WhoSus?', 'rooms': len(rooms)}
+
+
+@router.get('/api/rooms')
+def public_rooms():
+    return [
+        {
+            'code': room.code,
+            'players': len(room.players),
+            'capacity': room.capacity,
+            'host': room.players[room.host].name if room.host in room.players else 'Explorer',
+        }
+        for room in rooms.values()
+        if room.public and room.phase == 'lobby' and len(room.players) < room.capacity
+    ]
+
+
 
 app = FastAPI(title='WhoSus? authority', lifespan=lifespan)
-app.include_router(api_router)
-app.include_router(websocket_router)
+app.include_router(websocket.router)
