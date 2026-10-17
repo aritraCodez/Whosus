@@ -14,7 +14,9 @@ import { motion, renderPosition } from "./network";
 import { COLORS, type Player } from "./types";
 import { LOBBY_OBSTACLES, OBSTACLES, STATIONS, VENTS } from "./world";
 import { EliminationEffect } from "./EliminationEffect";
+import type { VisualEffect } from "./types";
 let rendererState: RootState | undefined;
+const EMPTY_VISUALS: VisualEffect[] = [];
 export function sceneDiagnostics() {
   const s = rendererState?.get();
   return s
@@ -295,17 +297,87 @@ function Console({ x, z, color }: { x: number; z: number; color: string }) {
 }
 const rooms = [
   { x: 0, z: 0, name: "THE COMMONS", color: "#b9c5bb", accent: "#f3c86d" },
-  { x: -10, z: 0, name: "BOTANICAL", color: "#adc4ae", accent: "#9ecc85" },
-  { x: 10, z: 0, name: "COMMS", color: "#a7bec6", accent: "#8dcee2" },
+  { x: -10, z: 0, name: "MEDBAY", color: "#adc4ae", accent: "#9ecc85" },
   { x: 0, z: -10, name: "REACTOR", color: "#b2b2c2", accent: "#b2a1e4" },
-  { x: 0, z: 10, name: "CARGO", color: "#c4b7a0", accent: "#e5ad79" },
+  { x: 10, z: 0, name: "COMMS & ADMIN", color: "#a7bec6", accent: "#8dcee2" },
+  { x: 0, z: 10, name: "STORAGE", color: "#c4b7a0", accent: "#e5ad79" },
+  { x: -10, z: -10, name: "SECURITY", color: "#9fb0bf", accent: "#7198b5" },
+  { x: 10, z: -10, name: "WEAPONS & O2", color: "#c9aba8", accent: "#e58277" },
+  { x: -10, z: 10, name: "ELECTRICAL", color: "#c6c29b", accent: "#e5d360" },
+  { x: 10, z: 10, name: "SHIELDS & NAV", color: "#9cbab6", accent: "#6bc4b5" },
 ];
+
+function VisualTaskEffects() {
+  const visuals = useGame((s) => s.room?.visuals ?? EMPTY_VISUALS);
+  return (
+    <>
+      {visuals.map((v, i) => {
+        if (v.kind === "scan") {
+          return (
+            <group key={i} position={[-8, 0, 2]}>
+              <mesh position={[0, 1.2, 0]}>
+                <cylinderGeometry args={[0.9, 0.9, 2.4, 32, 1, true]} />
+                <meshBasicMaterial color="#4ef6c5" transparent opacity={0.35} side={THREE.DoubleSide} />
+              </mesh>
+              <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.7, 0.95, 32]} />
+                <meshBasicMaterial color="#4ef6c5" transparent opacity={0.8} />
+              </mesh>
+            </group>
+          );
+        }
+        if (v.kind === "shields") {
+          return (
+            <group key={i} position={[12, 0.5, 8]}>
+              <mesh position={[0, 1, 0]}>
+                <sphereGeometry args={[1.5, 16, 16]} />
+                <meshBasicMaterial color="#6ad9c5" transparent opacity={0.25} wireframe />
+              </mesh>
+            </group>
+          );
+        }
+        if (v.kind === "asteroids") {
+          return (
+            <group key={i} position={[12, 1.5, -10]}>
+              <mesh rotation={[0, 0.4, 0]}>
+                <boxGeometry args={[0.2, 0.2, 3]} />
+                <meshBasicMaterial color="#ff4466" />
+              </mesh>
+            </group>
+          );
+        }
+        return null;
+      })}
+    </>
+  );
+}
+
+const consoleColors = [
+  "#bee196",
+  "#8fd7e5",
+  "#b3a6ee",
+  "#f4bf72",
+  "#e57979",
+  "#6ad9c5",
+  "#f59e6d",
+  "#c5db79",
+];
+
 const Station = memo(function Station() {
   const sabotage = useGame((s) => !!s.room?.sabotage);
   return (
     <group>
-      <Box at={[0, -0.37, 0]} size={[22, 0.55, 3.2]} color="#54696a" />
-      <Box at={[0, -0.37, 0]} size={[3.2, 0.55, 22]} color="#54696a" />
+      {/* Central halls */}
+      <Box at={[0, -0.37, 0]} size={[24, 0.55, 3.2]} color="#54696a" />
+      <Box at={[0, -0.37, 0]} size={[3.2, 0.55, 24]} color="#54696a" />
+      {/* Outer connecting loop corridors */}
+      <Box at={[-10, -0.37, -10]} size={[3, 0.55, 12]} color="#485c5d" />
+      <Box at={[10, -0.37, -10]} size={[3, 0.55, 12]} color="#485c5d" />
+      <Box at={[-10, -0.37, 10]} size={[3, 0.55, 12]} color="#485c5d" />
+      <Box at={[10, -0.37, 10]} size={[3, 0.55, 12]} color="#485c5d" />
+      <Box at={[0, -0.37, -10]} size={[24, 0.55, 3]} color="#485c5d" />
+      <Box at={[0, -0.37, 10]} size={[24, 0.55, 3]} color="#485c5d" />
+
       {rooms.map(({ x, z, name, color, accent }, i) => (
         <group key={name} position={[x, 0, z]}>
           <Box
@@ -406,15 +478,16 @@ const Station = memo(function Station() {
           <span className="beacon-label">MEETING BEACON</span>
         </Html>
       </group>
+      <VisualTaskEffects />
       {STATIONS.map((s, i) => (
         <Console
           key={s.id}
           x={s.x}
           z={s.z}
           color={
-            ["#bee196", "#8fd7e5", sabotage ? "#ff6c67" : "#b3a6ee", "#f4bf72"][
-              i
-            ]
+            s.id === "start_reactor" && sabotage
+              ? "#ff6c67"
+              : consoleColors[i % consoleColors.length]
           }
         />
       ))}
@@ -599,6 +672,29 @@ const WaitingRoom = memo(function WaitingRoom() {
   );
 });
 
+function isVisibleToPlayer(
+  targetX: number,
+  targetZ: number,
+  localX: number,
+  localZ: number,
+  isGhost: boolean,
+  phase: string | undefined,
+): boolean {
+  if (phase !== "playing" || isGhost) return true;
+  const dist = Math.hypot(targetX - localX, targetZ - localZ);
+  if (dist > 7.5) return false;
+  // Disconnected room occlusion checks: living players cannot see through walls
+  if (localX < -4.5 && targetX > -3.8) return false;
+  if (targetX < -4.5 && localX > -3.8) return false;
+  if (localX > 4.5 && targetX < 3.8) return false;
+  if (targetX > 4.5 && localX < 3.8) return false;
+  if (localZ < -4.5 && targetZ > -3.8) return false;
+  if (targetZ < -4.5 && localZ > -3.8) return false;
+  if (localZ > 4.5 && targetZ < 3.8) return false;
+  if (targetZ > 4.5 && localZ < 3.8) return false;
+  return true;
+}
+
 function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
   const { camera, size } = useThree();
   const map = useGame((s) => s.map);
@@ -626,7 +722,9 @@ function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
         ? Math.min(size.width / (size.width > 900 ? 22 : 19), size.height / 16)
         : map
           ? Math.min(size.width / 34, size.height / 32)
-          : Math.min(size.width / 18, size.height / 14);
+          : size.width > 900
+            ? Math.min(size.width / 11, size.height / 8)
+            : Math.max(size.width / 7.5, size.height / 13.5);
     cam.zoom = THREE.MathUtils.damp(cam.zoom, zoom, 5, dt);
     cam.updateProjectionMatrix();
   }, -1);
@@ -656,14 +754,36 @@ function Actors({
 }) {
   const r = useGame((s) => s.room),
     id = useGame((s) => s.id);
+  const me = r?.players.find((p) => p.id === id);
+  const isGhost = me ? !me.alive : false;
+  const lx = motion.renderX,
+    lz = motion.renderZ;
   const events = r?.eliminations || [];
   const animated = new Set(events.flatMap((e) => [e.attacker.id, e.victim.id]));
+  const visibleEvents = events.filter((e) => {
+    if (!r || r.phase !== "playing" || isGhost) return true;
+    if (e.attacker.id === id || e.victim.id === id) return true;
+    return isVisibleToPlayer(e.victim.x, e.victim.z, lx, lz, isGhost, r.phase);
+  });
+  const visibleBodies = (r?.bodies || []).filter((b) => {
+    if (animated.has(b.id)) return false;
+    if (!r || r.phase !== "playing" || isGhost) return true;
+    return isVisibleToPlayer(b.x, b.z, lx, lz, isGhost, r.phase);
+  });
+  const visiblePlayers = (
+    menu
+      ? showcase
+      : (r?.players || []).filter((p) => {
+          if (animated.has(p.id)) return false;
+          if (p.id === id) return true;
+          if (!r || r.phase !== "playing" || isGhost) return true;
+          return isVisibleToPlayer(p.x, p.z, lx, lz, isGhost, r.phase);
+        })
+  );
+
   return (
     <>
-      {(menu
-        ? showcase
-        : (r?.players || []).filter((p) => !animated.has(p.id))
-      ).map((p, i) =>
+      {visiblePlayers.map((p, i) =>
         menu ? (
           <group
             key={p.id}
@@ -680,20 +800,18 @@ function Actors({
           <Avatar key={p.id} p={p} local={p.id === id} />
         ),
       )}
-      {events.map((e) => (
+      {visibleEvents.map((e) => (
         <EliminationEffect key={e.id} event={e} Actor={Pip} />
       ))}
-      {r?.bodies
-        .filter((b) => !animated.has(b.id))
-        .map((b) => (
-          <group
-            key={b.id}
-            position={[b.x, 0.24, b.z]}
-            rotation={[0, 0, Math.PI / 2]}
-          >
-            <Pip color={b.color} hat="none" />
-          </group>
-        ))}
+      {visibleBodies.map((b) => (
+        <group
+          key={b.id}
+          position={[b.x, 0.24, b.z]}
+          rotation={[0, 0, Math.PI / 2]}
+        >
+          <Pip color={b.color} hat="none" />
+        </group>
+      ))}
     </>
   );
 }

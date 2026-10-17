@@ -75,7 +75,11 @@ export const send = (data: Record<string, unknown>) => {
   ws.send(JSON.stringify(data));
   return true;
 };
-export const act = (action: string, target = "", value?: number) => {
+export const act = (
+  action: string,
+  target = "",
+  value?: string | number | boolean,
+) => {
   sound();
   send({
     type: "action",
@@ -218,15 +222,16 @@ export function initializeNetwork() {
     const [dx, dz] = movementInput();
     motion.steppedAt = performance.now();
     if (!dx && !dz) return;
-    // Keep enough prediction history for real-world latency. A six-frame cap
-    // caused a visible stop-start rhythm whenever acknowledgements took >300ms.
-    if (motion.pending.length >= 20) return;
+    // Keep prediction history responsive without freezing movement during latency spikes.
+    if (motion.pending.length >= 50) {
+      motion.pending = motion.pending.slice(-25);
+    }
     const i = {
       seq: ++motion.seq,
       dx: Math.max(-1, Math.min(1, dx)),
       dz: Math.max(-1, Math.min(1, dz)),
     };
-    if (!send({ type: "input", round: r.round, ...i })) return;
+    send({ type: "input", round: r.round, ...i });
     motion.pending.push(i);
     const me = r.players.find((p) => p.id === s.id);
     [motion.x, motion.z] = move(

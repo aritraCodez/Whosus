@@ -3,7 +3,9 @@ import {
   ArrowDown,
   ArrowRight,
   Check,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Copy,
   DoorOpen,
   Headphones,
@@ -28,6 +30,7 @@ import {
   Zap,
 } from "lucide-react";
 import Scene from "./Scene";
+import { Modal } from "./components/Modal";
 import { useGame } from "./store";
 import {
   act,
@@ -66,41 +69,6 @@ function BotIcon({
     </div>
   );
 }
-function Modal({
-  title,
-  children,
-  close,
-  wide = false,
-}: {
-  title: string;
-  children: ReactNode;
-  close: () => void;
-  wide?: boolean;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    ref.current?.showModal();
-    return () => ref.current?.close();
-  }, []);
-  return (
-    <dialog
-      ref={ref}
-      className={wide ? "wide" : ""}
-      onCancel={close}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
-      <header>
-        <h2>{title}</h2>
-        <button className="icon" onClick={close} aria-label="Close">
-          <X size={20} />
-        </button>
-      </header>
-      {children}
-    </dialog>
-  );
-}
 function interact() {
   const s = useGame.getState(),
     r = s.room;
@@ -114,18 +82,32 @@ function interact() {
     act("repair");
     return;
   }
-  if (
-    near &&
-    me.role === "crew" &&
-    r.tasks.some((t) => t.id === near.id && !t.done)
-  ) {
-    act("task_begin", near.id);
-    return;
+  if (near) {
+    if (me.role === "crew" && r.tasks.some((t) => t.id === near.id && !t.done)) {
+      act("task_begin", near.id);
+      return;
+    }
+    if (me.role === "impostor" && r.tasks.some((t) => t.id === near.id && !s.fakeDone[t.id])) {
+      const targetTask = r.tasks.find((t) => t.id === near.id);
+      if (targetTask) {
+        useGame.setState({
+          fakeChallenge: {
+            ...targetTask,
+            nonce: "fake_" + Date.now(),
+            sequence: [0, 1, 2, 3],
+            step: 0,
+            started: Date.now() / 1000,
+            fake: true,
+          },
+        });
+        return;
+      }
+    }
   }
   if (Math.hypot(motion.x, motion.z) < 2.5) act("meeting");
   else
     useGame.setState({
-      error: "Move closer to a task console or the meeting beacon.",
+      error: "Move closer to an assigned task console or the meeting beacon.",
     });
 }
 function report() {
@@ -160,7 +142,7 @@ function eliminate() {
         Math.hypot(a.x - motion.x, a.z - motion.z) -
         Math.hypot(b.x - motion.x, b.z - motion.z),
     )[0];
-  if (q) act("kill", q.id, s.eliminationStyle);
+  if (q) act("kill", q.id, -1);
 }
 
 function HoldButton({
@@ -772,9 +754,45 @@ function SettingsPanel() {
   const s = useGame();
   return (
     <Modal
-      title="Make yourself comfortable."
+      title="Station & Mission Settings"
       close={() => s.set({ settings: false })}
     >
+      {s.room && (
+        <div className="mission-rules-group">
+          <span className="eyebrow">MISSION RULES</span>
+          <label className="toggle-line">
+            <span>
+              <strong>Task Progress Bar</strong>
+              <small>
+                {s.id === s.room.host
+                  ? "Choose when crew progress updates"
+                  : `Current rule: ${s.room.taskBarMode || "always"}`}
+              </small>
+            </span>
+            <select
+              value={s.room.taskBarMode || "always"}
+              disabled={s.id !== s.room.host || s.room.phase !== "lobby"}
+              onChange={(e) => act("settings", "taskBarMode", e.target.value)}
+            >
+              <option value="always">Always (Real-time)</option>
+              <option value="meetings">Meetings Only</option>
+              <option value="never">Never (Hidden)</option>
+            </select>
+          </label>
+          <label className="toggle-line">
+            <span>
+              <strong>Visual Tasks</strong>
+              <small>Nearby players observe MedBay scan, shields, and laser bursts</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={s.room.visualTasks ?? true}
+              disabled={s.id !== s.room.host || s.room.phase !== "lobby"}
+              onChange={(e) => act("settings", "visualTasks", e.target.checked)}
+            />
+          </label>
+        </div>
+      )}
       <label className="toggle-line">
         <span>
           <strong>Station sounds</strong>
@@ -902,7 +920,7 @@ function ChatPanel() {
   }, [s.chat.length]);
   if (!s.chatOpen) return null;
   const me = s.room?.players.find((p) => p.id === s.id);
-  const allowed = s.room?.phase !== "playing" || !me?.alive;
+  const allowed = true;
   return (
     <aside className="chat-panel">
       <header>
@@ -961,9 +979,9 @@ function ChatPanel() {
           aria-label="Chat message"
           disabled={!allowed}
           placeholder={
-            allowed
-              ? "Your very convincing message…"
-              : "Living chat opens in meetings"
+            me?.alive
+              ? "Message your crew…"
+              : "Ghost message (ghosts only)…"
           }
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -978,10 +996,13 @@ function ChatPanel() {
 function Joystick() {
   const [pos, setPos] = useState([0, 0]);
   const pointer = useRef<number | null>(null);
-  function update(e: React.PointerEvent<HTMLDivElement>) {
-    const box = e.currentTarget.getBoundingClientRect();
-    let x = e.clientX - box.left - box.width / 2,
-      z = e.clientY - box.top - box.height / 2;
+  const joystickEl = useRef<HTMLDivElement>(null);
+
+  function updateCoords(clientX: number, clientY: number) {
+    if (!joystickEl.current) return;
+    const box = joystickEl.current.getBoundingClientRect();
+    let x = clientX - box.left - box.width / 2,
+      z = clientY - box.top - box.height / 2;
     const radius = box.width * 0.32;
     const n = Math.max(1, Math.hypot(x, z) / radius);
     x /= n;
@@ -991,41 +1012,50 @@ function Joystick() {
     motion.dx = dead ? 0 : x / radius;
     motion.dz = dead ? 0 : z / radius;
   }
+
   function stop() {
     pointer.current = null;
     setPos([0, 0]);
     motion.dx = motion.dz = 0;
   }
+
   useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (pointer.current === e.pointerId) {
+        updateCoords(e.clientX, e.clientY);
+      }
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (pointer.current === e.pointerId) {
+        stop();
+      }
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
     window.addEventListener("blur", stop);
     document.addEventListener("visibilitychange", stop);
     return () => {
       motion.dx = motion.dz = 0;
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
       window.removeEventListener("blur", stop);
       document.removeEventListener("visibilitychange", stop);
     };
   }, []);
+
   return (
     <div
+      ref={joystickEl}
       className="joystick"
       aria-label="Movement joystick"
       onPointerDown={(e) => {
         if (pointer.current !== null) return;
         e.preventDefault();
         pointer.current = e.pointerId;
-        e.currentTarget.setPointerCapture(e.pointerId);
-        update(e);
+        updateCoords(e.clientX, e.clientY);
       }}
-      onPointerMove={(e) => {
-        if (
-          pointer.current === e.pointerId &&
-          e.currentTarget.hasPointerCapture(e.pointerId)
-        )
-          update(e);
-      }}
-      onPointerUp={stop}
-      onPointerCancel={stop}
-      onLostPointerCapture={stop}
     >
       <div style={{ transform: `translate(${pos[0]}px,${pos[1]}px)` }} />
       <span>MOVE</span>
@@ -1173,23 +1203,11 @@ function Lobby() {
             ),
           )}
         </div>
-        <label className="style-picker">
-          ELIMINATION ANIMATION
-          <select
-            aria-label="Elimination animation"
-            value={s.eliminationStyle}
-            onChange={(e) =>
-              s.set({ eliminationStyle: Number(e.target.value) })
-            }
-          >
-            <option value={-1}>Surprise me</option>
-            {ELIMINATION_NAMES.map((name, i) => (
-              <option key={name} value={i}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="lobby-rules-summary">
+          <span>TASK BAR: <strong>{(r.taskBarMode || "always").toUpperCase()}</strong></span>
+          <i>·</i>
+          <span>VISUAL TASKS: <strong>{(r.visualTasks ?? true) ? "ON" : "OFF"}</strong></span>
+        </div>
       </aside>
       <div className="lobby-bottom">
         <span>
@@ -1398,6 +1416,9 @@ function GameHUD() {
   const s = useGame(),
     r = s.room!,
     me = r.players.find((p) => p.id === s.id);
+  const [tasksCollapsed, setTasksCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 700,
+  );
   if (!me) return null;
   const impostor = me.role === "impostor";
   const nearbyTarget = r.players.some(
@@ -1469,53 +1490,75 @@ function GameHUD() {
         <Lobby />
       ) : (
         <>
-          <aside className="task-list">
-            <div className="task-header">
+          <aside className={`task-list ${tasksCollapsed ? "collapsed" : ""}`}>
+            <div
+              className="task-header"
+              onClick={() => setTasksCollapsed(!tasksCollapsed)}
+              role="button"
+              tabIndex={0}
+              title={tasksCollapsed ? "Expand tasks" : "Collapse tasks"}
+            >
               <span>
                 {impostor ? "A LITTLE TREACHERY" : "A LITTLE TEAMWORK"}
               </span>
-              <strong>{Math.round(r.progress * 100)}%</strong>
+              <div className="task-header-right">
+                <strong>{Math.round(r.progress * 100)}%</strong>
+                <span className="task-toggle-icon">
+                  {tasksCollapsed ? (
+                    <ChevronDown size={14} />
+                  ) : (
+                    <ChevronUp size={14} />
+                  )}
+                </span>
+              </div>
             </div>
-            <div className="progress">
-              <i style={{ width: `${r.progress * 100}%` }} />
-            </div>
-            <h3>
-              {!me.alive
-                ? "Your shift isn’t over."
-                : impostor
-                  ? "Make yourself believable."
-                  : "Keep the station alive."}
-            </h3>
-            {!me.alive && (
-              <p className="ghost-note">
-                You’re a ghost.{" "}
-                {impostor
-                  ? "Watch the mystery unfold."
-                  : "Finish your tasks and help your crew."}
-              </p>
-            )}
-            {impostor ? (
-              <p>
-                Blend in. Create a distraction.
-                <br />
-                Eliminate the crew without being caught.
-              </p>
-            ) : (
-              r.tasks.map((t) => (
-                <div className={`task-row ${t.done ? "done" : ""}`} key={t.id}>
-                  <span>
-                    {t.done ? (
-                      <Check size={13} />
-                    ) : (
-                      <span className="task-dot" />
-                    )}
-                  </span>
-                  <div>
-                    <strong>{t.name}</strong>
-                    <small>{t.room}</small>
-                  </div>
+            {!tasksCollapsed && (
+              <>
+                <div className="progress">
+                  <i style={{ width: `${r.progress * 100}%` }} />
                 </div>
-              ))
+                <h3>
+                  {!me.alive
+                    ? "Your shift isn’t over."
+                    : impostor
+                      ? "Make yourself believable."
+                      : "Keep the station alive."}
+                </h3>
+                {!me.alive && (
+                  <p className="ghost-note">
+                    You’re a ghost.{" "}
+                    {impostor
+                      ? "Watch the mystery unfold."
+                      : "Finish your tasks and help your crew."}
+                  </p>
+                )}
+                {impostor ? (
+                  <p>
+                    Blend in. Create a distraction.
+                    <br />
+                    Eliminate the crew without being caught.
+                  </p>
+                ) : (
+                  r.tasks.map((t) => (
+                    <div
+                      className={`task-row ${t.done ? "done" : ""}`}
+                      key={t.id}
+                    >
+                      <span>
+                        {t.done ? (
+                          <Check size={13} />
+                        ) : (
+                          <span className="task-dot" />
+                        )}
+                      </span>
+                      <div>
+                        <strong>{t.name}</strong>
+                        <small>{t.room}</small>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </>
             )}
           </aside>
           {r.sabotage > 0 && (
@@ -1768,9 +1811,17 @@ export default function App() {
         return;
       }
       if (
-        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(
-          e.code,
-        )
+        [
+          "ArrowUp",
+          "ArrowDown",
+          "ArrowLeft",
+          "ArrowRight",
+          "KeyW",
+          "KeyA",
+          "KeyS",
+          "KeyD",
+          "Space",
+        ].includes(e.code)
       )
         e.preventDefault();
       motion.keys.add(e.code);
