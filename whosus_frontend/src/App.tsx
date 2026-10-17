@@ -1197,7 +1197,7 @@ function Lobby() {
           {r.impostors} impostor{r.impostors > 1 ? "s" : ""}
         </span>
         <div>
-          {import.meta.env.VITE_TEST_BOTS?.toLowerCase() === "true" && host && (
+          {host && (
             <button
               className="secondary"
               disabled={addingTestPlayers}
@@ -1206,8 +1206,8 @@ function Lobby() {
               {addingTestPlayers
                 ? "Adding test players…"
                 : r.population < 4
-                  ? "Fill to 4 test players"
-                  : "Ready test players"}
+                  ? "Fill to 4 players"
+                  : "Ready added players"}
             </button>
           )}
           <button

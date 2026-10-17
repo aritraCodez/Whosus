@@ -120,11 +120,6 @@ export async function fillLobbyWithTestPlayers(
   roomCode: string,
   players: { id: string; ready: boolean }[],
 ) {
-  if (import.meta.env.VITE_TEST_BOTS?.toLowerCase() !== "true")
-    throw new Error(
-      "Test players are disabled. Set VITE_TEST_BOTS=True to enable.",
-    );
-
   const active = sessions.filter(
     (session) =>
       session.roomCode === roomCode &&

@@ -378,10 +378,9 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 | `WHOSUS_BROWSER` | Optional Chromium path consumed by frontend files in `test/` |
 | `WHOSUS_TEST_URL` | Optional frontend origin for both browser test commands; defaults to `http://127.0.0.1:5173` |
 | `VITE_BACKEND_ORIGIN` | Frontend build-time setting: the browser-reachable backend HTTP(S) origin, with no path or trailing slash; also selects the WebSocket host |
-| `VITE_TEST_BOTS` | Frontend build-time flag; set to `true` to show the lobby test-player button; unset or any other value disables it |
 | `PORT` | Container HTTP listener; defaults to 8080 for the frontend and 8000 for the backend; hosting runtime values override these defaults |
 
-Vite embeds `VITE_BACKEND_ORIGIN` and `VITE_TEST_BOTS` into the frontend bundle at build time. The backend URL is public, not a secret. For a Docker build, pass them with `--build-arg`; for Vite development, set them in the frontend `.env` file. Leave `VITE_BACKEND_ORIGIN` unset to use the local Vite proxy. Test bots are disabled unless `VITE_TEST_BOTS=true` (case-insensitive). `PORT` remains an Nginx runtime setting.
+Vite embeds `VITE_BACKEND_ORIGIN` into the frontend bundle at build time. The backend URL is public, not a secret. For a Docker build, pass it with `--build-arg`; for Vite development, set it in the frontend `.env` file. Leave `VITE_BACKEND_ORIGIN` unset to use the local Vite proxy. The room host's **Fill to 4 players** helper is included in every build and does not require an environment variable. `PORT` remains an Nginx runtime setting.
 
 The backend uses fixed Google and Cloudflare STUN servers for WebRTC discovery. STUN URLs are not configurable through environment variables.
 
@@ -408,7 +407,7 @@ From the repository root:
 
 ```sh
 docker build -t whosus-backend ./whosus_backend
-docker build --build-arg VITE_BACKEND_ORIGIN=http://127.0.0.1:8000 --build-arg VITE_TEST_BOTS=true -t whosus-frontend ./whosus_frontend
+docker build --build-arg VITE_BACKEND_ORIGIN=http://127.0.0.1:8000 -t whosus-frontend ./whosus_frontend
 ```
 
 For the following **Linux host-network** example, configure the backend `.env` to allow `http://localhost:8080`, then run in separate terminals:
@@ -436,7 +435,7 @@ Render supports Docker web services and separate applications within one reposit
 | Docker Build Context | `.` | `.` |
 | Docker Command override | Leave empty; use the Dockerfile CMD | Leave empty; preserve the official Nginx entrypoint/CMD |
 | Health Check Path | `/api/health` | `/healthz` |
-| Required app configuration | `ALLOWED_ORIGINS=https://your-frontend.onrender.com` | Build-time `VITE_BACKEND_ORIGIN=https://your-backend.onrender.com`; optional `VITE_TEST_BOTS=true` for testing deployments |
+| Required app configuration | `ALLOWED_ORIGINS=https://your-frontend.onrender.com` | Build-time `VITE_BACKEND_ORIGIN=https://your-backend.onrender.com` |
 
 Deploy the backend to obtain its public URL, then set it as the frontend's `VITE_BACKEND_ORIGIN` build-time environment value and rebuild/redeploy the frontend. Set the backend's `ALLOWED_ORIGINS` to the exact frontend origin and redeploy the backend. Keep both service instance counts at one for the current in-memory design.
 
