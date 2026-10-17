@@ -4,8 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app.main import app, Message, ORIGINS, voice
+from app.config import ORIGINS, voice
 from app.voice import VoiceRouter
+from app.main import app
+from app.models import Message
 from test_network import until, ORIGIN
 
 

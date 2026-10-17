@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from ..connection import Connection
 from ..game import GameError, Room
 from ..models import Message
-from ..state import ORIGINS, rooms, sessions, voice
+from ..config import ORIGINS, rooms, sessions, voice
 from ..voice import ice_config
 
 log = logging.getLogger('whosus')
@@ -51,7 +51,7 @@ async def socket(ws: WebSocket):
                 conn.send({
                     'type': 'voice_error',
                     'generation': message.generation,
-                    'message': 'Voice connection failed. Retry microphone; check TURN configuration.',
+                    'message': 'Voice connection failed. Retry microphone and check network configuration.',
                 })
 
     try:
@@ -128,7 +128,7 @@ async def socket(ws: WebSocket):
                         'type': 'joined',
                         'id': p.id,
                         'token': session['token'],
-                        'iceServers': ice_config(p.id),
+                        'iceServers': ice_config(voice.stun_urls),
                     })
                     continue
                 if not session or session['conn'] is not conn:
