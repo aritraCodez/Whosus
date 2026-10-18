@@ -46,7 +46,7 @@ export function interactWithStation(id?: string) {
       s.set({
         error: assigned
           ? "You have finished this task."
-          : `${task.name} is not assigned to you this round. Follow your highlighted consoles.`,
+          : "This room uses an older task list. Start a new round to unlock every console.",
       });
       return;
     }
@@ -67,6 +67,6 @@ export function interactWithStation(id?: string) {
   if (!id && me.alive && Math.hypot(motion.x, motion.z) < 2.5) act("meeting");
   else
     s.set({
-      error: "Move closer to an assigned task console or the meeting beacon.",
+      error: "Move closer to an unfinished task console or the meeting beacon.",
     });
 }

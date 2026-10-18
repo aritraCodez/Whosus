@@ -31,6 +31,7 @@ export interface Challenge extends Task {
   started: number;
   fake?: boolean;
   practice?: boolean;
+  error?: string;
 }
 export interface VisualEffect {
   player: string;

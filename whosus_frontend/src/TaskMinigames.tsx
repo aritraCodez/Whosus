@@ -92,6 +92,7 @@ function SequenceGame({
 }) {
   const [busy, setBusy] = useState(false);
   const [localStep, setLocalStep] = useState(c.step || 0);
+  const [localError, setLocalError] = useState("");
 
   const symbols = ["●", "◆", "▲", "✦"];
   const handlePress = (idx: number) => {
@@ -101,6 +102,7 @@ function SequenceGame({
 
     if (c.fake || c.practice) {
       if (idx === c.sequence[localStep]) {
+        setLocalError("");
         const next = localStep + 1;
         setLocalStep(next);
         if (next >= c.sequence.length) {
@@ -111,6 +113,7 @@ function SequenceGame({
       } else {
         playTaskSound("buzz");
         setLocalStep(0);
+        setLocalError("Wrong symbol. Start matching again from the first symbol.");
       }
       setTimeout(() => setBusy(false), 300);
     } else {
@@ -125,7 +128,8 @@ function SequenceGame({
     <div className="task-game sequence-game">
       <div className="task-instructions">
         <h3>Follow the signal sequence</h3>
-        <p>Tap the symbols in order to calibrate the station relay.</p>
+        <p>Match the symbols in order. A wrong symbol resets this task.</p>
+        {(c.error || localError) && <p className="task-retry" role="status">{c.error || localError}</p>}
       </div>
 
       <div className="sequence-display">
@@ -143,6 +147,7 @@ function SequenceGame({
         {symbols.map((sym, idx) => (
           <button
             key={sym}
+            aria-label={`Match symbol ${idx + 1}`}
             disabled={busy || currentStep >= c.sequence.length}
             className="circuit-btn"
             onClick={() => handlePress(idx)}
@@ -256,6 +261,7 @@ function WiresGame({ finish }: { finish: () => void }) {
 
   const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
   const [connections, setConnections] = useState<Record<number, number>>({});
+  const [retry, setRetry] = useState(false);
   const rightOrder = useRef([2, 0, 3, 1]); // Shuffled right terminals
 
   const handleLeftClick = (leftIdx: number) => {
@@ -268,6 +274,7 @@ function WiresGame({ finish }: { finish: () => void }) {
     const rightColor = rightOrder.current[rightIdx];
 
     if (selectedLeft === rightColor) {
+      setRetry(false);
       // Valid connection!
       playTaskSound("spark");
       const next = { ...connections, [selectedLeft]: rightIdx };
@@ -280,6 +287,8 @@ function WiresGame({ finish }: { finish: () => void }) {
     } else {
       playTaskSound("buzz");
       setSelectedLeft(null);
+      setConnections({});
+      setRetry(true);
     }
   };
 
@@ -288,6 +297,7 @@ function WiresGame({ finish }: { finish: () => void }) {
       <div className="task-instructions">
         <h3>Match and reconnect color conduits</h3>
         <p>Select a wire on the left, then connect it to its matching color terminal.</p>
+        {retry && <p className="task-retry" role="status">Wrong connection. Match all wires again from the start.</p>}
       </div>
 
       <div className="wires-junction">

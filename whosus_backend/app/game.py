@@ -183,32 +183,10 @@ class Room:
         self.eliminations.clear()
         self.active_visuals.clear()
         self.sabotage_until = 0; self.sabotage_at = self.now + 20
-        common_candidates = [s for s in STATIONS if s.get('category') == 'common']
-        short_candidates = [s for s in STATIONS if s.get('category') == 'short']
-        long_candidates = [s for s in STATIONS if s.get('category') == 'long']
-        selected_common = secrets.choice(common_candidates)['id'] if common_candidates else 'swipe'
-
         for i, p in enumerate(active):
             p.role = 'impostor' if p.id in traitors else 'crew'
             p.alive = True; p.done.clear(); p.vent = -1; p.emergency = self.emergency_meetings; p.challenge = None; p.animation_until = 0
-            if p.role == 'crew':
-                assigned = [selected_common]
-                for s in secrets.SystemRandom().sample(short_candidates, min(2, len(short_candidates))):
-                    if s['id'] not in assigned: assigned.append(s['id'])
-                if long_candidates:
-                    l_task = secrets.choice(long_candidates)['id']
-                    if l_task not in assigned: assigned.append(l_task)
-                if 'garden' not in assigned: assigned.append('garden')
-                p.tasks = assigned
-            else:
-                fake = [selected_common]
-                for s in secrets.SystemRandom().sample(short_candidates, min(2, len(short_candidates))):
-                    if s['id'] not in fake: fake.append(s['id'])
-                if long_candidates:
-                    l_task = secrets.choice(long_candidates)['id']
-                    if l_task not in fake: fake.append(l_task)
-                if 'garden' not in fake: fake.append('garden')
-                p.tasks = fake
+            p.tasks = [s['id'] for s in STATIONS]
             p.kill_at = self.now + self.kill_cooldown
             p.inputs.clear(); p.x = math.cos(i * math.tau / len(active)) * 2; p.z = math.sin(i * math.tau / len(active)) * 2
         self.phase = 'reveal'; self.deadline = self.now + 5
@@ -384,17 +362,23 @@ class Room:
             c = p.challenge
             self.require(c and target == c['nonce'] and math.hypot(p.x-c['x'],p.z-c['z']) <= 2.5, 'This task has expired.')
             if c.get('kind') == 'sequence':
-                self.require(type(value) is int and value == c['sequence'][c['step']], 'Wrong circuit. Follow the illuminated sequence.')
+                self.require(type(value) is int and 0 <= value < 4, 'Choose a circuit symbol.')
+                if value != c['sequence'][c['step']]:
+                    c['step'] = 0
+                    c['started'] = self.now
+                    c['error'] = 'Wrong symbol. Start matching again from the first symbol.'
+                    return
                 self.require(self.now - c['started'] >= (c['step']+1)*.3, 'Slow down and let the circuit settle.')
+                c.pop('error', None)
                 c['step'] += 1
                 if c['step'] == len(c['sequence']):
                     p.done.add(c['id']); p.challenge = None
-                    if c.get('visual') and self.visual_tasks:
+                    if self.visual_tasks:
                         self.active_visuals.append({'player': p.id, 'task': c['id'], 'kind': c.get('visual_kind', 'glow'), 'until': self.now + 4})
                     self.check_win()
             else:
                 p.done.add(c['id']); p.challenge = None
-                if c.get('visual') and self.visual_tasks:
+                if self.visual_tasks:
                     self.active_visuals.append({'player': p.id, 'task': c['id'], 'kind': c.get('visual_kind', 'glow'), 'until': self.now + 4})
                 self.check_win()
         else: raise GameError('Unknown action.')
@@ -461,7 +445,7 @@ class Room:
             'meetingCooldown': max(0, self.meeting_at - self.now), 'emergency': me.emergency, 'vent': me.vent,
             'tasks': [{**s, 'done': s['id'] in me.done} for s in STATIONS if s['id'] in me.tasks],
             'challenge': me.challenge, 'progress': prog, 'taskBarMode': self.task_bar_mode,
-            'visualTasks': self.visual_tasks, 'visuals': self.active_visuals,
+            'visualTasks': self.visual_tasks, 'visuals': [v for v in self.active_visuals if v['player'] == pid],
             'tally': dict(Counter(self.votes.values())) if self.phase in ('results', 'gameover') else {},
             'population': len(self.players), 'eliminations': eliminations,
             'movementLock': max(0, me.animation_until - self.now)
