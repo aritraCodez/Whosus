@@ -154,6 +154,7 @@ input::placeholder {
   top: 9%;
   bottom: 7%;
   right: -8%;
+  touch-action: none;
 }
 .at-menu:after {
   content: "";
@@ -654,6 +655,12 @@ h1 > svg {
   border: 1px solid #ffffff13;
   border-radius: 4px;
   font-weight: 400;
+}
+.menu-footer .footer-killer {
+  color: #ff7777;
+  background: #ff45450d;
+  border-color: #ff777733;
+  letter-spacing: 1px;
 }
 .nameplate {
   font-size: 10px;

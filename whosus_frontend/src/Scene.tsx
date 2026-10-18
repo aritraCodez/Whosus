@@ -12,7 +12,15 @@ import * as THREE from "three";
 import { useGame } from "./store";
 import { motion, renderPosition } from "./network";
 import { COLORS, type Player } from "./types";
-import { FLOORS, LOBBY_OBSTACLES, OBSTACLES, STATIONS, VENTS } from "./world";
+import {
+  FLOORS,
+  LOBBY_OBSTACLES,
+  move as movePlayer,
+  OBSTACLES,
+  STATIONS,
+  VENTS,
+  walkable,
+} from "./world";
 import { EliminationEffect } from "./EliminationEffect";
 import { interactWithStation, openPractice } from "./interactions";
 import type { VisualEffect } from "./types";
@@ -61,12 +69,14 @@ function Pip({
   hat = "sprout",
   ghost = false,
   walking = false,
+  idleBounce = 0.018,
   headTurn,
 }: {
   color: string;
   hat?: string;
   ghost?: boolean;
   walking?: boolean | React.RefObject<boolean>;
+  idleBounce?: number;
   headTurn?: React.RefObject<number>;
 }) {
   const { scene } = useGLTF("/models/pip.glb");
@@ -98,6 +108,8 @@ function Pip({
   }, [scene, color, ghost]);
   const group = useRef<THREE.Group>(null);
   const accessory = useRef<THREE.Group>(null);
+  const lastMovementAt = useRef<number | null>(null);
+  const hasMoved = useRef(false);
   const headPivot = useMemo(() => model.getObjectByName("HeadPivot"), [model]);
   const limbs = useMemo(
     () =>
@@ -120,18 +132,41 @@ function Pip({
   useFrame(({ clock }) => {
     const t = clock.elapsedTime,
       moving = typeof walking === "boolean" ? walking : walking.current;
+    if (moving) {
+      hasMoved.current = true;
+      lastMovementAt.current = t;
+    } else if (lastMovementAt.current === null) {
+      lastMovementAt.current = t;
+    }
+    const idleTime = t - lastMovementAt.current;
+    const jumpDelay = hasMoved.current ? 7 : 0;
+    const jumpTime = (idleTime - jumpDelay) % 2.6;
+    const idleJump =
+      !moving &&
+      idleBounce > 0.1 &&
+      idleTime >= jumpDelay &&
+      jumpTime < 0.7
+        ? Math.sin((Math.PI * jumpTime) / 0.7)
+        : 0;
     if (headPivot) headPivot.rotation.y = headTurn?.current || 0;
     if (accessory.current)
       accessory.current.rotation.y = headTurn?.current || 0;
     for (const [limb, sign] of limbs) {
-      if (limb) limb.rotation.x = moving ? Math.sin(t * 12) * 0.45 * sign : 0;
+      if (!limb) continue;
+      limb.rotation.x = moving
+        ? Math.sin(t * 12) * 0.45 * sign
+        : idleJump
+          ? (limb.name.startsWith("Foot") ? -0.3 : 0.18) * idleJump * sign
+          : 0;
     }
     if (group.current)
       group.current.position.y = ghost
         ? 0.3 + Math.sin(t * 2) * 0.12
         : moving
           ? Math.abs(Math.sin(t * 12)) * 0.06
-          : Math.sin(t * 2) * 0.018;
+          : idleBounce > 0.1
+            ? Math.pow(idleJump, 0.7) * idleBounce
+            : Math.sin(t * 2) * idleBounce;
   });
   return (
     <group ref={group}>
@@ -749,6 +784,21 @@ function isVisibleToPlayer(
   return true;
 }
 
+function heroCanOccupy(x: number, z: number) {
+  const radius = 0.42;
+  return (
+    walkable(x, z) &&
+    walkable(x - radius, z) &&
+    walkable(x + radius, z) &&
+    walkable(x, z - radius) &&
+    walkable(x, z + radius) &&
+    walkable(x - radius, z - radius) &&
+    walkable(x - radius, z + radius) &&
+    walkable(x + radius, z - radius) &&
+    walkable(x + radius, z + radius)
+  );
+}
+
 function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
   const { camera, size } = useThree();
   const map = useGame((s) => s.map);
@@ -807,19 +857,96 @@ function Actors({
   hat: string;
 }) {
   const r = useGame((s) => s.room),
-    id = useGame((s) => s.id);
+    id = useGame((s) => s.id),
+    map = useGame((s) => s.map);
+  const hero = useRef<THREE.Group>(null);
+  const heroPosition = useRef({ x: -2, z: 2 });
+  const heroWalking = useRef(false);
+  const heroStep = useRef(0);
+  const heroDirection = useRef({ x: 0, z: 0 });
   const me = r?.players.find((p) => p.id === id);
   const isGhost = me ? !me.alive : false;
   const lx = motion.renderX,
     lz = motion.renderZ;
   const events = r?.eliminations || [];
+  useFrame((_, dt) => {
+    if (!menu) {
+      heroWalking.current = false;
+      return;
+    }
+    const held = (a: string, b: string) =>
+      motion.keys.has(a) || motion.keys.has(b) ? 1 : 0;
+    let x =
+      held("KeyD", "ArrowRight") - held("KeyA", "ArrowLeft") + motion.dx;
+    let z =
+      held("KeyS", "ArrowDown") - held("KeyW", "ArrowUp") + motion.dz;
+    const length = Math.max(1, Math.hypot(x, z));
+    x /= length;
+    z /= length;
+    const directionLength = Math.hypot(18, 13);
+    const dx = (18 * x + 13 * z) / directionLength;
+    const dz = (-13 * x + 18 * z) / directionLength;
+    heroWalking.current = Math.hypot(dx, dz) > 0;
+    if (heroWalking.current) {
+      heroDirection.current = { x: dx, z: dz };
+      heroStep.current += dt;
+      while (heroStep.current >= 0.05) {
+        const [nextX, nextZ] = movePlayer(
+          heroPosition.current.x,
+          heroPosition.current.z,
+          dx,
+          dz,
+        );
+        if (heroCanOccupy(nextX, nextZ)) {
+          heroPosition.current.x = nextX;
+          heroPosition.current.z = nextZ;
+        } else {
+          const [slideX] = movePlayer(
+            heroPosition.current.x,
+            heroPosition.current.z,
+            dx,
+            0,
+          );
+          const [, slideZ] = movePlayer(
+            heroPosition.current.x,
+            heroPosition.current.z,
+            0,
+            dz,
+          );
+          if (heroCanOccupy(slideX, heroPosition.current.z))
+            heroPosition.current.x = slideX;
+          if (heroCanOccupy(heroPosition.current.x, slideZ))
+            heroPosition.current.z = slideZ;
+        }
+        heroStep.current -= 0.05;
+      }
+    } else {
+      heroStep.current = 0;
+    }
+    hero.current?.position.set(
+      heroPosition.current.x,
+      0,
+      heroPosition.current.z,
+    );
+    if (heroWalking.current && hero.current) {
+      const target = Math.atan2(
+        heroDirection.current.x,
+        heroDirection.current.z,
+      );
+      hero.current.rotation.y +=
+        Math.atan2(
+          Math.sin(target - hero.current.rotation.y),
+          Math.cos(target - hero.current.rotation.y),
+        ) * Math.min(1, dt * 12);
+    }
+  });
   const animated = new Set(events.flatMap((e) => [e.attacker.id, e.victim.id]));
-  const visibleEvents = events.filter((e) => {
+  const visibleEvents = map ? [] : events.filter((e) => {
     if (!r || r.phase !== "playing" || isGhost) return true;
     if (e.attacker.id === id || e.victim.id === id) return true;
     return isVisibleToPlayer(e.victim.x, e.victim.z, lx, lz, isGhost, r.phase);
   });
-  const visibleBodies = (r?.bodies || []).filter((b) => {
+  const visibleBodies = map ? [] : (r?.bodies || []).filter((b) => {
     if (animated.has(b.id)) return false;
     if (!r || r.phase !== "playing" || isGhost) return true;
     return isVisibleToPlayer(b.x, b.z, lx, lz, isGhost, r.phase);
@@ -829,7 +956,8 @@ function Actors({
       ? showcase
       : (r?.players || []).filter((p) => {
           if (animated.has(p.id)) return false;
-          if (p.id === id) return (r?.vent ?? -1) < 0;
+          if (p.id === id) return map || (r?.vent ?? -1) < 0;
+          if (map) return false;
           if (!r || r.phase !== "playing" || isGhost) return true;
           return isVisibleToPlayer(p.x, p.z, lx, lz, isGhost, r.phase);
         })
@@ -841,13 +969,19 @@ function Actors({
         menu ? (
           <group
             key={p.id}
-            position={[p.x, 0, p.z]}
+            ref={i === 0 ? hero : undefined}
+            position={
+              i === 0
+                ? [heroPosition.current.x, 0, heroPosition.current.z]
+                : [p.x, 0, p.z]
+            }
             rotation={[0, i * 0.8 + 0.3, 0]}
           >
             <Pip
               color={i === 0 ? COLORS[color] : p.color}
               hat={i === 0 ? hat : p.hat}
-              walking={i === 0}
+              walking={i === 0 ? heroWalking : false}
+              idleBounce={i === 0 ? 0.2 : undefined}
             />
           </group>
         ) : (
