@@ -58,3 +58,38 @@ def test_api_allows_configured_frontend_origin():
 
     assert response.status_code == 200
     assert response.headers['access-control-allow-origin'] == ORIGIN['origin']
+
+
+def test_host_settings_kick_and_revoked_resume_over_websocket():
+    with TestClient(app) as client, ExitStack() as stack:
+        host, guest = [stack.enter_context(client.websocket_connect('/ws', headers=ORIGIN)) for _ in range(2)]
+        host.send_json({'type': 'create', 'name': 'Host', 'capacity': 12, 'movement_speed': 1.5, 'voting': 60})
+        host_id = until(host, 'joined')['id']
+        r = until(host, 'snapshot')['room']
+        assert r['capacity'] == 12 and r['movementSpeed'] == 1.5 and r['rules']['voting'] == 60
+        guest.send_json({'type': 'join', 'name': 'Guest', 'code': r['code'], 'color': 0})
+        identity = until(guest, 'joined')
+        r = until(guest, 'snapshot')['room']
+        assert len({p['color'] for p in r['players']}) == 2
+        guest.send_json({'type': 'action', 'action': 'settings', 'target': 'public', 'value': True})
+        assert 'Only the host' in until(guest, 'error')['message']
+        host.send_json({'type': 'action', 'action': 'settings', 'target': 'public', 'value': True})
+        for _ in range(100):
+            if until(guest, 'snapshot')['room']['public']: break
+        else: raise AssertionError('Privacy was not shared')
+        assert client.get('/api/rooms').json()[0]['code'] == r['code']
+        host.send_json({'type': 'action', 'action': 'settings', 'target': 'taskBarMode', 'value': 'meetings'})
+        for _ in range(100):
+            if until(guest, 'snapshot')['room']['taskBarMode'] == 'meetings': break
+        else: raise AssertionError('String setting was not shared')
+        host.send_json({'type': 'action', 'action': 'kick', 'target': identity['id']})
+        assert until(guest, 'kicked')['message']
+        guest.send_json({'type': 'action', 'action': 'ready'})
+        assert until(guest, 'error')['message'] == 'Join a room first.'
+        resumed = stack.enter_context(client.websocket_connect('/ws', headers=ORIGIN))
+        resumed.send_json({'type': 'resume', 'token': identity['token']})
+        assert until(resumed, 'expired')
+        for _ in range(100):
+            r = until(host, 'snapshot')['room']
+            if r['population'] == 1: break
+        assert r['players'][0]['id'] == host_id and r['population'] == 1

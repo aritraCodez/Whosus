@@ -21,6 +21,7 @@ type State = {
   eliminationStyle: number;
   fakeChallenge: import("./types").Challenge | null;
   fakeDone: Record<string, boolean>;
+  practiceOpen: boolean;
   set: (v: Partial<State>) => void;
 };
 export const useGame = create<State>((set) => ({
@@ -48,5 +49,6 @@ export const useGame = create<State>((set) => ({
   eliminationStyle: -1,
   fakeChallenge: null,
   fakeDone: {},
+  practiceOpen: false,
   set,
 }));

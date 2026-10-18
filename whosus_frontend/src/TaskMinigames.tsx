@@ -3,6 +3,7 @@ import type { Challenge } from "./types";
 import { Modal } from "./components/Modal";
 import { act } from "./network";
 import { useGame } from "./store";
+import { STATIONS } from "./world";
 import {
   Check,
   CreditCard,
@@ -20,11 +21,13 @@ import {
 
 // Sound effects generator using Web Audio API for rich feedback
 function playTaskSound(type: "click" | "beep" | "success" | "laser" | "buzz" | "spark") {
+  if (!useGame.getState().sound) return;
   try {
     const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
+    osc.onended = () => { void ctx.close(); };
     gain.connect(ctx.destination);
     const now = ctx.currentTime;
 
@@ -96,7 +99,7 @@ function SequenceGame({
     playTaskSound("click");
     setBusy(true);
 
-    if (c.fake) {
+    if (c.fake || c.practice) {
       if (idx === c.sequence[localStep]) {
         const next = localStep + 1;
         setLocalStep(next);
@@ -116,7 +119,7 @@ function SequenceGame({
     }
   };
 
-  const currentStep = c.fake ? localStep : c.step;
+  const currentStep = c.fake || c.practice ? localStep : c.step;
 
   return (
     <div className="task-game sequence-game">
@@ -787,8 +790,10 @@ function FuelGame({ finish }: { finish: () => void }) {
   const [level, setLevel] = useState(0);
   const holding = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  useEffect(() => () => clearInterval(timer.current), []);
 
   const startFill = () => {
+    if (holding.current) return;
     holding.current = true;
     playTaskSound("beep");
     timer.current = setInterval(() => {
@@ -823,9 +828,10 @@ function FuelGame({ finish }: { finish: () => void }) {
         <div className="fuel-controls">
           <button
             className="fuel-dispense-btn"
-            onPointerDown={startFill}
+            onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startFill(); }}
             onPointerUp={stopFill}
             onPointerCancel={stopFill}
+            onLostPointerCapture={stopFill}
             disabled={level >= 100}
           >
             <Fuel size={28} />
@@ -887,29 +893,49 @@ function DialGame({ finish }: { finish: () => void }) {
 }
 
 // MASTER TASK PANEL COMPONENT
+export function PracticePanel() {
+  const s = useGame();
+  return <Modal title="Practice station" close={() => s.set({ practiceOpen: false })} wide>
+    <p className="muted">Try any console before launch. Practice does not count toward the mission.</p>
+    <div className="practice-grid">{STATIONS.map(t => <button key={t.id} className="secondary" onClick={() => s.set({
+      fakeChallenge: { ...t, done: false, nonce: `practice_${Date.now()}`, sequence: [2,0,3,1], step: 0, started: Date.now()/1000, practice: true },
+    })}><strong>{t.name}</strong><small>{t.room} · {t.category}</small></button>)}</div>
+  </Modal>;
+}
+
 export function UniversalTaskPanel() {
   const s = useGame();
   const c = s.room?.challenge || s.fakeChallenge;
-
   if (!c) return null;
+  return <TaskSession key={c.nonce} c={c} />;
+}
+
+function TaskSession({ c }: { c: Challenge }) {
+  const s = useGame();
+  const completed = useRef(false);
+  useEffect(() => { completed.current = false; return () => { completed.current = true; }; }, []);
 
   const isFake = !!c.fake;
 
   const closeTask = useCallback(() => {
-    if (isFake) s.set({ fakeChallenge: null });
+    if (isFake || c.practice) s.set({ fakeChallenge: null });
     else act("task_cancel");
-  }, [isFake, s.set]);
+  }, [isFake, c.practice, s.set]);
 
   const handleFinish = useCallback(() => {
-    if (isFake) {
+    if (completed.current) return;
+    completed.current = true;
+    if (c.practice) {
+      useGame.setState({ fakeChallenge: null });
+    } else if (isFake) {
       s.set({
         fakeChallenge: null,
-        fakeDone: { ...s.fakeDone, [c.id]: true },
+        fakeDone: { ...useGame.getState().fakeDone, [c.id]: true },
       });
     } else {
       act("task_step", c.nonce);
     }
-  }, [isFake, s.set, s.fakeDone, c.id, c.nonce]);
+  }, [isFake, s.set, c.practice, c.id, c.nonce]);
 
   return (
     <Modal
@@ -923,6 +949,7 @@ export function UniversalTaskPanel() {
           {c.category && <span className={`category-tag ${c.category}`}>{c.category.toUpperCase()} TASK</span>}
           {c.visual && <span className="visual-tag"><Sparkles size={12} /> VISUAL</span>}
           {isFake && <span className="fake-alert-tag">FAKE TASK (NO PROGRESS)</span>}
+          {c.practice && <span className="visual-tag">PRACTICE · NO MISSION PROGRESS</span>}
         </div>
 
         {c.kind === "sequence" && <SequenceGame c={c} finish={handleFinish} />}

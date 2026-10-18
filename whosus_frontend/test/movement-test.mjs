@@ -46,12 +46,13 @@ try {
       quality: "low",
     });
     document.activeElement?.blur();
-    const sample = (phase, x, z, key, ghost = false) => {
+    const sample = (phase, x, z, key, ghost = false, speed = 1) => {
       useGame.getState().room = {
         phase,
         vent: -1,
         movementLock: 0,
         challenge: null,
+        movementSpeed: speed,
         players: [{ id: "test", x, z, alive: !ghost }],
       };
       motion.x = x;
@@ -60,7 +61,7 @@ try {
       motion.keys.clear();
       motion.keys.add(key);
       const [dx, dz] = movementInput();
-      const target = move(x, z, dx, dz, ghost, phase === "lobby");
+      const target = move(x, z, dx, dz, ghost, phase === "lobby", speed);
       const frames = [0, 10, 20, 30, 40, 50].map((elapsed) => {
         motion.steppedAt = performance.now() - elapsed;
         return renderPosition();
@@ -74,6 +75,8 @@ try {
       lobbyCrate: sample("lobby", -3.5, 0.55, "ArrowUp"),
       meetingBeacon: sample("playing", -1.3, 0, "ArrowRight"),
       ghostEdge: sample("playing", 13.95, 0, "ArrowRight", true),
+      fastLobby: sample("lobby", -1.65, 2, "ArrowDown", false, 2),
+      slowLobby: sample("lobby", -1.65, 2, "ArrowDown", false, .5),
     };
     motion.keys.clear();
     useGame.setState({ room: null, status: "offline" });

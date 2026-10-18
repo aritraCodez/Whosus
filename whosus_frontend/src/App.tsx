@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import Scene from "./Scene";
 import { Modal } from "./components/Modal";
-import { UniversalTaskPanel } from "./TaskMinigames";
+import { PracticePanel, UniversalTaskPanel } from "./TaskMinigames";
 import { useGame } from "./store";
 import {
   act,
@@ -47,6 +47,8 @@ import { STATIONS } from "./world";
 import { sound } from "./audio";
 import { backendApiUrl } from "./backend";
 import { fillLobbyWithTestPlayers } from "./devPlayers";
+import { NumberRule, RoomRules } from "./RoomRules";
+import { interactWithStation, openPractice } from "./interactions";
 import { ELIMINATION_NAMES } from "./EliminationEffect";
 
 function BotIcon({
@@ -70,47 +72,7 @@ function BotIcon({
     </div>
   );
 }
-function interact() {
-  const s = useGame.getState(),
-    r = s.room;
-  if (!r || r.phase !== "playing" || r.challenge || r.movementLock > 0) return;
-  const me = r.players.find((p) => p.id === s.id);
-  if (!me) return;
-  const near = STATIONS.find(
-    (t) => Math.hypot(t.x - motion.x, t.z - motion.z) < 2,
-  );
-  if (r.sabotage && near?.id === "reactor" && me.alive) {
-    act("repair");
-    return;
-  }
-  if (near) {
-    if (me.role === "crew" && r.tasks.some((t) => t.id === near.id && !t.done)) {
-      act("task_begin", near.id);
-      return;
-    }
-    if (me.role === "impostor" && r.tasks.some((t) => t.id === near.id && !s.fakeDone[t.id])) {
-      const targetTask = r.tasks.find((t) => t.id === near.id);
-      if (targetTask) {
-        useGame.setState({
-          fakeChallenge: {
-            ...targetTask,
-            nonce: "fake_" + Date.now(),
-            sequence: [0, 1, 2, 3],
-            step: 0,
-            started: Date.now() / 1000,
-            fake: true,
-          },
-        });
-        return;
-      }
-    }
-  }
-  if (Math.hypot(motion.x, motion.z) < 2.5) act("meeting");
-  else
-    useGame.setState({
-      error: "Move closer to an assigned task console or the meeting beacon.",
-    });
-}
+function interact() { interactWithStation(); }
 function report() {
   const r = useGame.getState().room;
   const b = r?.bodies.find(
@@ -227,7 +189,11 @@ function RoomForm({
     [publicRoom, setPublic] = useState(false),
     [impostors, setImpostors] = useState(1),
     [cooldown, setCooldown] = useState(25),
-    [discussion, setDiscussion] = useState(25);
+    [discussion, setDiscussion] = useState(25),
+    [speed, setSpeed] = useState(1),
+    [voting, setVoting] = useState(30),
+    [meetings, setMeetings] = useState(1),
+    [meetingCooldown, setMeetingCooldown] = useState(20);
   const [list, setList] = useState<
       { code: string; players: number; capacity: number; host: string }[]
     >([]),
@@ -313,6 +279,10 @@ function RoomForm({
               impostors,
               kill_cooldown: cooldown,
               discussion,
+              movement_speed: speed,
+              voting,
+              emergency_meetings: meetings,
+              meeting_cooldown: meetingCooldown,
             });
             close();
           }}
@@ -326,11 +296,15 @@ function RoomForm({
             <div>
               <small>YOUR DESTINATION</small>
               <h3>Cloudline Station</h3>
-              <p>5 rooms · 4 tasks · many alibis</p>
+              <p>9 rooms · interactive tasks · many alibis</p>
             </div>
             <span className="tag">ORIGINAL</span>
           </div>
           <div className="form-grid">
+            <NumberRule label="Movement speed" value={speed} options={[.5,.75,1,1.25,1.5,1.75,2]} suffix="×" onChange={setSpeed} />
+            <NumberRule label="Voting time" value={voting} options={[10,15,30,45,60,90,120]} suffix=" s" onChange={setVoting} />
+            <NumberRule label="Emergency meetings per player" value={meetings} options={[0,1,2,3]} onChange={setMeetings} />
+            <NumberRule label="Meeting cooldown" value={meetingCooldown} options={[10,15,20,25,30,45,60]} suffix=" s" onChange={setMeetingCooldown} />
             <label>
               Crew capacity
               <select
@@ -761,6 +735,7 @@ function SettingsPanel() {
       {s.room && (
         <div className="mission-rules-group">
           <span className="eyebrow">MISSION RULES</span>
+          <RoomRules />
           <label className="toggle-line">
             <span>
               <strong>Task Progress Bar</strong>
@@ -788,6 +763,7 @@ function SettingsPanel() {
             <input
               type="checkbox"
               checked={s.room.visualTasks ?? true}
+              aria-label="Visual Tasks"
               disabled={s.id !== s.room.host || s.room.phase !== "lobby"}
               onChange={(e) => act("settings", "visualTasks", e.target.checked)}
             />
@@ -1088,7 +1064,7 @@ function Lobby() {
   async function addTestPlayers() {
     setAddingTestPlayers(true);
     try {
-      await fillLobbyWithTestPlayers(r.code, r.players);
+      await fillLobbyWithTestPlayers(r.code, r.players, r.capacity);
     } catch (error) {
       s.set({
         error:
@@ -1174,6 +1150,24 @@ function Lobby() {
             PRIVACY<strong>{r.public ? "Public" : "Private"}</strong>
           </span>
         </div>
+        <button className="secondary full" onClick={() => s.set({ settings: true })}>
+          {host ? "Room settings" : "View room settings"}
+        </button>
+        <label className="lobby-privacy">Room visibility
+          <select aria-label="Lobby room visibility" value={String(r.public)} disabled={!host} onChange={e => act("settings", "public", e.target.value === "true")}>
+            <option value="false">Private</option><option value="true">Public</option>
+          </select>
+        </label>
+        <fieldset className="lobby-colors"><legend>Your color</legend>
+          {COLORS.map((color, index) => {
+            const owner = r.players.find(p => p.color === color && p.id !== s.id);
+            return <button key={color} type="button" aria-label={`Color ${index + 1}${owner ? ` · taken by ${owner.name}` : ""}`}
+              aria-pressed={me?.color === color} title={owner ? `Taken by ${owner.name}` : `Choose color ${index + 1}`}
+              disabled={!!owner} style={{ background: color }} onClick={() => act("color", "", index)}>
+              {owner ? "×" : me?.color === color ? "✓" : ""}
+            </button>;
+          })}
+        </fieldset>
         <div className="crew-list">
           {r.players.map((p) => (
             <div className={`crew-card ${p.ready ? "ready" : ""}`} key={p.id}>
@@ -1193,10 +1187,11 @@ function Lobby() {
                 </small>
               </span>
               {p.ready && <Check size={17} />}
+              {host && p.id !== s.id && <button className="kick-player" aria-label={`Kick ${p.name}`} onClick={() => act("kick", p.id)}>Kick</button>}
             </div>
           ))}
           {Array.from(
-            { length: Math.max(0, Math.min(4, r.capacity) - r.population) },
+            { length: Math.max(0, r.capacity - r.population) },
             (_, i) => (
               <div className="crew-card vacant" key={`empty${i}`}>
                 <Plus size={22} />
@@ -1205,6 +1200,7 @@ function Lobby() {
             ),
           )}
         </div>
+        <button className="secondary full" onClick={openPractice}>Practice at console</button>
         <div className="lobby-rules-summary">
           <span>TASK BAR: <strong>{(r.taskBarMode || "always").toUpperCase()}</strong></span>
           <i>·</i>
@@ -1225,8 +1221,8 @@ function Lobby() {
             >
               {addingTestPlayers
                 ? "Adding test players…"
-                : r.population < 4
-                  ? "Fill to 4 players"
+                : r.population < r.capacity
+                  ? `Fill to ${r.capacity} players`
                   : "Ready added players"}
             </button>
           )}
@@ -1259,7 +1255,7 @@ function Lobby() {
         </div>
       </div>
       <div className="bay-hint">
-        HOLD WASD / ARROWS OR DRAG THE STICK TO MOVE
+        HOLD WASD / ARROWS TO MOVE · E AT THE CONSOLE TO PRACTICE
       </div>
     </div>
   );
@@ -1380,7 +1376,7 @@ function GameHUD() {
       Math.hypot(p.x - me.x, p.z - me.z) <= 1.8,
   );
   const nearTask = r.tasks.find(
-    (t) => !t.done && Math.hypot(t.x - me.x, t.z - me.z) < 2,
+    (t) => !t.done && !s.fakeDone[t.id] && Math.hypot(t.x - me.x, t.z - me.z) <= 2.5,
   );
   const nearBeacon =
     me.alive &&
@@ -1712,6 +1708,7 @@ function GameHUD() {
           </section>
         </div>
       )}
+      {s.practiceOpen && r.phase === "lobby" && !s.fakeChallenge && <PracticePanel />}
       {((r.challenge && r.phase === "playing") || s.fakeChallenge) && (
         <UniversalTaskPanel />
       )}

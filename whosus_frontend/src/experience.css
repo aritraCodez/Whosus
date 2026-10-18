@@ -2,6 +2,25 @@
   border-color: var(--yellow);
   box-shadow: 0 0 0 3px #f5c56816;
 }
+/* Waiting-room controls and console interactions. */
+.host-rules label, .lobby-privacy { display: grid; gap: 7px; }
+.host-rules select, .lobby-privacy select { width: 100%; min-width: 0; }
+.lobby-privacy { margin: 14px 0; font-size: 12px; }
+.lobby-colors { border: 0; padding: 0; margin: 16px 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; }
+.lobby-colors legend { font-size: 12px; margin-bottom: 9px; }
+.lobby-colors button { min-width: 0; height: 28px; border: 2px solid transparent; border-radius: 8px; color: #17313b; font-weight: 800; }
+.lobby-colors button[aria-pressed=true] { outline: 2px solid #fff; outline-offset: 2px; }
+.lobby-colors button:disabled { opacity: .3; cursor: not-allowed; }
+.waiting-ui .crew-card > span { flex: 1; min-width: 0; }
+.waiting-ui .crew-card .kick-player { background: #f4778515; color: #ff9cab; border: 1px solid #f4778540; border-radius: 7px; padding: 5px; font-size: 10px; }
+.station-label { display: grid; gap: 5px; white-space: nowrap; background: #162f3deb; border: 1px solid #6f959c; padding: 8px 12px; border-radius: 8px; color: #dcebe2; text-align: center; cursor: pointer; }
+.station-label.active { border-color: #b3df98; }
+.station-label small { font-size: 10px; color: #b3cfbe; }
+.station-label strong { font-size: 12px; }
+.practice-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.practice-grid button { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; white-space: normal; text-align: left; }
+.practice-grid small { color: #a6c4b7; font-size: 11px; }
+@media (max-width: 550px) { .practice-grid { grid-template-columns: 1fr; } }
 .player-custom .pencil {
   padding: 9px;
   border-radius: 7px;
