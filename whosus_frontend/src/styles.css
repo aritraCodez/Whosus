@@ -1223,6 +1223,11 @@ dialog .muted {
   box-shadow: 0 4px 16px #00000055;
 }
 .task-header {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1281,6 +1286,7 @@ dialog .muted {
   margin: 14px 0;
 }
 .task-row > span {
+  flex-shrink: 0;
   width: 17px;
   height: 17px;
   display: grid;

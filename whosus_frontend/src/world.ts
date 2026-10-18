@@ -191,10 +191,27 @@ export const VENTS = [
   [10, 10],
 ];
 export const LOBBY_OBSTACLES = [
-  [-4.5, -2.7, -1.6, 0.2],
   [2.7, 4.5, -1.6, 0.2],
   [-1, 1, -4.4, -3.2],
 ];
+// The right-hand cargo box doubles as the departure bay's wardrobe.
+export const WARDROBE_STATION = {
+  x: (LOBBY_OBSTACLES[0][0] + LOBBY_OBSTACLES[0][1]) / 2,
+  z: (LOBBY_OBSTACLES[0][2] + LOBBY_OBSTACLES[0][3]) / 2,
+  range: 2.25,
+};
+export function nearWardrobe(x: number, z: number) {
+  return Math.hypot(x - WARDROBE_STATION.x, z - WARDROBE_STATION.z) <= WARDROBE_STATION.range;
+}
+export const SEAT_RANGE = 1.35;
+export const LOBBY_SEATS = [-1, 1].flatMap(side =>
+  [-3.75, -2.25, -.75, .75, 2.25, 3.75].map(z => ({ x: side * 5.3, z, side })),
+);
+export function nearestLobbySeat(x: number, z: number, occupied: number[]) {
+  return LOBBY_SEATS.map((seat, index) => ({ index, distance: Math.hypot(x - seat.x, z - seat.z) }))
+    .filter(seat => seat.distance <= SEAT_RANGE && !occupied.includes(seat.index))
+    .sort((a, b) => a.distance - b.distance)[0]?.index;
+}
 export function walkable(x: number, z: number, lobby = false) {
   if (lobby)
     return (

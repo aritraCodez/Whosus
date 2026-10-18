@@ -33,7 +33,7 @@ export function movementInput(): [number, number] {
     r.challenge ||
     document.querySelector("dialog[open]") ||
     document.activeElement?.matches(
-      "input,textarea,select,[contenteditable=true]",
+      "input,textarea,select,[contenteditable=true],.task-header,.task-content",
     )
   )
     return [0, 0];
@@ -136,6 +136,8 @@ export function connect(message?: Record<string, unknown>) {
       const r = m.room as Snapshot,
         me = r.players.find((p) => p.id === useGame.getState().id);
       if (me) {
+        const previousMe = useGame.getState().room?.players.find(p => p.id === me.id);
+        if (me.seat !== previousMe?.seat) motion.pending = [];
         if (r.vent !== useGame.getState().room?.vent) {
           motion.pending = [];
           motion.revision++;
@@ -156,7 +158,7 @@ export function connect(message?: Record<string, unknown>) {
         }
         motion.seq = Math.max(motion.seq, me.ack);
         motion.pending = motion.pending.filter((i) => i.seq > me.ack);
-        if (r.movementLock > 0 || r.vent >= 0) motion.pending = [];
+        if (r.movementLock > 0 || r.vent >= 0 || (me.seat ?? -1) >= 0) motion.pending = [];
         let [x, z] = [me.x, me.z];
         if (["playing", "lobby"].includes(r.phase) && r.vent < 0)
           for (const i of motion.pending)
@@ -229,6 +231,7 @@ export function leave() {
     fakeChallenge: null,
     fakeDone: {},
     practiceOpen: false,
+    wardrobe: false,
     settings: false,
   });
 }

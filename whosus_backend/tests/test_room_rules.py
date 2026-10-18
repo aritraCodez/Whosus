@@ -67,6 +67,7 @@ def test_speed_and_meeting_rules_are_used_by_simulation(speed):
     room = Room('RULES', movement_speed=speed, discussion=45, voting=90, emergency_meetings=2, meeting_cooldown=30, kill_cooldown=60)
     for i in range(4): room.add(str(i)).ready = True
     p = room.players[room.host]
+    room.action(p.id, 'stand')
     p.x, p.z = 0, 2
     room.enqueue(p, 1, 1, 0, room.round)
     room.tick(room.now + DT)

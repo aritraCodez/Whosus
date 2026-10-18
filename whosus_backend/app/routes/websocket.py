@@ -112,7 +112,7 @@ async def socket(ws: WebSocket):
                         name = ''.join(c for c in m.name.strip() if c.isprintable())
                         if not name:
                             raise GameError('Choose an explorer name.')
-                        p = room.add(name, m.color, m.hat)
+                        p = room.add(name, m.color, m.hat, m.outfit, m.visor, m.accessory, m.boots)
                         token = secrets.token_urlsafe(32)
                         session = {'room': room, 'pid': p.id, 'token': token, 'conn': None}
                         sessions[token] = session

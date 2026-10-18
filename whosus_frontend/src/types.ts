@@ -3,6 +3,11 @@ export interface Player {
   name: string;
   color: string;
   hat: string;
+  outfit?: string;
+  visor?: string;
+  accessory?: string;
+  boots?: string;
+  seat?: number;
   x: number;
   z: number;
   alive: boolean;
@@ -81,8 +86,8 @@ export type Elimination = {
   id: string;
   style: number;
   elapsed: number;
-  attacker: Pick<Player, "id" | "name" | "color" | "hat" | "x" | "z">;
-  victim: Pick<Player, "id" | "name" | "color" | "hat" | "x" | "z">;
+  attacker: Pick<Player, "id" | "name" | "color" | "hat" | "outfit" | "visor" | "accessory" | "boots" | "x" | "z">;
+  victim: Pick<Player, "id" | "name" | "color" | "hat" | "outfit" | "visor" | "accessory" | "boots" | "x" | "z">;
 };
 export interface Chat {
   id: string;

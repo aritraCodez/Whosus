@@ -4,6 +4,7 @@ import secrets
 import time
 from collections import Counter, deque
 from dataclasses import dataclass, field
+from .cosmetics import COSMETICS
 
 DT = 1 / 20
 SPEED = 4.2
@@ -77,7 +78,10 @@ VENTS = [
     (0, 10),
     (10, 10),
 ]
-LOBBY_OBSTACLES = [(-4.5, -2.7, -1.6, .2), (2.7, 4.5, -1.6, .2), (-1, 1, -4.4, -3.2)]
+LOBBY_OBSTACLES = [(2.7, 4.5, -1.6, .2), (-1, 1, -4.4, -3.2)]
+LOBBY_SEATS = [(side * 5.3, z) for side in (-1, 1) for z in (-3.75, -2.25, -.75, .75, 2.25, 3.75)]
+SEAT_RANGE = 1.35
+ARRIVAL_SEAT_TIME = 2.0
 
 def distance(a, b):
     return math.hypot(a.x - b.x, a.z - b.z)
@@ -124,6 +128,12 @@ class Player:
     deafened: bool = False
     disconnected_at: float = 0
     animation_until: float = 0
+    outfit: str = 'none'
+    visor: str = 'none'
+    accessory: str = 'none'
+    boots: str = 'original'
+    seat: int = -1
+    seated_until: float = 0
 
 class GameError(ValueError): pass
 
@@ -154,22 +164,35 @@ class Room:
         self.meeting_progress = 0.0
         self.active_visuals = []
 
-    def add(self, name, color=0, hat='sprout'):
+    def add(self, name, color=0, hat='sprout', outfit='none', visor='none', accessory='none', boots='original'):
         if self.phase != 'lobby': raise GameError('This expedition has already launched.')
         if len(self.players) >= self.capacity: raise GameError('This room is full.')
         used = {p.color for p in self.players.values()}
         palette = COLORS[color % len(COLORS):] + COLORS[:color % len(COLORS)]
         chosen = next((c for c in palette if c not in used), None)
         self.require(chosen is not None, 'No explorer colors available.')
-        p = Player(secrets.token_hex(8), name, chosen, hat)
-        p.x = (len(self.players) % 4 - 1.5) * 1.1
-        p.z = 2 + len(self.players) // 4 * .6
+        look = dict(hat=hat, outfit=outfit, visor=visor, accessory=accessory, boots=boots)
+        self.require(all(value in COSMETICS[slot] for slot, value in look.items()), 'Unknown wardrobe item.')
+        p = Player(secrets.token_hex(8), name, chosen, **look)
+        occupied = {q.seat for q in self.players.values() if q.seat >= 0}
+        preferred = len(self.players) % len(LOBBY_SEATS)
+        p.seat = next((preferred + i) % len(LOBBY_SEATS) for i in range(len(LOBBY_SEATS)) if (preferred + i) % len(LOBBY_SEATS) not in occupied)
+        p.x, p.z = LOBBY_SEATS[p.seat]
+        p.seated_until = self.now + ARRIVAL_SEAT_TIME
         self.players[p.id] = p
         if not self.host: self.host = p.id
         return p
 
     def require(self, condition, message):
         if not condition: raise GameError(message)
+
+    def stand(self, p):
+        if p.seat < 0: return
+        x, z = LOBBY_SEATS[p.seat]
+        p.x, p.z = math.copysign(4.85, x), z
+        p.seat = -1
+        p.seated_until = 0
+        p.inputs.clear()
 
     def start(self, pid):
         self.require(pid == self.host and self.phase == 'lobby', 'Only the host can launch from the lobby.')
@@ -185,7 +208,7 @@ class Room:
         self.sabotage_until = 0; self.sabotage_at = self.now + 20
         for i, p in enumerate(active):
             p.role = 'killer' if p.id in traitors else 'crew'
-            p.alive = True; p.done.clear(); p.vent = -1; p.emergency = self.emergency_meetings; p.challenge = None; p.animation_until = 0
+            p.alive = True; p.done.clear(); p.vent = -1; p.emergency = self.emergency_meetings; p.challenge = None; p.animation_until = 0; p.seat = -1; p.seated_until = 0
             p.tasks = [s['id'] for s in STATIONS]
             p.kill_at = self.now + self.kill_cooldown
             p.inputs.clear(); p.x = math.cos(i * math.tau / len(active)) * 2; p.z = math.sin(i * math.tau / len(active)) * 2
@@ -197,6 +220,11 @@ class Room:
         if round_id != self.round: return
         if self.phase not in ('lobby', 'playing') or not p.connected or p.vent >= 0 or self.now < p.animation_until: return
         if seq <= p.last_seq: return
+        if self.phase == 'lobby' and p.seat >= 0:
+            if dx or dz: self.stand(p)
+            else:
+                p.last_seq = p.ack = seq
+                return
         p.last_seq = seq
         if len(p.inputs) < 50: p.inputs.append((seq, dx, dz))
 
@@ -204,6 +232,8 @@ class Room:
         self.now = time.monotonic() if now is None else now
         self.eliminations = [e for e in self.eliminations if self.now - e['started'] < 2.4]
         for p in self.players.values():
+            if self.phase == 'lobby' and p.seat >= 0 and (not p.connected or p.seated_until and self.now >= p.seated_until):
+                self.stand(p)
             if self.phase in ('lobby', 'playing') and p.connected and p.vent < 0 and self.now >= p.animation_until and p.inputs:
                 p.ack, dx, dz = p.inputs.popleft()
                 p.x, p.z = move(p.x, p.z, dx, dz, not p.alive, self.phase == 'lobby', self.movement_speed)
@@ -256,6 +286,21 @@ class Room:
 
     def action(self, pid, action, target='', value=None):
         p = self.players[pid]
+        if action in ('sit', 'stand'):
+            self.require(self.phase == 'lobby', 'Use the chairs in the waiting room.')
+            if action == 'stand':
+                self.stand(p)
+                return
+            self.require(p.seat < 0, 'You are already sitting.')
+            self.require(type(value) is int and 0 <= value < len(LOBBY_SEATS), 'Choose a chair.')
+            self.require(not any(q.seat == value for q in self.players.values()), 'That chair is occupied.')
+            x, z = LOBBY_SEATS[value]
+            self.require(math.hypot(p.x - x, p.z - z) <= SEAT_RANGE, 'Walk closer to the chair to sit.')
+            p.seat = value
+            p.x, p.z = x, z
+            p.seated_until = 0
+            p.inputs.clear()
+            return
         if action == 'settings':
             self.require(pid == self.host, 'Only the host can modify mission settings.')
             self.require(self.phase == 'lobby', 'Change mission settings in the waiting room.')
@@ -286,6 +331,11 @@ class Room:
                 q.ready = False
                 q.inputs.clear()
             return
+        if action == 'customize':
+            self.require(self.phase == 'lobby', 'Change your outfit in the waiting room.')
+            self.require(target in COSMETICS and value in COSMETICS[target], 'Unknown wardrobe item.')
+            setattr(p, target, value)
+            return
         if action == 'color':
             self.require(self.phase == 'lobby', 'Change colors in the waiting room.')
             self.require(type(value) is int and 0 <= value < len(COLORS), 'Unknown color.')
@@ -310,7 +360,7 @@ class Room:
             self.require(pid == self.host and self.phase == 'gameover', 'Only the host can return everyone to the lobby.')
             self.phase = 'lobby'; self.bodies.clear(); self.votes.clear(); self.eliminations.clear()
             for i, q in enumerate(self.players.values()):
-                q.ready = False; q.alive = True; q.role = 'crew'; q.vent = -1; q.x = (i % 4 - 1.5) * 1.1; q.z = 2 + i // 4 * .6; q.challenge = None; q.animation_until = 0; q.inputs.clear()
+                q.ready = False; q.alive = True; q.role = 'crew'; q.vent = -1; q.x = (i % 4 - 1.5) * 1.1; q.z = 2 + i // 4 * .6; q.challenge = None; q.animation_until = 0; q.seat = -1; q.seated_until = 0; q.inputs.clear()
             return
         if action == 'vote':
             self.require(self.phase == 'voting' and p.alive and pid not in self.votes, 'You cannot vote now.')
@@ -326,8 +376,8 @@ class Room:
             self.require(type(style) is int and 0 <= style <= 3, 'Unknown elimination style.')
             self.eliminations.append({
                 'id': secrets.token_hex(8), 'started': self.now, 'style': style,
-                'attacker': {k: getattr(p, k) for k in ('id', 'name', 'color', 'hat', 'x', 'z')},
-                'victim': {k: getattr(q, k) for k in ('id', 'name', 'color', 'hat', 'x', 'z')},
+                'attacker': {k: getattr(p, k) for k in ('id', 'name', 'color', *COSMETICS, 'x', 'z')},
+                'victim': {k: getattr(q, k) for k in ('id', 'name', 'color', *COSMETICS, 'x', 'z')},
                 'recipients': [v.id for v in self.players.values() if v.id in (p.id, q.id) or distance(v, q) <= 6],
             })
             p.animation_until = q.animation_until = self.now + 2.4
@@ -414,7 +464,7 @@ class Room:
         for p in self.players.values():
             if p.id != pid and self.phase not in ('lobby','gameover','discussion','voting','results'):
                 if (not p.alive and me.alive) or p.vent >= 0: continue
-            row = {k:getattr(p,k) for k in ('id','name','color','hat','x','z','alive','connected','ready','ack')}
+            row = {k:getattr(p,k) for k in ('id','name','color',*COSMETICS,'x','z','alive','connected','ready','ack','seat')}
             if p.id == pid or self.phase == 'gameover' or me.role == 'killer' and p.role == 'killer': row['role'] = p.role
             row['voted'] = p.id in self.votes
             players.append(row)

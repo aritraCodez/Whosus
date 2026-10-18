@@ -12,9 +12,15 @@ import * as THREE from "three";
 import { useGame } from "./store";
 import { motion, renderPosition } from "./network";
 import { COLORS, type Player } from "./types";
+import { useAppearance, type Cosmetics } from "./appearance";
+import { Headwear, Bodywear, OUTFIT_COLORS, BOOT_COLORS } from "./CharacterClothes";
 import {
   FLOORS,
   LOBBY_OBSTACLES,
+  LOBBY_SEATS,
+  nearestLobbySeat,
+  WARDROBE_STATION,
+  nearWardrobe,
   move as movePlayer,
   OBSTACLES,
   STATIONS,
@@ -22,7 +28,7 @@ import {
   walkable,
 } from "./world";
 import { EliminationEffect } from "./EliminationEffect";
-import { interactWithStation, openPractice } from "./interactions";
+import { interactWithStation, interactWithSeat, openPractice, openWardrobe } from "./interactions";
 import type { VisualEffect } from "./types";
 let rendererState: RootState | undefined;
 const EMPTY_VISUALS: VisualEffect[] = [];
@@ -64,17 +70,23 @@ const Box = memo(function Box({
     </RoundedBox>
   );
 });
-function Pip({
+export function Pip({
   color,
   hat = "sprout",
+  outfit = "none",
+  visor = "none",
+  accessory: gear = "none",
+  boots = "original",
   ghost = false,
+  seated = false,
   walking = false,
   idleBounce = 0.018,
   headTurn,
-}: {
+}: Partial<Cosmetics> & {
   color: string;
   hat?: string;
   ghost?: boolean;
+  seated?: boolean;
   walking?: boolean | React.RefObject<boolean>;
   idleBounce?: number;
   headTurn?: React.RefObject<number>;
@@ -97,6 +109,9 @@ function Pip({
         o.material = (o.material as THREE.MeshStandardMaterial).clone();
         const m = o.material as THREE.MeshStandardMaterial;
         if (m.name === "Shell") m.color.set(color);
+        if (o.name === "Badge" && outfit !== "none") o.visible = false;
+        if (["Torso", "ArmL", "ArmR"].includes(o.name) && OUTFIT_COLORS[outfit]) m.color.set(OUTFIT_COLORS[outfit]);
+        if (o.name.startsWith("Foot") && BOOT_COLORS[boots]) m.color.set(BOOT_COLORS[boots]);
         if (ghost) {
           m.transparent = true;
           m.opacity = 0.35;
@@ -105,11 +120,12 @@ function Pip({
       }
     });
     return c;
-  }, [scene, color, ghost]);
+  }, [scene, color, ghost, outfit, boots]);
   const group = useRef<THREE.Group>(null);
   const accessory = useRef<THREE.Group>(null);
   const lastMovementAt = useRef<number | null>(null);
   const hasMoved = useRef(false);
+  const sitBlend = useRef(seated ? 1 : 0);
   const headPivot = useMemo(() => model.getObjectByName("HeadPivot"), [model]);
   const limbs = useMemo(
     () =>
@@ -129,9 +145,11 @@ function Pip({
     },
     [model],
   );
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, dt) => {
+    sitBlend.current = THREE.MathUtils.damp(sitBlend.current, seated ? 1 : 0, 10, dt);
+    const sitting = sitBlend.current;
     const t = clock.elapsedTime,
-      moving = typeof walking === "boolean" ? walking : walking.current;
+      moving = !seated && (typeof walking === "boolean" ? walking : walking.current);
     if (moving) {
       hasMoved.current = true;
       lastMovementAt.current = t;
@@ -153,16 +171,26 @@ function Pip({
       accessory.current.rotation.y = headTurn?.current || 0;
     for (const [limb, sign] of limbs) {
       if (!limb) continue;
-      limb.rotation.x = moving
+      const stride = moving
         ? Math.sin(t * 12) * 0.45 * sign
         : idleJump
           ? (limb.name.startsWith("Foot") ? -0.3 : 0.18) * idleJump * sign
           : 0;
+      limb.rotation.x = THREE.MathUtils.lerp(stride, limb.name.startsWith("Foot") ? -.12 : -.6, sitting);
+      if (limb.name.startsWith("Foot")) {
+        limb.position.y = .2 - .04 * sitting;
+        limb.position.z = .045 + .29 * sitting;
+      } else {
+        limb.position.y = .67 - .045 * sitting;
+        limb.position.z = .09 * sitting;
+      }
     }
     if (group.current)
       group.current.position.y = ghost
         ? 0.3 + Math.sin(t * 2) * 0.12
-        : moving
+        : sitting > .001
+          ? .085 * sitting
+          : moving
           ? Math.abs(Math.sin(t * 12)) * 0.06
           : idleBounce > 0.1
             ? Math.pow(idleJump, 0.7) * idleBounce
@@ -171,7 +199,9 @@ function Pip({
   return (
     <group ref={group}>
       <primitive object={model} />
+      <Bodywear outfit={outfit} accessory={gear} ghost={ghost} />
       <group ref={accessory}>
+        <Headwear hat={hat} visor={visor} ghost={ghost} />
         {hat === "sprout" && (
           <group position={[0, 1.52, 0]}>
             <mesh>
@@ -221,21 +251,30 @@ function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
     previous = useRef([p.x, p.z]);
   const initialPosition = useRef<[number, number, number]>([p.x, 0, p.z]);
   const walking = useRef(false);
+  const seated = (p.seat ?? -1) >= 0;
+  const seat = seated ? LOBBY_SEATS[p.seat!] : undefined;
+  const lastSeat = useRef(p.seat);
+  const transitionUntil = useRef(0);
   const speaking = useGame((s) => s.speaking.includes(p.id));
-  useFrame((_, dt) => {
+  useFrame(({ clock }, dt) => {
     const g = group.current;
     if (!g) return;
+    if (lastSeat.current !== p.seat) {
+      lastSeat.current = p.seat;
+      transitionUntil.current = clock.elapsedTime + .5;
+    }
     const x = local ? motion.renderX : p.x,
       z = local ? motion.renderZ : p.z;
     const dx = x - g.position.x,
       dz = z - g.position.z;
-    walking.current =
+    walking.current = !seated && (
       Math.hypot(x - previous.current[0], z - previous.current[1]) > 0.001 ||
-      Math.hypot(dx, dz) > 0.035;
-    g.position.x = local ? x : THREE.MathUtils.damp(g.position.x, x, 16, dt);
-    g.position.z = local ? z : THREE.MathUtils.damp(g.position.z, z, 16, dt);
-    if (walking.current) {
-      const target = Math.atan2(dx, dz);
+      Math.hypot(dx, dz) > 0.035);
+    const immediate = local && clock.elapsedTime >= transitionUntil.current;
+    g.position.x = immediate ? x : THREE.MathUtils.damp(g.position.x, x, 12, dt);
+    g.position.z = immediate ? z : THREE.MathUtils.damp(g.position.z, z, 12, dt);
+    if (seat || walking.current) {
+      const target = seat ? -seat.side * Math.PI / 2 : Math.atan2(dx, dz);
       g.rotation.y +=
         Math.atan2(
           Math.sin(target - g.rotation.y),
@@ -245,11 +284,13 @@ function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
     previous.current = [x, z];
   });
   return (
-    <group ref={group} position={initialPosition.current}>
+    <group ref={group} position={initialPosition.current} rotation={[0, seat ? -seat.side * Math.PI / 2 : 0, 0]}>
       <AnimatedPip
+        outfit={p.outfit} visor={p.visor} accessory={p.accessory} boots={p.boots}
         color={p.color}
         hat={p.hat}
         ghost={!p.alive}
+        seated={seated}
         walking={walking}
       />
       {/* Keep nameplates in screen pixels; distanceFactor multiplies orthographic zoom. */}
@@ -257,6 +298,7 @@ function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
         position={[0, 2.05, 0]}
         center
         pointerEvents="none"
+        style={{ pointerEvents: "none" }}
         zIndexRange={[10, 0]}
       >
         <div
@@ -281,9 +323,14 @@ function AnimatedPip({
   ...props
 }: {
   walking: React.RefObject<boolean>;
+  outfit?: string;
+  visor?: string;
+  accessory?: string;
+  boots?: string;
   color: string;
   hat: string;
   ghost: boolean;
+  seated?: boolean;
 }) {
   return <Pip {...props} walking={walking} />;
 }
@@ -646,6 +693,49 @@ function MotionFrame() {
   return null;
 }
 
+function WardrobeStation({ touchControls }: { touchControls: boolean }) {
+  const near = useGame(s => {
+    const me = s.room?.players.find(p => p.id === s.id);
+    return s.room?.phase === "lobby" && !!me && (me.seat ?? -1) < 0 && nearWardrobe(me.x, me.z) && !s.wardrobe && !s.practiceOpen && !s.settings;
+  });
+  return (
+    <group position={[WARDROBE_STATION.x, 0, WARDROBE_STATION.z]}>
+      <Box at={[0, .76, .94]} size={[.64, .56, .04]} color="#294c50" round={.05} />
+      <Box at={[0, .72, .97]} size={[.23, .27, .025]} color="#d5e5c8" round={.015} />
+      <Box at={[0, .85, .97]} size={[.42, .12, .025]} color="#d5e5c8" round={.015} />
+      <Box at={[0, .92, .98]} size={[.09, .06, .025]} color="#294c50" round={.015} />
+      {near && <Html position={[0, 2, 0]} center zIndexRange={[14, 11]}>
+        <button className="station-label active wardrobe-station" aria-label="Change outfit" onClick={e => { e.stopPropagation(); openWardrobe(); }}>
+          <strong>Change outfit</strong>
+          <small>{touchControls ? "Tap to open wardrobe" : "Click or press E"}</small>
+        </button>
+      </Html>}
+    </group>
+  );
+}
+
+function LobbyChair({ index, touchControls }: { index: number; touchControls: boolean }) {
+  const chair = LOBBY_SEATS[index];
+  const action = useGame(s => {
+    if (s.room?.phase !== "lobby" || s.wardrobe || s.practiceOpen || s.settings) return "";
+    const me = s.room.players.find(p => p.id === s.id);
+    if (!me) return "";
+    if (me.seat === index) return "Stand up";
+    if ((me.seat ?? -1) >= 0) return "";
+    return nearestLobbySeat(me.x, me.z, s.room.players.map(p => p.seat ?? -1)) === index ? "Sit down" : "";
+  });
+  return <group position={[chair.x, 0, chair.z]}>
+    <Box at={[0, .4, 0]} size={[.65, .22, .85]} color="#5a91a1" />
+    <Box at={[chair.side * .23, .8, 0]} size={[.18, .8, .85]} color="#73a7ad" />
+    <Box at={[0, .17, 0]} size={[.3, .35, .55]} color="#2a414e" />
+    {action && <Html position={[-chair.side * 1.15, .4, .8]} center zIndexRange={[14, 11]}>
+      <button className="station-label active chair-interaction" aria-label={action} onClick={e => { e.stopPropagation(); interactWithSeat(index); }}>
+        <strong>{action}</strong><small>{touchControls ? "Tap to interact" : "Click or press E"}</small>
+      </button>
+    </Html>}
+  </group>;
+}
+
 const WaitingRoom = memo(function WaitingRoom({ touchControls }: { touchControls: boolean }) {
   return (
     <group>
@@ -695,19 +785,9 @@ const WaitingRoom = memo(function WaitingRoom({ touchControls }: { touchControls
             color="#a7e4d5"
             round={0.03}
           />
-          {[-3, -1.5, 0, 1.5, 3].map((z) => (
-            <group key={z} position={[sign * 5.3, 0, z]}>
-              <Box at={[0, 0.4, 0]} size={[0.65, 0.22, 0.85]} color="#5a91a1" />
-              <Box
-                at={[sign * 0.23, 0.8, 0]}
-                size={[0.18, 0.8, 0.85]}
-                color="#73a7ad"
-              />
-              <Box at={[0, 0.17, 0]} size={[0.3, 0.35, 0.55]} color="#2a414e" />
-            </group>
-          ))}
         </group>
       ))}
+      {LOBBY_SEATS.map((_, index) => <LobbyChair key={index} index={index} touchControls={touchControls} />)}
       <Box at={[0, 1, -4.8]} size={[2.2, 2, 0.15]} color="#1c303e" />
       {[-0.52, 0.52].map((x) => (
         <Box
@@ -723,7 +803,7 @@ const WaitingRoom = memo(function WaitingRoom({ touchControls }: { touchControls
         color="#bde1c8"
         round={0.03}
       />
-      {LOBBY_OBSTACLES.slice(0, 2).map(([a, b, c, d], i) => (
+      {LOBBY_OBSTACLES.slice(0, 1).map(([a, b, c, d], i) => (
         <group key={i}>
           <Box
             at={[(a + b) / 2, 0.6, (c + d) / 2]}
@@ -744,11 +824,13 @@ const WaitingRoom = memo(function WaitingRoom({ touchControls }: { touchControls
           />
         </group>
       ))}
+      <WardrobeStation touchControls={touchControls} />
       <Console x={0} z={-3.8} color="#a8e4b3" practice touchControls={touchControls} />
       <Html
         position={[0, 2.5, -5]}
         center
         pointerEvents="none"
+        style={{ pointerEvents: "none" }}
         zIndexRange={[2, 0]}
       >
         <span className="bay-sign">CLOUDLINE / DEPARTURE BAY</span>
@@ -860,6 +942,7 @@ function Actors({
     id = useGame((s) => s.id),
     map = useGame((s) => s.map);
   const hero = useRef<THREE.Group>(null);
+  const appearance = useAppearance(s => s.appearance);
   const heroPosition = useRef({ x: -2, z: 2 });
   const heroWalking = useRef(false);
   const heroStep = useRef(0);
@@ -978,6 +1061,10 @@ function Actors({
             rotation={[0, i * 0.8 + 0.3, 0]}
           >
             <Pip
+              outfit={i === 0 ? appearance.outfit : p.outfit}
+              visor={i === 0 ? appearance.visor : p.visor}
+              accessory={i === 0 ? appearance.accessory : p.accessory}
+              boots={i === 0 ? appearance.boots : p.boots}
               color={i === 0 ? COLORS[color] : p.color}
               hat={i === 0 ? hat : p.hat}
               walking={i === 0 ? heroWalking : false}
