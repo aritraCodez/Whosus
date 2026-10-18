@@ -1,5 +1,6 @@
 import { act } from "./network";
 import { useGame } from "./store";
+import { GameSelect } from "./components/GameSelect";
 
 export function NumberRule({
   label,
@@ -17,22 +18,13 @@ export function NumberRule({
   suffix?: string;
 }) {
   return (
-    <label>
-      {label}
-      <select
-        aria-label={label}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(Number(e.target.value))}
-      >
-        {options.map((n) => (
-          <option key={n} value={n}>
-            {n}
-            {suffix}
-          </option>
-        ))}
-      </select>
-    </label>
+    <GameSelect
+      label={label}
+      value={value}
+      disabled={disabled}
+      options={options.map((n) => ({ value: n, label: `${n}${suffix}` }))}
+      onChange={(v) => onChange(Number(v))}
+    />
   );
 }
 
@@ -58,17 +50,16 @@ export function RoomRules() {
             ? "Room rules are locked during a match. Change them in the waiting room."
           : "Changes apply to everyone. Players must ready up again after a rule changes."}
       </p>
-      <label>
-        Room visibility
-        <select
-          value={String(r.public)}
-          disabled={disabled}
-          onChange={(e) => act("settings", "public", e.target.value === "true")}
-        >
-          <option value="false">Private · invite code only</option>
-          <option value="true">Public · listed in Find a room</option>
-        </select>
-      </label>
+      <GameSelect
+        label="Room visibility"
+        value={String(r.public)}
+        disabled={disabled}
+        options={[
+          { value: "false", label: "Private · invite code only" },
+          { value: "true", label: "Public · listed in Find a room" },
+        ]}
+        onChange={(v) => act("settings", "public", v === "true")}
+      />
       <div className="form-grid">
         <NumberRule
           label="Crew capacity"

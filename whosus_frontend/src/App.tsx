@@ -48,6 +48,7 @@ import { sound } from "./audio";
 import { backendApiUrl } from "./backend";
 import { fillLobbyWithTestPlayers } from "./devPlayers";
 import { NumberRule, RoomRules } from "./RoomRules";
+import { GameSelect } from "./components/GameSelect";
 import { interactWithStation, openPractice } from "./interactions";
 import { ELIMINATION_NAMES } from "./EliminationEffect";
 
@@ -305,58 +306,30 @@ function RoomForm({
             <NumberRule label="Voting time" value={voting} options={[10,15,30,45,60,90,120]} suffix=" s" onChange={setVoting} />
             <NumberRule label="Emergency meetings per player" value={meetings} options={[0,1,2,3]} onChange={setMeetings} />
             <NumberRule label="Meeting cooldown" value={meetingCooldown} options={[10,15,20,25,30,45,60]} suffix=" s" onChange={setMeetingCooldown} />
-            <label>
-              Crew capacity
-              <select
-                value={capacity}
-                onChange={(e) => setCapacity(+e.target.value)}
-              >
-                {Array.from({ length: 9 }, (_, i) => (
-                  <option key={i} value={i + 4}>
-                    {i + 4} players
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Impostors
-              <select
-                value={impostors}
-                onChange={(e) => setImpostors(+e.target.value)}
-              >
-                {[1, 2, 3].map((n) => (
-                  <option key={n} value={n}>
-                    {n} {n === 1 ? "impostor" : "impostors"}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Elimination cooldown
-              <select
-                value={cooldown}
-                onChange={(e) => setCooldown(+e.target.value)}
-              >
-                {[10, 20, 25, 30, 45, 60].map((n) => (
-                  <option key={n} value={n}>
-                    {n} seconds
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Discussion time
-              <select
-                value={discussion}
-                onChange={(e) => setDiscussion(+e.target.value)}
-              >
-                {[10, 25, 45, 60, 90].map((n) => (
-                  <option key={n} value={n}>
-                    {n} seconds
-                  </option>
-                ))}
-              </select>
-            </label>
+            <GameSelect
+              label="Crew capacity"
+              value={capacity}
+              options={Array.from({ length: 9 }, (_, i) => ({ value: i + 4, label: `${i + 4} players` }))}
+              onChange={(v) => setCapacity(Number(v))}
+            />
+            <GameSelect
+              label="Impostors"
+              value={impostors}
+              options={[1, 2, 3].map((n) => ({ value: n, label: n === 1 ? "1 impostor" : `${n} impostors` }))}
+              onChange={(v) => setImpostors(Number(v))}
+            />
+            <GameSelect
+              label="Elimination cooldown"
+              value={cooldown}
+              options={[10, 20, 25, 30, 45, 60].map((n) => ({ value: n, label: `${n} seconds` }))}
+              onChange={(v) => setCooldown(Number(v))}
+            />
+            <GameSelect
+              label="Discussion time"
+              value={discussion}
+              options={[10, 25, 45, 60, 90].map((n) => ({ value: n, label: `${n} seconds` }))}
+              onChange={(v) => setDiscussion(Number(v))}
+            />
           </div>
           <p className="hint">
             Impostors are capped at one per three other players to keep the
@@ -552,15 +525,16 @@ function Menu({
                 </button>
               ))}
             </div>
-            <select
-              aria-label="Character accessory"
+            <GameSelect
+              label="Accessory"
               value={hat}
-              onChange={(e) => setHat(e.target.value)}
-            >
-              <option value="sprout">Little sprout</option>
-              <option value="antenna">Antenna</option>
-              <option value="none">No accessory</option>
-            </select>
+              options={[
+                { value: "sprout", label: "Little sprout" },
+                { value: "antenna", label: "Antenna" },
+                { value: "none", label: "No accessory" },
+              ]}
+              onChange={(v) => setHat(String(v))}
+            />
           </div>
           <button
             className="primary create"
@@ -736,7 +710,7 @@ function SettingsPanel() {
         <div className="mission-rules-group">
           <span className="eyebrow">MISSION RULES</span>
           <RoomRules />
-          <label className="toggle-line">
+          <div className="toggle-line">
             <span>
               <strong>Task Progress Bar</strong>
               <small>
@@ -745,16 +719,17 @@ function SettingsPanel() {
                   : `Current rule: ${s.room.taskBarMode || "always"}`}
               </small>
             </span>
-            <select
+            <GameSelect
               value={s.room.taskBarMode || "always"}
               disabled={s.id !== s.room.host || s.room.phase !== "lobby"}
-              onChange={(e) => act("settings", "taskBarMode", e.target.value)}
-            >
-              <option value="always">Always (Real-time)</option>
-              <option value="meetings">Meetings Only</option>
-              <option value="never">Never (Hidden)</option>
-            </select>
-          </label>
+              options={[
+                { value: "always", label: "Always (Real-time)" },
+                { value: "meetings", label: "Meetings Only" },
+                { value: "never", label: "Never (Hidden)" },
+              ]}
+              onChange={(v) => act("settings", "taskBarMode", String(v))}
+            />
+          </div>
           <label className="toggle-line">
             <span>
               <strong>Visual Tasks</strong>
@@ -781,19 +756,20 @@ function SettingsPanel() {
           onChange={(e) => s.set({ sound: e.target.checked })}
         />
       </label>
-      <label className="toggle-line">
+      <div className="toggle-line">
         <span>
           <strong>Graphics</strong>
           <small>Low reduces shadows and resolution</small>
         </span>
-        <select
+        <GameSelect
           value={s.quality}
-          onChange={(e) => s.set({ quality: e.target.value as "high" | "low" })}
-        >
-          <option value="high">High</option>
-          <option value="low">Low / mobile</option>
-        </select>
-      </label>
+          options={[
+            { value: "high", label: "High" },
+            { value: "low", label: "Low / mobile" },
+          ]}
+          onChange={(v) => s.set({ quality: v as "high" | "low" })}
+        />
+      </div>
       <div className="settings-voice">
         <Headphones />
         <h3>A good alibi deserves good audio.</h3>
@@ -1160,11 +1136,16 @@ function Lobby() {
         <button className="secondary full" onClick={() => s.set({ settings: true })}>
           {host ? "Room settings" : "View room settings"}
         </button>
-        <label className="lobby-privacy">Room visibility
-          <select aria-label="Lobby room visibility" value={String(r.public)} disabled={!host} onChange={e => act("settings", "public", e.target.value === "true")}>
-            <option value="false">Private</option><option value="true">Public</option>
-          </select>
-        </label>
+        <GameSelect
+          label="Room visibility"
+          value={String(r.public)}
+          disabled={!host}
+          options={[
+            { value: "false", label: "Private" },
+            { value: "true", label: "Public" },
+          ]}
+          onChange={(v) => act("settings", "public", v === "true")}
+        />
         <fieldset className="lobby-colors"><legend>Your color</legend>
           {COLORS.map((color, index) => {
             const owner = r.players.find(p => p.color === color && p.id !== s.id);
