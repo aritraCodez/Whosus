@@ -102,6 +102,7 @@ async def socket(ws: WebSocket):
                             room = Room(
                                 code, m.public, m.capacity, m.impostors,
                                 m.kill_cooldown, m.discussion,
+                                m.movement_speed, m.voting, m.emergency_meetings, m.meeting_cooldown,
                             )
                             rooms[code] = room
                         else:
@@ -139,6 +140,14 @@ async def socket(ws: WebSocket):
                     room.enqueue(p, m.seq, m.dx, m.dz, m.round)
                 elif m.type == 'action':
                     room.action(pid, m.action, m.target, m.value)
+                    if m.action == 'kick':
+                        for token, removed in list(sessions.items()):
+                            if removed['room'] is room and removed['pid'] == m.target:
+                                if removed['conn']:
+                                    removed['conn'].send({'type': 'kicked', 'message': 'The host removed you from the room.'})
+                                removed['conn'] = None
+                                sessions.pop(token, None)
+                        await voice.close(m.target)
                 elif m.type == 'chat':
                     text = ''.join(c for c in m.text.strip() if c.isprintable())
                     if not text:

@@ -97,6 +97,10 @@ function addTestPlayer(roomCode: string): Promise<void> {
             resolve();
           }
         }
+      } else if (message.type === "kicked") {
+        session.closing = true;
+        removeSession(session);
+        socket.close();
       } else if (message.type === "error") {
         fail(new Error(message.message || `Could not add ${name}.`));
       }
@@ -119,6 +123,7 @@ function addTestPlayer(roomCode: string): Promise<void> {
 export async function fillLobbyWithTestPlayers(
   roomCode: string,
   players: { id: string; ready: boolean }[],
+  capacity = 4,
 ) {
   const active = sessions.filter(
     (session) =>
@@ -139,7 +144,7 @@ export async function fillLobbyWithTestPlayers(
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  const needed = Math.max(0, 4 - players.length);
+  const needed = Math.max(0, capacity - players.length);
   for (let index = 0; index < needed; index++)
     await addTestPlayer(roomCode);
 }

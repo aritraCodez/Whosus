@@ -51,16 +51,18 @@ OBSTACLES = [
     (10.5, 12.5, 7, 8.5),
 ]
 STATIONS = [
+    {'id': 'security', 'name': 'Tune Security Signal', 'room': 'Security', 'x': -12, 'z': -12, 'category': 'short', 'kind': 'dial', 'visual': False},
+    {'id': 'reactor_monitor', 'name': 'Calibrate Reactor Monitor', 'room': 'Reactor', 'x': 2, 'z': -12, 'category': 'short', 'kind': 'dial', 'visual': False},
     {'id': 'garden', 'name': 'Balance the biofilter', 'room': 'Botanical', 'x': -12, 'z': -2, 'category': 'long', 'kind': 'sequence', 'visual': False},
     {'id': 'swipe', 'name': 'Swipe Card', 'room': 'The Commons', 'x': 2, 'z': -3, 'category': 'common', 'kind': 'swipe', 'visual': False},
-    {'id': 'id_code', 'name': 'Enter ID Code', 'room': 'Comms', 'x': 12, 'z': 2, 'category': 'common', 'kind': 'keypad', 'visual': False},
+    {'id': 'id_code', 'name': 'Enter ID Code', 'room': 'Comms', 'x': 8, 'z': 2, 'category': 'common', 'kind': 'keypad', 'visual': False},
     {'id': 'wires', 'name': 'Fix Wiring', 'room': 'Electrical', 'x': -11, 'z': 12, 'category': 'common', 'kind': 'wires', 'visual': False},
     {'id': 'relay', 'name': 'Align the Relay', 'room': 'Comms', 'x': 12, 'z': -2, 'category': 'short', 'kind': 'dial', 'visual': False},
-    {'id': 'prime_shields', 'name': 'Prime Shields', 'room': 'Shields', 'x': 12, 'z': 8, 'category': 'short', 'kind': 'shields', 'visual': True, 'visual_kind': 'shields'},
+    {'id': 'prime_shields', 'name': 'Prime Shields', 'room': 'Shields', 'x': 12, 'z': 10, 'category': 'short', 'kind': 'shields', 'visual': True, 'visual_kind': 'shields'},
     {'id': 'chart_course', 'name': 'Chart Course', 'room': 'Navigation', 'x': 8, 'z': 12, 'category': 'short', 'kind': 'course', 'visual': False},
     {'id': 'clear_asteroids', 'name': 'Clear Asteroids', 'room': 'Weapons', 'x': 12, 'z': -10, 'category': 'short', 'kind': 'asteroids', 'visual': True, 'visual_kind': 'asteroids'},
     {'id': 'clean_filter', 'name': 'Clean O2 Filter', 'room': 'Life Support', 'x': 8, 'z': -12, 'category': 'short', 'kind': 'clean', 'visual': False},
-    {'id': 'start_reactor', 'name': 'Start Reactor', 'room': 'Reactor', 'x': -2, 'z': -12, 'category': 'long', 'kind': 'sequence', 'visual': False},
+    {'id': 'start_reactor', 'name': 'Start Reactor', 'room': 'Reactor', 'x': -2, 'z': -8, 'category': 'long', 'kind': 'sequence', 'visual': False},
     {'id': 'submit_scan', 'name': 'Submit Scan', 'room': 'MedBay', 'x': -8, 'z': 2, 'category': 'long', 'kind': 'scan', 'visual': True, 'visual_kind': 'scan'},
     {'id': 'divert_power', 'name': 'Divert Power', 'room': 'Electrical', 'x': -8, 'z': 10, 'category': 'long', 'kind': 'divert', 'visual': False},
     {'id': 'fuel_engines', 'name': 'Fuel Engines', 'room': 'Storage', 'x': -2, 'z': 12, 'category': 'long', 'kind': 'fuel', 'visual': False},
@@ -83,9 +85,9 @@ def distance(a, b):
 def walkable(x, z):
     return -13.7 <= x <= 13.7 and -13.7 <= z <= 13.7 and any(a <= x <= b and c <= z <= d for a, b, c, d in FLOORS) and not any(a - .3 < x < b + .3 and c - .3 < z < d + .3 for a, b, c, d in OBSTACLES)
 
-def move(x, z, dx, dz, ghost=False, lobby=False):
+def move(x, z, dx, dz, ghost=False, lobby=False, speed=1):
     norm = max(1, math.hypot(dx, dz))
-    nx, nz = x + dx / norm * SPEED * DT, z + dz / norm * SPEED * DT
+    nx, nz = x + dx / norm * SPEED * DT * speed, z + dz / norm * SPEED * DT * speed
     if ghost:
         return max(-14, min(14, nx)), max(-14, min(14, nz))
     def allowed(a, b):
@@ -126,9 +128,12 @@ class Player:
 class GameError(ValueError): pass
 
 class Room:
-    def __init__(self, code, public=False, capacity=8, impostors=1, kill_cooldown=25, discussion=25):
+    def __init__(self, code, public=False, capacity=8, impostors=1, kill_cooldown=25, discussion=25,
+                 movement_speed=1, voting=30, emergency_meetings=1, meeting_cooldown=20):
         self.code, self.public, self.capacity = code, public, capacity
         self.impostors, self.kill_cooldown, self.discussion = impostors, kill_cooldown, discussion
+        self.movement_speed, self.voting = movement_speed, voting
+        self.emergency_meetings, self.meeting_cooldown = emergency_meetings, meeting_cooldown
         self.players = {}
         self.host = ''
         self.phase = 'lobby'
@@ -152,7 +157,11 @@ class Room:
     def add(self, name, color=0, hat='sprout'):
         if self.phase != 'lobby': raise GameError('This expedition has already launched.')
         if len(self.players) >= self.capacity: raise GameError('This room is full.')
-        p = Player(secrets.token_hex(8), name, COLORS[color % len(COLORS)], hat)
+        used = {p.color for p in self.players.values()}
+        palette = COLORS[color % len(COLORS):] + COLORS[:color % len(COLORS)]
+        chosen = next((c for c in palette if c not in used), None)
+        self.require(chosen is not None, 'No explorer colors available.')
+        p = Player(secrets.token_hex(8), name, chosen, hat)
         p.x = (len(self.players) % 4 - 1.5) * 1.1
         p.z = 2 + len(self.players) // 4 * .6
         self.players[p.id] = p
@@ -181,7 +190,7 @@ class Room:
 
         for i, p in enumerate(active):
             p.role = 'impostor' if p.id in traitors else 'crew'
-            p.alive = True; p.done.clear(); p.vent = -1; p.emergency = 1; p.challenge = None; p.animation_until = 0
+            p.alive = True; p.done.clear(); p.vent = -1; p.emergency = self.emergency_meetings; p.challenge = None; p.animation_until = 0
             if p.role == 'crew':
                 assigned = [selected_common]
                 for s in secrets.SystemRandom().sample(short_candidates, min(2, len(short_candidates))):
@@ -219,17 +228,17 @@ class Room:
         for p in self.players.values():
             if self.phase in ('lobby', 'playing') and p.connected and p.vent < 0 and self.now >= p.animation_until and p.inputs:
                 p.ack, dx, dz = p.inputs.popleft()
-                p.x, p.z = move(p.x, p.z, dx, dz, not p.alive, self.phase == 'lobby')
+                p.x, p.z = move(p.x, p.z, dx, dz, not p.alive, self.phase == 'lobby', self.movement_speed)
             else: p.inputs.clear()
-            if p.challenge and math.hypot(p.x-p.challenge['x'],p.z-p.challenge['z']) > 2: p.challenge = None
+            if p.challenge and math.hypot(p.x-p.challenge['x'],p.z-p.challenge['z']) > 2.5: p.challenge = None
             if not p.connected and self.now - p.disconnected_at > 45 and self.phase not in ('lobby','gameover'):
                 p.alive = False
                 if p.role == 'crew': p.done.update(p.tasks)
-        if self.phase == 'reveal' and self.now >= self.deadline: self.phase = 'playing'; self.meeting_at = self.now + 15
-        elif self.phase == 'discussion' and self.now >= self.deadline: self.phase = 'voting'; self.deadline = self.now + 30
+        if self.phase == 'reveal' and self.now >= self.deadline: self.phase = 'playing'; self.meeting_at = self.now + self.meeting_cooldown
+        elif self.phase == 'discussion' and self.now >= self.deadline: self.phase = 'voting'; self.deadline = self.now + self.voting
         elif self.phase == 'voting' and (self.now >= self.deadline or len(self.votes) >= sum(p.alive and p.connected for p in self.players.values())): self.finish_vote()
         elif self.phase == 'results' and self.now >= self.deadline:
-            self.phase = 'playing'; self.meeting_at = self.now + 20
+            self.phase = 'playing'; self.meeting_at = self.now + self.meeting_cooldown
             for p in self.players.values(): p.kill_at = self.now + self.kill_cooldown
         if self.phase in ('playing','discussion','voting','results'): self.check_win()
 
@@ -269,6 +278,47 @@ class Room:
 
     def action(self, pid, action, target='', value=None):
         p = self.players[pid]
+        if action == 'settings':
+            self.require(pid == self.host, 'Only the host can modify mission settings.')
+            self.require(self.phase == 'lobby', 'Change mission settings in the waiting room.')
+            numeric = {
+                'capacity': ('capacity', 4, 12), 'impostors': ('impostors', 1, 3),
+                'killCooldown': ('kill_cooldown', 10, 60), 'discussion': ('discussion', 10, 90),
+                'voting': ('voting', 10, 120), 'emergencyMeetings': ('emergency_meetings', 0, 3),
+                'meetingCooldown': ('meeting_cooldown', 10, 60),
+            }
+            if target in numeric:
+                attr, low, high = numeric[target]
+                self.require(type(value) is int and low <= value <= high, 'Invalid setting value.')
+                if target == 'capacity':
+                    self.require(value >= len(self.players), 'Remove players before reducing capacity.')
+                setattr(self, attr, value)
+            elif target == 'movementSpeed':
+                self.require(type(value) in (int, float) and math.isfinite(value) and .5 <= value <= 2, 'Speed must be between 0.5 and 2.')
+                self.movement_speed = value
+            elif target in ('public', 'visualTasks'):
+                self.require(type(value) is bool, 'Choose on or off.')
+                setattr(self, 'public' if target == 'public' else 'visual_tasks', value)
+            elif target == 'taskBarMode':
+                self.require(value in ('always', 'meetings', 'never'), 'Unknown task bar mode.')
+                self.task_bar_mode = value
+            else:
+                raise GameError('Unknown setting.')
+            for q in self.players.values():
+                q.ready = False
+                q.inputs.clear()
+            return
+        if action == 'color':
+            self.require(self.phase == 'lobby', 'Change colors in the waiting room.')
+            self.require(type(value) is int and 0 <= value < len(COLORS), 'Unknown color.')
+            self.require(not any(q.id != pid and q.color == COLORS[value] for q in self.players.values()), 'That color is already taken.')
+            p.color = COLORS[value]
+            return
+        if action == 'kick':
+            self.require(pid == self.host and self.phase == 'lobby', 'Only the host can kick players in the waiting room.')
+            self.require(target != pid and target in self.players, 'Choose another player to kick.')
+            self.players.pop(target)
+            return
         if action == 'rename':
             self.require(self.phase == 'lobby', 'Change your name in the waiting room.')
             name = ''.join(c for c in target.strip() if c.isprintable())
@@ -323,12 +373,7 @@ class Room:
             else:
                 idx = min(range(len(VENTS)), key=lambda i: math.hypot(p.x-VENTS[i][0],p.z-VENTS[i][1]))
                 self.require(math.hypot(p.x-VENTS[idx][0],p.z-VENTS[idx][1]) <= 1.7,'Approach a service duct.'); p.vent = idx; p.x,p.z = VENTS[idx]
-        elif action == 'settings':
-            self.require(pid == self.host, 'Only the host can modify mission settings.')
-            if target == 'taskBarMode' and str(value) in ('always', 'meetings', 'never'):
-                self.task_bar_mode = str(value)
-            elif target == 'visualTasks':
-                self.visual_tasks = bool(value)
+            p.inputs.clear()
         elif action == 'task_cancel': p.challenge = None
         elif action == 'task_begin':
             s = next((s for s in STATIONS if s['id'] == target), None)
@@ -405,6 +450,10 @@ class Room:
         eliminations = [{k: v for k, v in e.items() if k not in ('recipients', 'started')} | {'elapsed': self.now-e['started']} for e in self.eliminations if pid in e['recipients'] and self.now-e['started'] < 2.4]
         return {
             'code': self.code, 'host': self.host, 'public': self.public, 'capacity': self.capacity,
+            'movementSpeed': self.movement_speed,
+            'rules': {'killCooldown': self.kill_cooldown, 'discussion': self.discussion,
+                      'voting': self.voting, 'emergencyMeetings': self.emergency_meetings,
+                      'meetingCooldown': self.meeting_cooldown},
             'impostors': self.impostors, 'phase': self.phase, 'round': self.round, 'players': players,
             'bodies': self.bodies, 'remaining': max(0, self.deadline - self.now), 'result': self.result,
             'winner': self.winner, 'sabotage': max(0, self.sabotage_until - self.now),

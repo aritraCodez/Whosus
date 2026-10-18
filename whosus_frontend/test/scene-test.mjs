@@ -41,19 +41,19 @@ try {
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();
   await page
-    .getByRole("button", { name: "Fill to 4 players", exact: true })
+    .getByRole("button", { name: "Fill to 8 players", exact: true })
     .waitFor();
   await page.getByLabel("Edit lobby name").click();
   await page.getByLabel("Lobby explorer name").fill("Renamed Pilot");
   await page.getByLabel("Lobby explorer name").press("Enter");
   await waitFor(page, async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     const s = useGame.getState();
     return s.room.players.find((p) => p.id === s.id).name === "Renamed Pilot";
   });
   const position = () =>
     page.evaluate(async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       const s = useGame.getState();
       const p = s.room.players.find((p) => p.id === s.id);
       return [p.x, p.z];
@@ -63,7 +63,7 @@ try {
   await waitFor(
     page,
     async (before) => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       const s = useGame.getState();
       const player = s.room.players.find((p) => p.id === s.id);
       return Math.hypot(player.x - before[0], player.z - before[1]) > 1.5;
@@ -87,7 +87,7 @@ try {
   // Three independent protocol clients keep this test focused on one renderer.
   await page.evaluate(async () => {
     const { backendWebSocketUrl } = await import("/src/backend.ts");
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     const code = useGame.getState().room.code;
     window.sceneTestPeers = await Promise.all(
       Array.from(
@@ -121,7 +121,7 @@ try {
     }, 15000);
   });
   await waitFor(page, async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     const s = useGame.getState();
     return (
       s.room.players.length === 4 &&
@@ -161,7 +161,7 @@ try {
   await waitFor(
     page,
     async (before) => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       const s = useGame.getState();
       const player = s.room.players.find((p) => p.id === s.id);
       return Math.hypot(player.x - before[0], player.z - before[1]) > 0.7;
@@ -194,7 +194,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.evaluate(async () => {
     const { act, send } = await import(window.sceneModuleUrl("network"));
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     const round = useGame.getState().room.round;
     window.sceneTestErrors = [];
     window.sceneTestUnsubscribe = useGame.subscribe((s) => {
@@ -207,7 +207,7 @@ try {
   });
   await page.getByText("KEEP THIS BETWEEN US.").waitFor();
   await waitFor(page, async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     return useGame.getState().room?.phase === "playing";
   });
   await checkLabels();
@@ -226,7 +226,7 @@ try {
   await waitFor(
     page,
     async (before) => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       const s = useGame.getState();
       return s.room.players.find((p) => p.id === s.id).x > before + 0.3;
     },
@@ -254,7 +254,7 @@ try {
   await page.evaluate(async () => {
     window.sceneTestUnsubscribe();
     clearInterval(window.sceneTestPeerHeartbeat);
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     window.effectTestRoom = structuredClone(useGame.getState().room);
     for (const socket of window.sceneTestPeers) {
       socket.send(JSON.stringify({ type: "leave" }));
@@ -272,7 +272,7 @@ try {
     { key: "ArrowLeft", x: -4.2, z: 11.3, axis: "x", sign: -1 },
   ]) {
     await page.evaluate(async ({ x, z }) => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       const { motion } = await import(window.sceneModuleUrl("network"));
       const room = structuredClone(window.effectTestRoom);
       const player = { ...room.players[0], x, z, alive: true, role: "crew" };
@@ -323,8 +323,25 @@ try {
       "Releasing a corridor movement key stops prediction",
     );
   }
+  // Entering/travelling through ducts removes the entire local avatar, including
+  // its nameplate and selection ring. Exiting mounts it at the current duct.
+  for (const vent of [-1, 0, 1, -1]) {
+    await page.evaluate(async (vent) => {
+      const { useGame } = await import(window.sceneModuleUrl("store"));
+      const { motion } = await import(window.sceneModuleUrl("network"));
+      const room = structuredClone(window.effectTestRoom);
+      const player = { ...room.players[0], x: 0, z: -11, alive: true, role: "impostor" };
+      motion.x = motion.renderX = player.x;
+      motion.z = motion.renderZ = player.z;
+      motion.revision++;
+      useGame.setState({ id: player.id, room: { ...room, phase: "playing", vent, players: [player], bodies: [], eliminations: [], movementLock: 0 } });
+    }, vent);
+    if (vent < 0) await page.locator(".nameplate.you").waitFor({ state: "visible" });
+    else await page.locator(".nameplate.you").waitFor({ state: "detached" });
+    assert.equal(await page.getByRole("button", { name: /Exit duct/ }).count(), vent < 0 ? 0 : 1);
+  }
   await page.evaluate(async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import(window.sceneModuleUrl("store"));
     const room = structuredClone(window.effectTestRoom);
     room.phase = "voting";
     room.remaining = 24;
@@ -347,7 +364,7 @@ try {
   // Exercise each renderer with the same shape as validated server events.
   for (let style = 0; style < 4; style++) {
     await page.evaluate(async (style) => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       const { motion } = await import(window.sceneModuleUrl("network"));
       const room = structuredClone(window.effectTestRoom);
       const attacker = {
@@ -390,7 +407,7 @@ try {
     );
     await page.screenshot({ path: `artifacts/elimination-${style}.png` });
     await page.evaluate(async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import(window.sceneModuleUrl("store"));
       useGame.setState((s) => ({ room: { ...s.room, eliminations: [] } }));
     });
   }

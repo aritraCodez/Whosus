@@ -14,6 +14,7 @@ import { motion, renderPosition } from "./network";
 import { COLORS, type Player } from "./types";
 import { FLOORS, LOBBY_OBSTACLES, OBSTACLES, STATIONS, VENTS } from "./world";
 import { EliminationEffect } from "./EliminationEffect";
+import { interactWithStation, openPractice } from "./interactions";
 import type { VisualEffect } from "./types";
 let rendererState: RootState | undefined;
 const EMPTY_VISUALS: VisualEffect[] = [];
@@ -279,19 +280,50 @@ function Plant({
     </group>
   );
 }
-function Console({ x, z, color }: { x: number; z: number; color: string }) {
+function Console({ x, z, color, stationId, practice = false }: { x: number; z: number; color: string; stationId?: string; practice?: boolean }) {
+  const { scene } = useGLTF("/models/task-console.glb");
+  const model = useMemo(() => {
+    const copy = scene.clone(true);
+    copy.traverse(o => { if (o instanceof THREE.Mesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return copy;
+  }, [scene]);
+  const s = useGame(), r = s.room;
+  const me = r?.players.find(p => p.id === s.id);
+  const task = r?.tasks.find(t => t.id === stationId);
+  const definition = STATIONS.find(t => t.id === stationId);
+  const done = !!task?.done || !!(stationId && s.fakeDone[stationId]);
+  const repair = stationId === "reactor_monitor" && !!r?.sabotage;
+  const active = practice || repair || (!!task && !done);
+  const near = !!me && Math.hypot(me.x - x, me.z - z) <= 2.5;
+  const ring = useRef<THREE.Mesh>(null);
+  useFrame(({ clock }) => {
+    if (ring.current) {
+      ring.current.rotation.z = clock.elapsedTime * .7;
+      ring.current.position.y = 1.42 + Math.sin(clock.elapsedTime * 2) * .07;
+    }
+  });
+  const statusColor = done ? "#6ad9c5" : active ? color : "#718d91";
+  const activate = () => practice ? openPractice() : interactWithStation(stationId);
   return (
-    <group position={[x, 0, z]}>
-      <Box at={[0, 0.45, 0]} size={[1.1, 0.9, 0.65]} color="#334b57" />
-      <Box at={[0, 0.94, -0.02]} size={[0.93, 0.08, 0.58]} color={color} />
-      <mesh position={[0, 1.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.18, 0.035, 8, 24]} />
+    <group position={[x, 0, z]} onClick={e => { e.stopPropagation(); activate(); }}>
+      <primitive object={model} />
+      <mesh ref={ring} position={[0, 1.42, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.23, 0.025, 8, 24, Math.PI * 1.65]} />
         <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={0.7}
+          color={statusColor}
+          emissive={statusColor}
+          emissiveIntensity={active ? 1.2 : .15}
         />
       </mesh>
+      {active && <mesh position={[0, .03, 0]} rotation={[-Math.PI/2,0,0]}>
+        <ringGeometry args={[.7,.75,32]} /><meshBasicMaterial color={statusColor} transparent opacity={near ? .8 : .3} />
+      </mesh>}
+      {(near || practice) && <Html position={[0, 1.95, 0]} center zIndexRange={[10, 1]}>
+        <button className={`station-label ${active ? "active" : ""}`} onClick={e => { e.stopPropagation(); activate(); }}>
+          <strong>{practice ? "Practice station" : repair ? "Repair reactor" : definition?.name}</strong>
+          <small>{near ? active ? "Click or press E" : done ? "Complete" : "Not assigned this round" : "Walk closer to try tasks"}</small>
+        </button>
+      </Html>}
     </group>
   );
 }
@@ -352,7 +384,7 @@ function VisualTaskEffects() {
         }
         if (v.kind === "shields") {
           return (
-            <group key={i} position={[12, 0.5, 8]}>
+            <group key={i} position={[12, 0.5, 10]}>
               <mesh position={[0, 1, 0]}>
                 <sphereGeometry args={[1.5, 16, 16]} />
                 <meshBasicMaterial color="#6ad9c5" transparent opacity={0.25} wireframe />
@@ -496,6 +528,7 @@ const Station = memo(function Station() {
       {STATIONS.map((s, i) => (
         <Console
           key={s.id}
+          stationId={s.id}
           x={s.x}
           z={s.z}
           color={
@@ -672,7 +705,7 @@ const WaitingRoom = memo(function WaitingRoom() {
           />
         </group>
       ))}
-      <Console x={0} z={-3.8} color="#a8e4b3" />
+      <Console x={0} z={-3.8} color="#a8e4b3" practice />
       <Html
         position={[0, 2.5, -5]}
         center
@@ -792,7 +825,7 @@ function Actors({
       ? showcase
       : (r?.players || []).filter((p) => {
           if (animated.has(p.id)) return false;
-          if (p.id === id) return true;
+          if (p.id === id) return (r?.vent ?? -1) < 0;
           if (!r || r.phase !== "playing" || isGhost) return true;
           return isVisibleToPlayer(p.x, p.z, lx, lz, isGhost, r.phase);
         })

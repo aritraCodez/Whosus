@@ -43,6 +43,8 @@ export const OBSTACLES = [
 ];
 
 export const STATIONS = [
+  { id: "security", name: "Tune Security Signal", room: "Security", x: -12, z: -12, category: "short", kind: "dial", visual: false },
+  { id: "reactor_monitor", name: "Calibrate Reactor Monitor", room: "Reactor", x: 2, z: -12, category: "short", kind: "dial", visual: false },
   {
     id: "garden",
     name: "Balance the biofilter",
@@ -67,7 +69,7 @@ export const STATIONS = [
     id: "id_code",
     name: "Enter ID Code",
     room: "Comms",
-    x: 12,
+    x: 8,
     z: 2,
     category: "common",
     kind: "keypad",
@@ -98,7 +100,7 @@ export const STATIONS = [
     name: "Prime Shields",
     room: "Shields",
     x: 12,
-    z: 8,
+    z: 10,
     category: "short",
     kind: "shields",
     visual: true,
@@ -140,7 +142,7 @@ export const STATIONS = [
     name: "Start Reactor",
     room: "Reactor",
     x: -2,
-    z: -12,
+    z: -8,
     category: "long",
     kind: "sequence",
     visual: false,

@@ -114,7 +114,7 @@ def test_kills_enforce_role_range_cooldown_and_alive():
     with pytest.raises(GameError):r.action(imp.id,'kill',crew[1].id)
 
 def test_tasks_require_distance_nonce_sequence_and_time():
-    r=game();imp,crew=parties(r);p=crew[0];s=STATIONS[0]
+    r=game();imp,crew=parties(r);p=crew[0];s=next(s for s in STATIONS if s['id'] == 'garden')
     with pytest.raises(GameError):r.action(p.id,'task_begin',s['id'])
     p.x=s['x'];p.z=s['z'];r.action(p.id,'task_begin',s['id']);c=p.challenge
     with pytest.raises(GameError):r.action(p.id,'task_step','forged',c['sequence'][0])
@@ -166,9 +166,16 @@ def test_vents_require_impostor_and_range():
     r=game();imp,crew=parties(r)
     with pytest.raises(GameError):r.action(crew[0].id,'vent')
     with pytest.raises(GameError):r.action(imp.id,'vent')
-    imp.x=-11;imp.z=0;r.action(imp.id,'vent');assert imp.vent==0
+    imp.x=-11;imp.z=0
+    r.enqueue(imp, 1, 1, 0, r.round)
+    r.action(imp.id,'vent');assert imp.vent==0
+    assert not imp.inputs
+    assert r.snapshot(imp.id)['vent'] == 0
+    assert imp.id not in [p['id'] for p in r.snapshot(crew[0].id)['players']]
     r.action(imp.id,'vent','next');assert (imp.x,imp.z)==(0,-11)
     r.action(imp.id,'vent');assert imp.vent==-1
+    assert (imp.x, imp.z) == (0, -11)
+    assert imp.id in [p['id'] for p in r.snapshot(crew[0].id)['players']]
 
 def test_chat_permissions_and_rate_limit():
     r=game();imp,crew=parties(r);a,b=crew[:2];a.alive=False

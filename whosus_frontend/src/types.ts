@@ -30,6 +30,7 @@ export interface Challenge extends Task {
   step: number;
   started: number;
   fake?: boolean;
+  practice?: boolean;
 }
 export interface VisualEffect {
   player: string;
@@ -44,6 +45,14 @@ export interface Snapshot {
   host: string;
   public: boolean;
   capacity: number;
+  movementSpeed?: number;
+  rules?: {
+    killCooldown: number;
+    discussion: number;
+    voting: number;
+    emergencyMeetings: number;
+    meetingCooldown: number;
+  };
   impostors: number;
   phase: string;
   round: number;

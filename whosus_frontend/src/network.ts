@@ -59,6 +59,7 @@ export function renderPosition() {
     dz,
     me ? !me.alive : false,
     r?.phase === "lobby",
+    r?.movementSpeed ?? 1,
   );
   // Interpolate toward the same full step the client and server will accept.
   // Testing a fractional step against collision can walk into a gap that the
@@ -135,21 +136,31 @@ export function connect(message?: Record<string, unknown>) {
       const r = m.room as Snapshot,
         me = r.players.find((p) => p.id === useGame.getState().id);
       if (me) {
+        if (r.vent !== useGame.getState().room?.vent) {
+          motion.pending = [];
+          motion.revision++;
+        }
+        if (r.movementSpeed !== useGame.getState().room?.movementSpeed) {
+          motion.pending = [];
+          motion.revision++;
+        }
         if (r.round !== lastRound || r.phase !== lastPhase) {
           motion.pending = [];
           motion.revision++;
           useGame.setState({ map: false });
+          if (r.phase !== lastPhase) useGame.setState({ fakeChallenge: null, practiceOpen: false });
+          if (r.round !== lastRound) useGame.setState({ fakeDone: {} });
           lastRound = r.round;
           if (r.phase === "discussion") sound("meeting");
           if (r.phase === "gameover") sound("task");
         }
         motion.seq = Math.max(motion.seq, me.ack);
         motion.pending = motion.pending.filter((i) => i.seq > me.ack);
-        if (r.movementLock > 0) motion.pending = [];
+        if (r.movementLock > 0 || r.vent >= 0) motion.pending = [];
         let [x, z] = [me.x, me.z];
         if (["playing", "lobby"].includes(r.phase) && r.vent < 0)
           for (const i of motion.pending)
-            [x, z] = move(x, z, i.dx, i.dz, !me.alive, r.phase === "lobby");
+            [x, z] = move(x, z, i.dx, i.dz, !me.alive, r.phase === "lobby", r.movementSpeed ?? 1);
         motion.x = x;
         motion.z = z;
       }
@@ -164,6 +175,11 @@ export function connect(message?: Record<string, unknown>) {
     if (m.type === "voice_answer") void voice.answer(m.sdp, m.generation);
     if (m.type === "voice_error") voice.fail(m.message, m.generation);
     if (m.type === "error") useGame.setState({ error: m.message });
+    if (m.type === "kicked") {
+      leave();
+      useGame.setState({ error: m.message });
+      return;
+    }
     if (m.type === "expired") {
       token = "";
       sessionStorage.removeItem("whosus-session");
@@ -210,6 +226,10 @@ export function leave() {
     chat: [],
     error: "",
     status: "offline",
+    fakeChallenge: null,
+    fakeDone: {},
+    practiceOpen: false,
+    settings: false,
   });
 }
 export function initializeNetwork() {
@@ -246,6 +266,7 @@ export function initializeNetwork() {
       i.dz,
       me ? !me.alive : false,
       r.phase === "lobby",
+      r.movementSpeed ?? 1,
     );
   };
   // Browsers can defer interval timers while native keyboard repeat is active.
