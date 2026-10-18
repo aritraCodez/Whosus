@@ -14,7 +14,7 @@ def game(n=6):
     return r
 
 def parties(r):
-    return next(p for p in r.players.values() if p.role=='impostor'),[p for p in r.players.values() if p.role=='crew']
+    return next(p for p in r.players.values() if p.role=='killer'),[p for p in r.players.values() if p.role=='crew']
 
 def test_start_requires_four_ready_players_and_host():
     r=Room('TESTAB');p=r.add('Host')
@@ -138,7 +138,7 @@ def test_sabotage_repair_and_expiration():
     r=game();imp,crew=parties(r);r.now+=30;r.action(imp.id,'sabotage')
     with pytest.raises(GameError):r.action(crew[0].id,'repair')
     crew[0].x=2;crew[0].z=-12;r.action(crew[0].id,'repair');assert not r.sabotage_until
-    r.now+=85;r.action(imp.id,'sabotage');r.tick(r.now+56);assert r.winner=='impostor'
+    r.now+=85;r.action(imp.id,'sabotage');r.tick(r.now+56);assert r.winner=='killer'
 
 def test_meetings_votes_skip_and_rematch():
     r=game();imp,crew=parties(r);p=crew[0];r.now+=30;p.x=0;p.z=2;r.action(p.id,'meeting')
@@ -162,7 +162,7 @@ def test_report_requires_a_real_nearby_body():
     with pytest.raises(GameError):r.action(crew[1].id,'report',crew[0].id)
     crew[1].x=0;crew[1].z=2;r.action(crew[1].id,'report',crew[0].id);assert r.phase=='discussion' and not r.bodies
 
-def test_vents_require_impostor_and_range():
+def test_vents_require_killer_and_range():
     r=game();imp,crew=parties(r)
     with pytest.raises(GameError):r.action(crew[0].id,'vent')
     with pytest.raises(GameError):r.action(imp.id,'vent')
@@ -212,6 +212,6 @@ def test_disconnect_grace_then_forfeit():
     r.tick(r.now+40);assert imp.alive
     r.tick(r.now+6);assert not imp.alive and r.winner=='crew'
 
-@pytest.mark.parametrize('payload',[{'type':'input','dx':float('nan')},{'type':'input','dx':2},{'type':'action','role':'impostor'},{'type':'chat','text':'x'*281}])
+@pytest.mark.parametrize('payload',[{'type':'input','dx':float('nan')},{'type':'input','dx':2},{'type':'action','role':'killer'},{'type':'chat','text':'x'*281}])
 def test_invalid_protocol_payloads(payload):
     with pytest.raises(ValidationError):Message.model_validate(payload)

@@ -32,7 +32,7 @@ def test_four_clients_chat_role_secrecy_and_resume():
                 room=until(ws,'snapshot')['room']
                 if room['phase']=='reveal':break
             assert sum('role' in p for p in room['players'])==1
-            assert next(p for p in room['players'] if p['id']==identity['id'])['role'] in ('crew','impostor')
+            assert next(p for p in room['players'] if p['id']==identity['id'])['role'] in ('crew','killer')
         sockets[2].close()
         resumed=stack.enter_context(client.websocket_connect('/ws',headers=ORIGIN))
         resumed.send_json({'type':'resume','token':identities[2]['token']})

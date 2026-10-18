@@ -341,7 +341,7 @@ try {
       return { page, me: s.room.players.find((p) => p.id === s.id) };
     }),
   );
-  const impostor = info.find((item) => item.me.role === "impostor");
+  const killer = info.find((item) => item.me.role === "killer");
   const crew = info.filter((item) => item.me.role === "crew");
   for (const page of pages) await muted(page, true);
   await muted(crew[0].page, false);
@@ -352,16 +352,16 @@ try {
   );
   const establishedGeneration = (await diagnostics(crew[2].page)).generation;
   async function eliminate(victim) {
-    await approachAlongRing(victim.page, impostor.me);
+    await approachAlongRing(victim.page, killer.me);
     await waitFor(
-      impostor.page,
+      killer.page,
       async () =>
         (await import("/src/store.ts")).useGame.getState().room.killCooldown ===
         0,
       null,
       { timeout: 15000 },
     );
-    await action(impostor.page, "kill", victim.me.id);
+    await action(killer.page, "kill", victim.me.id);
     await waitFor(victim.page, async () => {
       const s = (await import("/src/store.ts")).useGame.getState();
       return !s.room.players.find((p) => p.id === s.id).alive;
@@ -388,12 +388,12 @@ try {
     "Two ghosts remain inaudible to living crew",
   );
   await waitFor(
-    impostor.page,
+    killer.page,
     async () =>
       (await import("/src/store.ts")).useGame.getState().room
         .meetingCooldown === 0,
   );
-  await action(impostor.page, "meeting");
+  await action(killer.page, "meeting");
   await waitFor(
     pages[0],
     async () =>
@@ -413,8 +413,8 @@ try {
     null,
     { timeout: 15000 },
   );
-  for (const item of [impostor, crew[2], crew[3]])
-    await action(item.page, "vote", impostor.me.id);
+  for (const item of [killer, crew[2], crew[3]])
+    await action(item.page, "vote", killer.me.id);
   await waitFor(
     pages[0],
     async () =>

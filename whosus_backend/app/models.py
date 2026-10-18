@@ -24,7 +24,7 @@ class Message(BaseModel):
     hat: Literal['sprout', 'antenna', 'none'] = 'sprout'
     public: bool = False
     capacity: int = Field(default=8, ge=4, le=12)
-    impostors: int = Field(default=1, ge=1, le=3)
+    killers: int = Field(default=1, ge=1, le=3)
     kill_cooldown: int = Field(default=25, ge=10, le=60)
     discussion: int = Field(default=25, ge=10, le=90)
     movement_speed: float = Field(default=1, ge=0.5, le=2)

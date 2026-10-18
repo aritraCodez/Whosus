@@ -217,12 +217,12 @@ try {
     null,
     { timeout: 15000 },
   );
-  const impostor = infos.find((i) => i.me.role === "impostor");
+  const killer = infos.find((i) => i.me.role === "killer");
   for (const p of pages)
     await p.evaluate(async (id) => {
       const { act } = await import("/src/network.ts");
       act("vote", id);
-    }, impostor.id);
+    }, killer.id);
   await waitFor(page, async () => {
     const { useGame } = await import("/src/store.ts");
     return useGame.getState().room?.phase === "gameover";
