@@ -16,6 +16,14 @@ try {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173");
+  await page.evaluate(() => {
+    // Match the module version used by the app after a Vite dependency reload.
+    window.sceneModuleUrl = (name) =>
+      performance
+        .getEntriesByType("resource")
+        .find((entry) => new URL(entry.name).pathname === `/src/${name}.ts`)
+        .name;
+  });
   await page.getByLabel("Edit explorer name", { exact: true }).click();
   assert.equal(
     await page
@@ -105,6 +113,12 @@ try {
           }),
       ),
     );
+    window.sceneTestPeerHeartbeat = setInterval(() => {
+      for (const socket of window.sceneTestPeers) {
+        if (socket.readyState === WebSocket.OPEN)
+          socket.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 15000);
   });
   await waitFor(page, async () => {
     const { useGame } = await import("/src/store.ts");
@@ -179,7 +193,7 @@ try {
   );
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.evaluate(async () => {
-    const { act, send } = await import("/src/network.ts");
+    const { act, send } = await import(window.sceneModuleUrl("network"));
     const { useGame } = await import("/src/store.ts");
     const round = useGame.getState().room.round;
     window.sceneTestErrors = [];
@@ -204,7 +218,7 @@ try {
   await page.screenshot({ path: "artifacts/scene-map.png" });
   await page.getByLabel("Toggle map").click();
   const before = await page.evaluate(
-    async () => (await import("/src/network.ts")).motion.x,
+    async () => (await import(window.sceneModuleUrl("network"))).motion.x,
   );
   await page.keyboard.down("KeyD");
   await page.waitForTimeout(350);
@@ -239,15 +253,76 @@ try {
   assert.deepEqual(errors, [], "No renderer errors");
   await page.evaluate(async () => {
     window.sceneTestUnsubscribe();
+    clearInterval(window.sceneTestPeerHeartbeat);
     const { useGame } = await import("/src/store.ts");
     window.effectTestRoom = structuredClone(useGame.getState().room);
     for (const socket of window.sceneTestPeers) {
       socket.send(JSON.stringify({ type: "leave" }));
       socket.close();
     }
-    (await import("/src/network.ts")).leave();
+    (await import(window.sceneModuleUrl("network"))).leave();
   });
   await page.setViewportSize({ width: 1440, height: 900 });
+  // Isolate client prediction at the visible corridor edges. The server suite
+  // checks the same routes against authoritative collision.
+  for (const route of [
+    { key: "KeyW", x: -11.3, z: -4.2, axis: "z", sign: -1 },
+    { key: "ArrowDown", x: 11.3, z: 4.2, axis: "z", sign: 1 },
+    { key: "KeyD", x: 4.2, z: -11.3, axis: "x", sign: 1 },
+    { key: "ArrowLeft", x: -4.2, z: 11.3, axis: "x", sign: -1 },
+  ]) {
+    await page.evaluate(async ({ x, z }) => {
+      const { useGame } = await import("/src/store.ts");
+      const { motion } = await import(window.sceneModuleUrl("network"));
+      const room = structuredClone(window.effectTestRoom);
+      const player = { ...room.players[0], x, z, alive: true, role: "crew" };
+      motion.x = x;
+      motion.z = z;
+      motion.keys.clear();
+      motion.revision++;
+      useGame.setState({
+        id: player.id,
+        status: "connected",
+        room: {
+          ...room,
+          phase: "playing",
+          players: [player],
+          challenge: null,
+          movementLock: 0,
+          vent: -1,
+          bodies: [],
+          eliminations: [],
+        },
+      });
+    }, route);
+    await page.keyboard.down(route.key);
+    try {
+      await waitFor(
+        page,
+        async ({ axis, sign }) => {
+          const { motion } = await import(window.sceneModuleUrl("network"));
+          return motion[axis] * sign > 6.3;
+        },
+        route,
+        { timeout: 5000 },
+      );
+    } finally {
+      await page.keyboard.up(route.key);
+    }
+    const released = await page.evaluate(async () => {
+      const { motion } = await import(window.sceneModuleUrl("network"));
+      return [motion.x, motion.z];
+    });
+    await page.waitForTimeout(200);
+    assert.deepEqual(
+      await page.evaluate(async () => {
+        const { motion } = await import(window.sceneModuleUrl("network"));
+        return [motion.x, motion.z];
+      }),
+      released,
+      "Releasing a corridor movement key stops prediction",
+    );
+  }
   await page.evaluate(async () => {
     const { useGame } = await import("/src/store.ts");
     const room = structuredClone(window.effectTestRoom);
@@ -273,7 +348,7 @@ try {
   for (let style = 0; style < 4; style++) {
     await page.evaluate(async (style) => {
       const { useGame } = await import("/src/store.ts");
-      const { motion } = await import("/src/network.ts");
+      const { motion } = await import(window.sceneModuleUrl("network"));
       const room = structuredClone(window.effectTestRoom);
       const attacker = {
         ...room.players[0],
@@ -321,7 +396,7 @@ try {
   }
   assert.deepEqual(errors, [], "No errors during any elimination animation");
   console.log(
-    "PASS: editable names, held keys, joystick, responsive waiting room, launch, map, movement, four elimination effects.",
+    "PASS: editable names, held keys, joystick, responsive waiting room, launch, map, movement, corridor edges, four elimination effects.",
   );
 } finally {
   await browser.close();

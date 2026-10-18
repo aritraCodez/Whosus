@@ -12,7 +12,7 @@ import * as THREE from "three";
 import { useGame } from "./store";
 import { motion, renderPosition } from "./network";
 import { COLORS, type Player } from "./types";
-import { LOBBY_OBSTACLES, OBSTACLES, STATIONS, VENTS } from "./world";
+import { FLOORS, LOBBY_OBSTACLES, OBSTACLES, STATIONS, VENTS } from "./world";
 import { EliminationEffect } from "./EliminationEffect";
 import type { VisualEffect } from "./types";
 let rendererState: RootState | undefined;
@@ -391,16 +391,15 @@ const Station = memo(function Station() {
   const sabotage = useGame((s) => !!s.room?.sabotage);
   return (
     <group>
-      {/* Central halls */}
-      <Box at={[0, -0.37, 0]} size={[24, 0.55, 3.2]} color="#54696a" />
-      <Box at={[0, -0.37, 0]} size={[3.2, 0.55, 24]} color="#54696a" />
-      {/* Outer connecting loop corridors */}
-      <Box at={[-10, -0.37, -10]} size={[3, 0.55, 12]} color="#485c5d" />
-      <Box at={[10, -0.37, -10]} size={[3, 0.55, 12]} color="#485c5d" />
-      <Box at={[-10, -0.37, 10]} size={[3, 0.55, 12]} color="#485c5d" />
-      <Box at={[10, -0.37, 10]} size={[3, 0.55, 12]} color="#485c5d" />
-      <Box at={[0, -0.37, -10]} size={[24, 0.55, 3]} color="#485c5d" />
-      <Box at={[0, -0.37, 10]} size={[24, 0.55, 3]} color="#485c5d" />
+      {/* Render halls from the same bounds used for movement. */}
+      {FLOORS.slice(9).map(([a, b, c, d], i) => (
+        <Box
+          key={i}
+          at={[(a + b) / 2, -0.37, (c + d) / 2]}
+          size={[b - a, 0.55, d - c]}
+          color={i < 2 ? "#54696a" : "#485c5d"}
+        />
+      ))}
 
       {rooms.map(({ x, z, name, color, accent }, i) => (
         <group key={name} position={[x, 0, z]}>
@@ -520,27 +519,30 @@ const Station = memo(function Station() {
           ))}
         </group>
       ))}
-      {OBSTACLES.slice(0, 4).map(([a, b, c, d], i) => (
-        <group key={i}>
-          <Box
-            at={[(a + b) / 2, 0.5, (c + d) / 2]}
-            size={[b - a, 1, d - c]}
-            color={["#66897a", "#587a8e", "#776d97", "#a78a64"][i]}
-          />
-          {i === 0 ? (
-            <>
-              <Plant at={[a + 0.4, 1, c + 0.4]} />
-              <Plant at={[b - 0.4, 1, d - 0.4]} />
-            </>
-          ) : (
+      {/* The reactor obstacle (index 5) has its own model below. */}
+      {OBSTACLES.map(([a, b, c, d], i) =>
+        i === 5 ? null : (
+          <group key={i}>
             <Box
-              at={[(a + b) / 2, 1.05, (c + d) / 2]}
-              size={[b - a - 0.2, 0.1, d - c - 0.2]}
-              color="#d2d5bc"
+              at={[(a + b) / 2, 0.5, (c + d) / 2]}
+              size={[b - a, 1, d - c]}
+              color={["#66897a", "#587a8e", "#776d97", "#a78a64"][i % 4]}
             />
-          )}
-        </group>
-      ))}
+            {i === 0 ? (
+              <>
+                <Plant at={[a + 0.4, 1, c + 0.4]} />
+                <Plant at={[b - 0.4, 1, d - 0.4]} />
+              </>
+            ) : (
+              <Box
+                at={[(a + b) / 2, 1.05, (c + d) / 2]}
+                size={[b - a - 0.2, 0.1, d - c - 0.2]}
+                color="#d2d5bc"
+              />
+            )}
+          </group>
+        ),
+      )}
       <group position={[0, 0, -10]}>
         <mesh position={[0, 1.4, 0]} castShadow>
           <cylinderGeometry args={[0.6, 0.8, 2.8, 8]} />

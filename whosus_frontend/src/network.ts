@@ -52,15 +52,21 @@ export function renderPosition() {
   const [dx, dz] = movementInput();
   const me = r?.players.find((p) => p.id === useGame.getState().id);
   const fraction = Math.min(1, (performance.now() - motion.steppedAt) / 50);
-  return move(
+  const [x, z] = move(
     motion.x,
     motion.z,
     dx,
     dz,
     me ? !me.alive : false,
     r?.phase === "lobby",
-    fraction,
   );
+  // Interpolate toward the same full step the client and server will accept.
+  // Testing a fractional step against collision can walk into a gap that the
+  // full step cannot enter, then snap back on every input tick.
+  return [
+    motion.x + (x - motion.x) * fraction,
+    motion.z + (z - motion.z) * fraction,
+  ];
 }
 let ws: WebSocket | null = null,
   retry: ReturnType<typeof setTimeout> | undefined,
@@ -209,7 +215,7 @@ export function leave() {
 export function initializeNetwork() {
   const detachVoice = voice.attach();
   if (token) connect();
-  const timer = setInterval(() => {
+  const step = () => {
     const s = useGame.getState(),
       r = s.room;
     if (
@@ -220,7 +226,6 @@ export function initializeNetwork() {
     )
       return;
     const [dx, dz] = movementInput();
-    motion.steppedAt = performance.now();
     if (!dx && !dz) return;
     // Keep prediction history responsive without freezing movement during latency spikes.
     if (motion.pending.length >= 50) {
@@ -242,16 +247,46 @@ export function initializeNetwork() {
       me ? !me.alive : false,
       r.phase === "lobby",
     );
-  }, 50);
-  const ping = setInterval(() => {
+  };
+  // Browsers can defer interval timers while native keyboard repeat is active.
+  // Keep the 20 Hz input cadence on the animation clock so held keys keep moving.
+  let frame = 0;
+  let steppedAt = performance.now();
+  let nextPing = steppedAt + 5000;
+  const heartbeat = () => {
+    const now = performance.now();
+    if (now < nextPing) return;
+    nextPing = now + 5000;
     if (ws?.readyState === WebSocket.OPEN) {
       if (Date.now() - lastPong > 20000) ws.close();
       else send({ type: "ping" });
     }
-  }, 5000);
+  };
+  const resetClock = () => {
+    steppedAt = motion.steppedAt = performance.now();
+  };
+  const update = (now: number) => {
+    const elapsed = now - steppedAt;
+    if (elapsed >= 50) {
+      // Catch up short frame delays without replaying time spent in a hidden tab.
+      const steps = elapsed > 250 ? 1 : Math.floor(elapsed / 50);
+      steppedAt = elapsed > 250 ? now : steppedAt + steps * 50;
+      for (let i = 0; i < steps; i++) step();
+      motion.steppedAt = steppedAt;
+    }
+    heartbeat();
+    frame = requestAnimationFrame(update);
+  };
+  frame = requestAnimationFrame(update);
+  window.addEventListener("focus", resetClock);
+  document.addEventListener("visibilitychange", resetClock);
+  // Retain a timer fallback for heartbeats while a hidden tab pauses rendering.
+  const ping = setInterval(heartbeat, 5000);
   return () => {
     detachVoice();
-    clearInterval(timer);
+    cancelAnimationFrame(frame);
+    window.removeEventListener("focus", resetClock);
+    document.removeEventListener("visibilitychange", resetClock);
     clearInterval(ping);
     leave();
   };

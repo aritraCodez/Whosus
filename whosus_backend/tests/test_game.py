@@ -77,6 +77,31 @@ def test_movement_crosses_room_and_hallway_floor_seams():
     x, z = move(-10, -5.9, 0, -1)
     assert (x, z) == pytest.approx((-10, -6.11))
 
+@pytest.mark.parametrize('x', [-11.3, -10, -8.7, 8.7, 10, 11.3])
+@pytest.mark.parametrize('side', [-1, 1])
+def test_full_visible_vertical_corridors_are_walkable(x, side):
+    z = side * 4.2
+    for _ in range(10):
+        assert walkable(x, z)
+        x, z = move(x, z, 0, side)
+    assert z == pytest.approx(side * 6.3)
+
+
+@pytest.mark.parametrize('z', [-11.3, -10, -8.7, 8.7, 10, 11.3])
+@pytest.mark.parametrize('side', [-1, 1])
+def test_full_visible_horizontal_corridors_are_walkable(z, side):
+    x = side * 4.2
+    for _ in range(10):
+        assert walkable(x, z)
+        x, z = move(x, z, side, 0)
+    assert x == pytest.approx(side * 6.3)
+
+
+def test_corridors_still_block_movement_off_the_visible_floor():
+    for x, z in [(-11.6, -5), (11.6, 5), (-5, -11.6), (5, 11.6), (4.3, 3)]:
+        assert not walkable(x, z)
+
+
 def test_kills_enforce_role_range_cooldown_and_alive():
     r=game();imp,crew=parties(r);q=crew[0]
     with pytest.raises(GameError):r.action(q.id,'kill',crew[1].id)
