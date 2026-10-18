@@ -19,6 +19,10 @@ export function EliminationEffect({
   Actor: ComponentType<{
     color: string;
     hat?: string;
+    outfit?: string;
+    visor?: string;
+    accessory?: string;
+    boots?: string;
     headTurn?: React.RefObject<number>;
   }>;
 }) {
@@ -102,7 +106,7 @@ export function EliminationEffect({
       rotation={[0, angle, 0]}
     >
       <group ref={attacker}>
-        <Actor color={event.attacker.color} hat={event.attacker.hat} />
+        <Actor {...event.attacker} />
         {(event.style === 0 || event.style === 1) && (
           <group ref={weapon} position={[0.4, 0.9, 0.45]}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
@@ -141,6 +145,7 @@ export function EliminationEffect({
         rotation={[0, Math.PI, 0]}
       >
         <Actor
+          outfit={event.victim.outfit} visor={event.victim.visor} accessory={event.victim.accessory} boots={event.victim.boots}
           color={event.victim.color}
           hat={event.victim.hat}
           headTurn={headTurn}

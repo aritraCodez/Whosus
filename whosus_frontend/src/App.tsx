@@ -22,6 +22,7 @@ import {
   Shield,
   Skull,
   Sparkles,
+  Shirt,
   Users,
   Volume2,
   VolumeX,
@@ -30,6 +31,8 @@ import {
   Zap,
 } from "lucide-react";
 import Scene from "./Scene";
+import { Wardrobe } from "./Wardrobe";
+import { useAppearance } from "./appearance";
 import { Modal } from "./components/Modal";
 import { PracticePanel, UniversalTaskPanel } from "./TaskMinigames";
 import { useGame } from "./store";
@@ -224,7 +227,7 @@ function RoomForm({
       setError("Enter an explorer name before joining.");
       return;
     }
-    connect({ type: "join", name: playerName, color, hat, code: roomCode });
+    connect({ ...useAppearance.getState().appearance, type: "join", name: playerName, color, hat, code: roomCode });
     close();
   }
   const nameField = (
@@ -271,6 +274,7 @@ function RoomForm({
               return;
             }
             connect({
+              ...useAppearance.getState().appearance,
               type: "create",
               name: playerName,
               color,
@@ -425,14 +429,12 @@ function Menu({
   color,
   setColor,
   hat,
-  setHat,
 }: {
   name: string;
   setName: (n: string) => void;
   color: number;
   setColor: (n: number) => void;
   hat: string;
-  setHat: (s: string) => void;
 }) {
   const [form, setForm] = useState<"create" | "join" | "find" | null>(null),
     [help, setHelp] = useState(false);
@@ -525,16 +527,7 @@ function Menu({
                 </button>
               ))}
             </div>
-            <GameSelect
-              label="Accessory"
-              value={hat}
-              options={[
-                { value: "sprout", label: "Little sprout" },
-                { value: "antenna", label: "Antenna" },
-                { value: "none", label: "No accessory" },
-              ]}
-              onChange={(v) => setHat(String(v))}
-            />
+            <button className="secondary wardrobe-launch" onClick={() => useGame.setState({ wardrobe: true })}><Shirt size={18} /> Customize character</button>
           </div>
           <button
             className="primary create"
@@ -1186,7 +1179,7 @@ function Lobby() {
             ),
           )}
         </div>
-        <button className="secondary full" onClick={openPractice}>Practice at console</button>
+        <button className="secondary full" onClick={openPractice}>Practice Task at console</button>
         {host && <button className="secondary full fill-crew" disabled={addingTestPlayers} onClick={() => void addTestPlayers()}>
           {addingTestPlayers ? "Adding test players…" : r.population < r.capacity ? `Fill to ${r.capacity} players` : "Ready added players"}
         </button>}
@@ -1414,17 +1407,19 @@ function GameHUD() {
       ) : (
         <>
           <aside className={`task-list ${tasksCollapsed ? "collapsed" : ""}`}>
-            <div
+            <button
+              type="button"
               className="task-header"
               onClick={() => setTasksCollapsed(!tasksCollapsed)}
-              role="button"
-              tabIndex={0}
+              aria-expanded={!tasksCollapsed}
+              aria-controls="mission-tasks"
+              aria-label={tasksCollapsed ? "Expand tasks" : "Collapse tasks"}
               title={tasksCollapsed ? "Expand tasks" : "Collapse tasks"}
             >
               <span>
                 {killer ? "A LITTLE TREACHERY" : "A LITTLE TEAMWORK"}
               </span>
-              <div className="task-header-right">
+              <span className="task-header-right">
                 <strong>{Math.round(r.progress * 100)}%</strong>
                 <span className="task-toggle-icon">
                   {tasksCollapsed ? (
@@ -1433,13 +1428,14 @@ function GameHUD() {
                     <ChevronUp size={14} />
                   )}
                 </span>
-              </div>
-            </div>
+              </span>
+            </button>
             {!tasksCollapsed && (
               <>
                 <div className="progress">
                   <i style={{ width: `${r.progress * 100}%` }} />
                 </div>
+                <div className="task-content" id="mission-tasks" role="region" aria-label="Mission tasks" tabIndex={0}>
                 <h3>
                   {!me.alive
                     ? "Your shift isn’t over."
@@ -1481,6 +1477,7 @@ function GameHUD() {
                     </div>
                   ))
                 )}
+                </div>
               </>
             )}
           </aside>
@@ -1715,9 +1712,14 @@ export default function App() {
     [name, setName] = useState(() => {
       const savedName = localStorage.getItem("whosus-name");
       return savedName && savedName !== "Miso" ? savedName : makeDefaultName();
-    }),
-    [color, setColor] = useState(0),
-    [hat, setHat] = useState("sprout");
+    });
+  const { appearance, update: updateAppearance } = useAppearance();
+  const { color, hat } = appearance;
+  const setColor = (color: number) => updateAppearance({ color });
+  const roomLook = s.room?.players.find(p => p.id === s.id);
+  useEffect(() => {
+    if (roomLook) updateAppearance({ color: COLORS.indexOf(roomLook.color), hat: roomLook.hat, outfit: roomLook.outfit, visor: roomLook.visor, accessory: roomLook.accessory, boots: roomLook.boots });
+  }, [roomLook?.color, roomLook?.hat, roomLook?.outfit, roomLook?.visor, roomLook?.accessory, roomLook?.boots, updateAppearance]);
   useEffect(() => initializeNetwork(), []);
   useEffect(() => {
     localStorage.setItem("whosus-name", name);
@@ -1729,7 +1731,7 @@ export default function App() {
   useEffect(() => {
     let swipe: { pointerId: number; startX: number; startY: number } | undefined;
     const down = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest("input,textarea,select,dialog"))
+      if ((e.target as HTMLElement).closest("input,textarea,select,dialog,.task-list"))
         return;
       if (e.code === "Tab") {
         e.preventDefault();
@@ -1840,9 +1842,10 @@ export default function App() {
       {s.room ? (
         <GameHUD />
       ) : (
-        <Menu {...{ name, setName, color, setColor, hat, setHat }} />
+        <Menu {...{ name, setName, color, setColor, hat }} />
       )}
       {s.settings && <SettingsPanel />}
+      {s.wardrobe && <SceneBoundary><Wardrobe /></SceneBoundary>}
       {(s.error || s.voiceError) && (
         <div className="toast" role="alert">
           <span>{s.error || s.voiceError}</span>

@@ -17,6 +17,7 @@
 .station-label.active { border-color: #b3df98; }
 .station-label small { font-size: 10px; color: #b3cfbe; }
 .station-label strong { font-size: 12px; }
+.chair-interaction, .wardrobe-station { min-width: 116px; }
 .practice-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
 .practice-grid button { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; white-space: normal; text-align: left; }
 .practice-grid small { color: #a6c4b7; font-size: 11px; }
@@ -465,11 +466,39 @@
 }
 
 /* Small screens keep the room visible; crew management opens on demand. */
+.in-game .task-list {
+  --task-top: 105px;
+  --task-controls-clearance: 238px;
+  top: calc(var(--task-top) + env(safe-area-inset-top, 0px));
+  max-height: min(540px, calc(100dvh - var(--task-top) - var(--task-controls-clearance) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.task-header, .task-list > .progress { flex-shrink: 0; }
+.task-content {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: #789f98 #ffffff08;
+  scrollbar-gutter: stable;
+  padding-right: 8px;
+}
+.task-content h3 { margin-top: 0; }
+.task-content .task-row:last-child { margin-bottom: 2px; }
+.task-header:focus-visible, .task-content:focus-visible { outline: 2px solid var(--mint); outline-offset: -2px; border-radius: 4px; }
+@media (max-width: 900px) {
+  .in-game .task-list { --task-top: 80px; }
+}
 .mobile-lobby-bar { display: none; }
 .fill-crew { margin-top: 10px; }
 .lobby-rules-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; font-size: 10px; line-height: 1.6; }
 .task-retry { color: #ffac9f; font-size: 13px; }
 @media (max-width: 700px), (max-height: 550px) and (orientation: landscape) {
+  .in-game .task-list { --task-top: 70px; --task-controls-clearance: 196px; }
   .in-game.app { height: 100dvh; min-height: 0; overflow: hidden; }
   .in-game .game-top { top: env(safe-area-inset-top, 0px); padding: 10px 12px; height: 60px; }
   .in-game .top-actions { gap: 5px; }

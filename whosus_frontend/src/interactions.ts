@@ -1,6 +1,26 @@
 import { act, motion } from "./network";
 import { useGame } from "./store";
-import { STATIONS } from "./world";
+import { STATIONS, nearWardrobe, nearestLobbySeat } from "./world";
+
+export function interactWithSeat(index?: number) {
+  const s = useGame.getState(), r = s.room;
+  if (r?.phase !== "lobby" || s.wardrobe || s.practiceOpen || s.settings) return;
+  const me = r.players.find(p => p.id === s.id);
+  if ((me?.seat ?? -1) >= 0) { act("stand"); return; }
+  const nearest = nearestLobbySeat(motion.x, motion.z, r.players.map(p => p.seat ?? -1));
+  if (nearest === undefined || (index !== undefined && nearest !== index)) return;
+  act("sit", "", nearest);
+}
+
+export function openWardrobe() {
+  const s = useGame.getState();
+  if (s.room?.phase !== "lobby" || s.practiceOpen || s.settings) return;
+  if (!nearWardrobe(motion.x, motion.z)) {
+    s.set({ error: "Walk closer to the wardrobe box to change your outfit." });
+    return;
+  }
+  s.set({ wardrobe: true });
+}
 
 export function openPractice() {
   const s = useGame.getState();
@@ -15,9 +35,14 @@ export function openPractice() {
 export function interactWithStation(id?: string) {
   const s = useGame.getState(),
     r = s.room;
-  if (!r || r.challenge || s.fakeChallenge || r.movementLock > 0) return;
+  if (!r || r.challenge || s.fakeChallenge || s.wardrobe || s.practiceOpen || s.settings || r.movementLock > 0) return;
   if (r.phase === "lobby") {
-    openPractice();
+    const me = r.players.find(p => p.id === s.id);
+    const seat = nearestLobbySeat(motion.x, motion.z, r.players.map(p => p.seat ?? -1));
+    if ((me?.seat ?? -1) >= 0 || seat !== undefined) interactWithSeat(seat);
+    else if (nearWardrobe(motion.x, motion.z)) openWardrobe();
+    else if (Math.hypot(motion.x, motion.z + 3.8) <= 2.5) openPractice();
+    else s.set({ error: "Walk closer to a chair, the wardrobe box or the practice console." });
     return;
   }
   if (r.phase !== "playing") return;

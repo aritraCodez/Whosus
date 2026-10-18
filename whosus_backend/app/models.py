@@ -1,6 +1,7 @@
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from .cosmetics import Hat, Outfit, Visor, Accessory, Boots
 
 
 class IceCandidate(BaseModel):
@@ -21,7 +22,11 @@ class Message(BaseModel):
     code: str = Field(default='', max_length=6)
     token: str = Field(default='', max_length=128)
     color: int = Field(default=0, ge=0, le=11)
-    hat: Literal['sprout', 'antenna', 'none'] = 'sprout'
+    hat: Hat = 'sprout'
+    outfit: Outfit = 'none'
+    visor: Visor = 'none'
+    accessory: Accessory = 'none'
+    boots: Boots = 'original'
     public: bool = False
     capacity: int = Field(default=8, ge=4, le=12)
     killers: int = Field(default=1, ge=1, le=3)
