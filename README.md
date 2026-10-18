@@ -4,7 +4,9 @@ WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on
 
 This README is the single project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts.
 
-**Verification status:** all **99 backend tests** pass locally. The focused scene, room, and movement suites check editable names, held movement at configurable speeds, host rules, unique colors, kicking, practice tasks, the waiting room, and elimination rendering. The dedicated **five-browser voice suite** uses synthetic microphones and checks real decoded audio, permission/playback recovery, push-to-talk, reconnects and ghost isolation. Full game-UI validation is tracked separately below. Physical Android and internet NAT traversal testing are still outstanding.
+## Project preview
+
+![WhoSus? landing page](./docs/game.png)
 
 ## Contents
 
