@@ -100,7 +100,7 @@ async def socket(ws: WebSocket):
                                     for _ in range(6)
                                 )
                             room = Room(
-                                code, m.public, m.capacity, m.impostors,
+                                code, m.public, m.capacity, m.killers,
                                 m.kill_cooldown, m.discussion,
                                 m.movement_speed, m.voting, m.emergency_meetings, m.meeting_cooldown,
                             )

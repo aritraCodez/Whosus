@@ -128,10 +128,10 @@ class Player:
 class GameError(ValueError): pass
 
 class Room:
-    def __init__(self, code, public=False, capacity=8, impostors=1, kill_cooldown=25, discussion=25,
+    def __init__(self, code, public=False, capacity=8, killers=1, kill_cooldown=25, discussion=25,
                  movement_speed=1, voting=30, emergency_meetings=1, meeting_cooldown=20):
         self.code, self.public, self.capacity = code, public, capacity
-        self.impostors, self.kill_cooldown, self.discussion = impostors, kill_cooldown, discussion
+        self.killers, self.kill_cooldown, self.discussion = killers, kill_cooldown, discussion
         self.movement_speed, self.voting = movement_speed, voting
         self.emergency_meetings, self.meeting_cooldown = emergency_meetings, meeting_cooldown
         self.players = {}
@@ -175,7 +175,7 @@ class Room:
         self.require(pid == self.host and self.phase == 'lobby', 'Only the host can launch from the lobby.')
         active = list(self.players.values())
         self.require(len(active) >= 4 and all(p.connected and p.ready for p in active), 'At least four connected, ready players are needed.')
-        count = min(self.impostors, (len(active) - 1) // 3)
+        count = min(self.killers, (len(active) - 1) // 3)
         traitors = set(secrets.SystemRandom().sample([p.id for p in active], count))
         self.round += 1
         self.winner = self.result = ''
@@ -184,7 +184,7 @@ class Room:
         self.active_visuals.clear()
         self.sabotage_until = 0; self.sabotage_at = self.now + 20
         for i, p in enumerate(active):
-            p.role = 'impostor' if p.id in traitors else 'crew'
+            p.role = 'killer' if p.id in traitors else 'crew'
             p.alive = True; p.done.clear(); p.vent = -1; p.emergency = self.emergency_meetings; p.challenge = None; p.animation_until = 0
             p.tasks = [s['id'] for s in STATIONS]
             p.kill_at = self.now + self.kill_cooldown
@@ -223,12 +223,12 @@ class Room:
     def check_win(self):
         crew = [p for p in self.players.values() if p.role == 'crew']
         living_crew = sum(p.alive for p in crew)
-        imps = sum(p.alive and p.role == 'impostor' for p in self.players.values())
+        imps = sum(p.alive and p.role == 'killer' for p in self.players.values())
         winner = ''
         if not imps: winner = 'crew'
-        elif imps >= living_crew: winner = 'impostor'
+        elif imps >= living_crew: winner = 'killer'
         elif crew and all(len(p.done) == len(p.tasks) for p in crew): winner = 'crew'
-        elif self.sabotage_until and self.now >= self.sabotage_until: winner = 'impostor'
+        elif self.sabotage_until and self.now >= self.sabotage_until: winner = 'killer'
         if winner: self.winner = winner; self.phase = 'gameover'; self.sabotage_until = 0
 
     def meeting(self, p, body=None):
@@ -260,7 +260,7 @@ class Room:
             self.require(pid == self.host, 'Only the host can modify mission settings.')
             self.require(self.phase == 'lobby', 'Change mission settings in the waiting room.')
             numeric = {
-                'capacity': ('capacity', 4, 12), 'impostors': ('impostors', 1, 3),
+                'capacity': ('capacity', 4, 12), 'killers': ('killers', 1, 3),
                 'killCooldown': ('kill_cooldown', 10, 60), 'discussion': ('discussion', 10, 90),
                 'voting': ('voting', 10, 120), 'emergencyMeetings': ('emergency_meetings', 0, 3),
                 'meetingCooldown': ('meeting_cooldown', 10, 60),
@@ -320,7 +320,7 @@ class Room:
         self.require(self.now >= p.animation_until, 'Elimination animation is finishing.')
         if action == 'kill':
             q = self.players.get(target)
-            self.require(p.alive and p.role == 'impostor' and p.vent < 0 and self.now >= p.kill_at and q is not None and q.alive and q.role == 'crew' and q.vent < 0 and distance(p,q) <= 1.8, 'No eligible target in range, or eliminator cooling down.')
+            self.require(p.alive and p.role == 'killer' and p.vent < 0 and self.now >= p.kill_at and q is not None and q.alive and q.role == 'crew' and q.vent < 0 and distance(p,q) <= 1.8, 'No eligible target in range, or eliminator cooling down.')
             self.require(self.now >= q.animation_until, 'That explorer is busy.')
             style = secrets.randbelow(4) if value is None or value == -1 else value
             self.require(type(style) is int and 0 <= style <= 3, 'Unknown elimination style.')
@@ -338,13 +338,13 @@ class Room:
         elif action == 'report': self.meeting(p, target)
         elif action == 'meeting': self.meeting(p)
         elif action == 'sabotage':
-            self.require(p.alive and p.role == 'impostor' and self.now >= self.sabotage_at and not self.sabotage_until, 'Sabotage is unavailable.')
+            self.require(p.alive and p.role == 'killer' and self.now >= self.sabotage_at and not self.sabotage_until, 'Sabotage is unavailable.')
             self.sabotage_until = self.now + 55; self.sabotage_at = self.now + 80
         elif action == 'repair':
             self.require(p.alive and p.vent < 0 and self.sabotage_until and math.hypot(p.x-2,p.z+12) <= 2, 'Approach the reactor console to repair it.')
             self.sabotage_until = 0
         elif action == 'vent':
-            self.require(p.role == 'impostor' and p.alive, 'Only impostors can use service ducts.')
+            self.require(p.role == 'killer' and p.alive, 'Only killers can use service ducts.')
             if p.vent >= 0:
                 if target == 'next': p.vent = (p.vent+1)%len(VENTS); p.x,p.z = VENTS[p.vent]
                 else: p.vent = -1
@@ -415,7 +415,7 @@ class Room:
             if p.id != pid and self.phase not in ('lobby','gameover','discussion','voting','results'):
                 if (not p.alive and me.alive) or p.vent >= 0: continue
             row = {k:getattr(p,k) for k in ('id','name','color','hat','x','z','alive','connected','ready','ack')}
-            if p.id == pid or self.phase == 'gameover' or me.role == 'impostor' and p.role == 'impostor': row['role'] = p.role
+            if p.id == pid or self.phase == 'gameover' or me.role == 'killer' and p.role == 'killer': row['role'] = p.role
             row['voted'] = p.id in self.votes
             players.append(row)
         crew = [p for p in self.players.values() if p.role == 'crew']
@@ -438,7 +438,7 @@ class Room:
             'rules': {'killCooldown': self.kill_cooldown, 'discussion': self.discussion,
                       'voting': self.voting, 'emergencyMeetings': self.emergency_meetings,
                       'meetingCooldown': self.meeting_cooldown},
-            'impostors': self.impostors, 'phase': self.phase, 'round': self.round, 'players': players,
+            'killers': self.killers, 'phase': self.phase, 'round': self.round, 'players': players,
             'bodies': self.bodies, 'remaining': max(0, self.deadline - self.now), 'result': self.result,
             'winner': self.winner, 'sabotage': max(0, self.sabotage_until - self.now),
             'killCooldown': max(0, me.kill_at - self.now), 'sabotageCooldown': max(0, self.sabotage_at - self.now),

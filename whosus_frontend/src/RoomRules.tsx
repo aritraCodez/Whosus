@@ -71,11 +71,11 @@ export function RoomRules() {
           onChange={change("capacity")}
         />
         <NumberRule
-          label="Impostors"
-          value={r.impostors}
+          label="killers"
+          value={r.killers}
           options={[1, 2, 3]}
           disabled={disabled}
-          onChange={change("impostors")}
+          onChange={change("killers")}
         />
         <NumberRule
           label="Movement speed"
@@ -126,7 +126,7 @@ export function RoomRules() {
         />
       </div>
       <p className="hint">
-        At least 4 ready players to launch. Two impostors need 7 players; three
+        At least 4 ready players to launch. Two killers need 7 players; three
         need 10.
       </p>
     </section>

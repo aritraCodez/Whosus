@@ -9,7 +9,7 @@ export interface Player {
   connected: boolean;
   ready: boolean;
   ack: number;
-  role?: "crew" | "impostor";
+  role?: "crew" | "killer";
   voted: boolean;
 }
 export interface Task {
@@ -54,7 +54,7 @@ export interface Snapshot {
     emergencyMeetings: number;
     meetingCooldown: number;
   };
-  impostors: number;
+  killers: number;
   phase: string;
   round: number;
   players: Player[];

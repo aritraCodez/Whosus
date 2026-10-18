@@ -1,6 +1,6 @@
 # WhoSus?
 
-WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on Cloudline Station. Crewmates maintain the station and investigate; impostors sabotage it and eliminate crew. A FastAPI server owns the match, while a React Three Fiber client renders the world and handles player input.
+WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on Cloudline Station. Crewmates maintain the station and investigate; killers sabotage it and eliminate crew. A FastAPI server owns the match, while a React Three Fiber client renders the world and handles player input.
 
 This README is the single project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts.
 
@@ -127,7 +127,7 @@ On macOS/Linux, use `python3`, `.venv/bin/python`, and `npm` instead of the Wind
 
 Create a private or public room, then join it from **at least four independent browser contexts or devices**. Use distinct browser profiles or different browsers; ordinary duplicated tabs may copy the same session token and reconnect as the same player. Everyone must be connected and ready before the host can launch. Enable voice with the microphone button in each participating client.
 
-Crewmates win by completing every assigned task or ejecting all impostors. Impostors win when living impostors reach parity with living crew, or when a reactor sabotage expires. Ghosts can continue tasks. A vote tie or a winning skip vote ejects nobody. After game over, the host can return the room to the lobby for a rematch.
+Crewmates win by completing every assigned task or ejecting all killers. killers win when living killers reach parity with living crew, or when a reactor sabotage expires. Ghosts can continue tasks. A vote tie or a winning skip vote ejects nobody. After game over, the host can return the room to the lobby for a rematch.
 
 | Action | Desktop | Touch |
 | --- | --- | --- |
@@ -187,7 +187,7 @@ The server trusts session identity established on the WebSocket, rather than a p
 | Simulation | `app/game.py`; fixed 50 ms steps, bounded input queues, collision checks and server-owned timers |
 | Client responsiveness | `src/network.ts` predicts local inputs and replays unacknowledged inputs over server positions |
 | Remote movement | `src/Scene.tsx` smooths received player positions during rendering |
-| Role secrecy | Per-recipient snapshots disclose the player's own role, impostor teammates when applicable, and all roles after game over |
+| Role secrecy | Per-recipient snapshots disclose the player's own role, killer teammates when applicable, and all roles after game over |
 | Task validation | Station range, issued challenge nonce, expected sequence, and minimum step timing |
 | Communication validation | Server-side text recipients and per-recipient audio gain |
 | Transport limits | Pydantic validation, bounded message sizes, request rate limits, and bounded outbound queues |
@@ -357,16 +357,16 @@ Use four independent contexts named A, B, C and D. Start with headphones on sepa
 | Role reveal and movement | Ready everyone, launch, and move each explorer through room entrances and against obstacles. | Each client sees its permitted role; movement remains synchronized and obeys collision. |
 | Tasks | As crew, approach a console and follow its sequence; also try a wrong symbol and move away. | Valid steps advance; invalid steps do not; moving out of range expires the challenge. |
 | Proximity voice | Move two living players together, then more than 9 map units apart. | Speech fades with distance and becomes inaudible outside the range. |
-| Elimination and reporting | As impostor, wait for the cooldown, eliminate nearby crew, then report from another living player. | A body is created, a nearby report opens discussion, and dead players cannot vote. |
+| Elimination and reporting | As killer, wait for the cooldown, eliminate nearby crew, then report from another living player. | A body is created, a nearby report opens discussion, and dead players cannot vote. |
 | Ghost isolation | In a four-player match, eliminate one crew member, then have that ghost and living players speak and text. | Ghost audio/text never reaches living players; living audio/text never reaches the ghost. |
-| Ghost-to-ghost audio | Use at least five players and one impostor; eliminate two crew members without reaching parity. | The two ghosts hear and text one another while living players remain isolated. |
-| Sabotage and ducts | Sabotage the reactor, repair its console as crew, then use a duct as impostor. | Repair clears the countdown; only impostors use ducts; vented living audio is suppressed. |
+| Ghost-to-ghost audio | Use at least five players and one killer; eliminate two crew members without reaching parity. | The two ghosts hear and text one another while living players remain isolated. |
+| Sabotage and ducts | Sabotage the reactor, repair its console as crew, then use a duct as killer. | Repair clears the countdown; only killers use ducts; vented living audio is suppressed. |
 | Meetings and voting | Approach the beacon after its cooldown, discuss, vote, then repeat with a tie or skip. | Living players communicate across the map; only eligible votes count; tie/skip ejects nobody. |
-| Results and rematch | Eject the impostor, confirm the outcome, and let the host request a rematch. | Roles are revealed, all-player chat returns, and readiness resets in the lobby. |
+| Results and rematch | Eject the killer, confirm the outcome, and let the host request a rematch. | Roles are revealed, all-player chat returns, and readiness resets in the lobby. |
 | Reconnect | Disconnect one client briefly using browser network controls, reconnect within 45 seconds, then separately test a longer disconnect. | A retained token resumes identity; a long active-match disconnect forfeits the player's life. |
 | Mobile controls | Test an actual Android browser over HTTPS in landscape and portrait; move and press actions simultaneously. | Multi-touch controls remain usable; microphone permission and playback work on the device. |
 
-Also verify a crew task victory, impostor parity victory, and an unrepaired reactor timeout in separate rounds. Test microphone denial and playback unlocking as explicit error-recovery cases.
+Also verify a crew task victory, killer parity victory, and an unrepaired reactor timeout in separate rounds. Test microphone denial and playback unlocking as explicit error-recovery cases.
 
 For each failure, record browser/device, room phase, expected and actual behavior, reproduction steps, browser console output, backend logs, and available screenshots. Do not include reconnect tokens or private network configuration in reports. Restrictive-network testing requires a separately configured relay; same-computer tests do not establish internet connectivity.
 
@@ -384,7 +384,7 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 
 Vite embeds `VITE_BACKEND_ORIGIN` into the frontend bundle at build time. The backend URL is public, not a secret. For a Docker build, pass it with `--build-arg`; for Vite development, set it in the frontend `.env` file. Leave `VITE_BACKEND_ORIGIN` unset to use the local Vite proxy. The room host's **Fill to N players** helper fills the selected capacity (4–12) with test clients and does not require an environment variable. `PORT` remains an Nginx runtime setting.
 
-Hosts can change public/private visibility, capacity, impostors, movement speed (0.5–2×), kill cooldown, discussion/voting durations, emergency meeting limits, task bar visibility, and visual tasks in the waiting room. Rule changes clear ready status. Hosts can kick other players before launch; kicked sessions cannot resume. Colors are unique within each room, including reserved colors for reconnecting players.
+Hosts can change public/private visibility, capacity, killers, movement speed (0.5–2×), kill cooldown, discussion/voting durations, emergency meeting limits, task bar visibility, and visual tasks in the waiting room. Rule changes clear ready status. Hosts can kick other players before launch; kicked sessions cannot resume. Colors are unique within each room, including reserved colors for reconnecting players.
 
 The departure-door console offers practice versions of all tasks. Walk within range and press **E** or click the console. During a match, highlighted consoles are assigned tasks; nearby consoles show their name and completion status. Run `npm.cmd run test:room` for the room controls and practice-task browser checks, and `npm.cmd run test:movement` for held-key and speed/prediction checks.
 

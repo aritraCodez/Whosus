@@ -92,13 +92,13 @@ function eliminate() {
   )
     return;
   const me = s.room.players.find((p) => p.id === s.id);
-  if (!me?.alive || me.role !== "impostor" || s.room.vent >= 0) return;
+  if (!me?.alive || me.role !== "killer" || s.room.vent >= 0) return;
   const q = s.room?.players
     .filter(
       (p) =>
         p.id !== s.id &&
         p.alive &&
-        p.role !== "impostor" &&
+        p.role !== "killer" &&
         Math.hypot(p.x - motion.x, p.z - motion.z) <= 1.8,
     )
     .sort(
@@ -188,7 +188,7 @@ function RoomForm({
   const [code, setCode] = useState(""),
     [capacity, setCapacity] = useState(8),
     [publicRoom, setPublic] = useState(false),
-    [impostors, setImpostors] = useState(1),
+    [killers, setKillers] = useState(1),
     [cooldown, setCooldown] = useState(25),
     [discussion, setDiscussion] = useState(25),
     [speed, setSpeed] = useState(1),
@@ -277,7 +277,7 @@ function RoomForm({
               hat,
               capacity,
               public: publicRoom,
-              impostors,
+              killers,
               kill_cooldown: cooldown,
               discussion,
               movement_speed: speed,
@@ -313,10 +313,10 @@ function RoomForm({
               onChange={(v) => setCapacity(Number(v))}
             />
             <GameSelect
-              label="Impostors"
-              value={impostors}
-              options={[1, 2, 3].map((n) => ({ value: n, label: n === 1 ? "1 impostor" : `${n} impostors` }))}
-              onChange={(v) => setImpostors(Number(v))}
+              label="killers"
+              value={killers}
+              options={[1, 2, 3].map((n) => ({ value: n, label: n === 1 ? "1 killer" : `${n} killers` }))}
+              onChange={(v) => setKillers(Number(v))}
             />
             <GameSelect
               label="Elimination cooldown"
@@ -332,7 +332,7 @@ function RoomForm({
             />
           </div>
           <p className="hint">
-            Impostors are capped at one per three other players to keep the
+            killers are capped at one per three other players to keep the
             match fair.
           </p>
           <label className="toggle-line">
@@ -634,7 +634,7 @@ function Menu({
               <h3>Keep things running.</h3>
               <p>
                 Crewmates visit the four marked consoles and complete their
-                circuits. Finish every task or vote out every impostor to win.
+                circuits. Finish every task or vote out every killer to win.
                 Ghosts can still finish tasks.
               </p>
             </article>
@@ -642,7 +642,7 @@ function Menu({
               <Skull />
               <h3>Be a little suspicious.</h3>
               <p>
-                Impostors blend in, use service ducts and eliminate nearby crew.
+                killers blend in, use service ducts and eliminate nearby crew.
                 Sabotage the reactor to create a 55-second emergency. Crew can
                 repair it at the reactor console.
               </p>
@@ -1201,7 +1201,7 @@ function Lobby() {
       <div className="lobby-bottom">
         <span>
           <Users size={16} /> {r.population}/{r.capacity} explorers <i />{" "}
-          {r.impostors} impostor{r.impostors > 1 ? "s" : ""}
+          {r.killers} killer{r.killers > 1 ? "s" : ""}
         </span>
         <div>
           <button
@@ -1345,12 +1345,12 @@ function GameHUD() {
     () => typeof window !== "undefined" && window.innerWidth < 700,
   );
   if (!me) return null;
-  const impostor = me.role === "impostor";
+  const killer = me.role === "killer";
   const nearbyTarget = r.players.some(
     (p) =>
       p.id !== s.id &&
       p.alive &&
-      p.role !== "impostor" &&
+      p.role !== "killer" &&
       Math.hypot(p.x - me.x, p.z - me.z) <= 1.8,
   );
   const nearTask = r.tasks.find(
@@ -1424,7 +1424,7 @@ function GameHUD() {
               title={tasksCollapsed ? "Expand tasks" : "Collapse tasks"}
             >
               <span>
-                {impostor ? "A LITTLE TREACHERY" : "A LITTLE TEAMWORK"}
+                {killer ? "A LITTLE TREACHERY" : "A LITTLE TEAMWORK"}
               </span>
               <div className="task-header-right">
                 <strong>{Math.round(r.progress * 100)}%</strong>
@@ -1445,19 +1445,19 @@ function GameHUD() {
                 <h3>
                   {!me.alive
                     ? "Your shift isn’t over."
-                    : impostor
+                    : killer
                       ? "Make yourself believable."
                       : "Keep the station alive."}
                 </h3>
                 {!me.alive && (
                   <p className="ghost-note">
                     You’re a ghost.{" "}
-                    {impostor
+                    {killer
                       ? "Watch the mystery unfold."
                       : "Finish your tasks and help your crew."}
                   </p>
                 )}
-                {impostor ? (
+                {killer ? (
                   <p>
                     Blend in. Create a distraction.
                     <br />
@@ -1503,7 +1503,7 @@ function GameHUD() {
           )}
           {r.phase === "playing" && (
             <div className="action-buttons">
-              {impostor && me.alive && (
+              {killer && me.alive && (
                 <>
                   <HoldButton
                     className="action danger"
@@ -1604,12 +1604,12 @@ function GameHUD() {
         !r.movementLock && <Joystick />}
       <ChatPanel />
       {r.phase === "reveal" && (
-        <div className={`role-reveal ${impostor ? "traitor" : ""}`}>
+        <div className={`role-reveal ${killer ? "traitor" : ""}`}>
           <span className="eyebrow">KEEP THIS BETWEEN US.</span>
           <BotIcon color={me.color} />
-          <h2>You’re {impostor ? "the impostor." : "a crewmate."}</h2>
+          <h2>You’re {killer ? "the killer." : "a crewmate."}</h2>
           <p>
-            {impostor
+            {killer
               ? "A friendly face. A very different agenda."
               : "A little teamwork will get you home."}
           </p>
@@ -1652,10 +1652,10 @@ function GameHUD() {
             <p>
               {r.winner === "crew"
                 ? "The crewmates saved Cloudline Station."
-                : "The impostors got the better of this crew."}
+                : "The killers got the better of this crew."}
             </p>
             <h3>
-              {(impostor ? "impostor" : "crew") === r.winner
+              {(killer ? "killer" : "crew") === r.winner
                 ? "VICTORY"
                 : "BETTER LUCK NEXT EXPEDITION"}
             </h3>
@@ -1664,8 +1664,8 @@ function GameHUD() {
                 <div key={p.id}>
                   <BotIcon small color={p.color} />
                   <strong>{p.name}</strong>
-                  <small className={p.role === "impostor" ? "error-text" : ""}>
-                    {p.role === "impostor" ? "Impostor" : "Crewmate"}
+                  <small className={p.role === "killer" ? "error-text" : ""}>
+                    {p.role === "killer" ? "killer" : "Crewmate"}
                   </small>
                 </div>
               ))}

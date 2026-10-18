@@ -330,7 +330,7 @@ try {
       const { useGame } = await import(window.sceneModuleUrl("store"));
       const { motion } = await import(window.sceneModuleUrl("network"));
       const room = structuredClone(window.effectTestRoom);
-      const player = { ...room.players[0], x: 0, z: -11, alive: true, role: "impostor" };
+      const player = { ...room.players[0], x: 0, z: -11, alive: true, role: "killer" };
       motion.x = motion.renderX = player.x;
       motion.z = motion.renderZ = player.z;
       motion.revision++;
@@ -371,7 +371,7 @@ try {
         ...room.players[0],
         x: 0,
         z: 2,
-        role: "impostor",
+        role: "killer",
         alive: true,
       };
       const victim = {

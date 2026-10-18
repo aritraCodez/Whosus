@@ -8,7 +8,7 @@ def match():
         room.add(f'Pilot {i}').ready = True
     room.start(room.host)
     room.tick(room.deadline + 11)
-    killer = next(p for p in room.players.values() if p.role == 'impostor')
+    killer = next(p for p in room.players.values() if p.role == 'killer')
     crew = [p for p in room.players.values() if p.role == 'crew']
     killer.x, killer.z = 0, 2
     crew[0].x, crew[0].z = 1, 2
