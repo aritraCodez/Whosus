@@ -292,6 +292,7 @@ function Console({ x, z, color, stationId, practice = false }: { x: number; z: n
   const task = r?.tasks.find(t => t.id === stationId);
   const definition = STATIONS.find(t => t.id === stationId);
   const done = !!task?.done || !!(stationId && s.fakeDone[stationId]);
+  const success = !!r?.visuals?.some(v => v.player === s.id && v.task === stationId);
   const repair = stationId === "reactor_monitor" && !!r?.sabotage;
   const active = practice || repair || (!!task && !done);
   const near = !!me && Math.hypot(me.x - x, me.z - z) <= 2.5;
@@ -312,16 +313,16 @@ function Console({ x, z, color, stationId, practice = false }: { x: number; z: n
         <meshStandardMaterial
           color={statusColor}
           emissive={statusColor}
-          emissiveIntensity={active ? 1.2 : .15}
+          emissiveIntensity={success ? 3 : active ? 1.2 : .15}
         />
       </mesh>
-      {active && <mesh position={[0, .03, 0]} rotation={[-Math.PI/2,0,0]}>
-        <ringGeometry args={[.7,.75,32]} /><meshBasicMaterial color={statusColor} transparent opacity={near ? .8 : .3} />
+      {(active || success) && <mesh position={[0, .03, 0]} rotation={[-Math.PI/2,0,0]}>
+        <ringGeometry args={[.7,success ? .95 : .75,32]} /><meshBasicMaterial color={statusColor} transparent opacity={success ? 1 : near ? .8 : .3} />
       </mesh>}
       {(near || practice) && <Html position={[0, 1.95, 0]} center zIndexRange={[10, 1]}>
         <button className={`station-label ${active ? "active" : ""}`} onClick={e => { e.stopPropagation(); activate(); }}>
           <strong>{practice ? "Practice station" : repair ? "Repair reactor" : definition?.name}</strong>
-          <small>{near ? active ? "Click or press E" : done ? "Complete" : "Not assigned this round" : "Walk closer to try tasks"}</small>
+          <small>{success ? "Task complete" : near ? active ? "Tap or press E" : done ? "Complete" : "Task console" : "Walk closer to try tasks"}</small>
         </button>
       </Html>}
     </group>
@@ -365,9 +366,11 @@ function FloorLabel({ name, x, z }: { name: string; x: number; z: number }) {
 
 function VisualTaskEffects() {
   const visuals = useGame((s) => s.room?.visuals ?? EMPTY_VISUALS);
+  const id = useGame((s) => s.id);
   return (
     <>
       {visuals.map((v, i) => {
+        if (v.player !== id) return null;
         if (v.kind === "scan") {
           return (
             <group key={i} position={[-8, 0, 2]}>

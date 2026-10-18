@@ -758,7 +758,7 @@ function SettingsPanel() {
           <label className="toggle-line">
             <span>
               <strong>Visual Tasks</strong>
-              <small>Nearby players observe MedBay scan, shields, and laser bursts</small>
+              <small>Show completion lights and effects only to the player doing the task</small>
             </span>
             <input
               type="checkbox"
@@ -1048,6 +1048,7 @@ function Lobby() {
   const [copied, setCopied] = useState(false),
     [addingTestPlayers, setAddingTestPlayers] = useState(false);
   const [draftName, setDraftName] = useState(me?.name || "");
+  const [crewOpen, setCrewOpen] = useState(false);
   const lobbyName = useRef<HTMLInputElement>(null);
   useEffect(() => {
     setDraftName(me?.name || "");
@@ -1077,7 +1078,13 @@ function Lobby() {
     }
   }
   return (
-    <div className="waiting-ui">
+    <div className={`waiting-ui ${crewOpen ? "crew-open" : ""}`}>
+      <div className="mobile-lobby-bar">
+        <span><strong>{r.code}</strong><small>{r.population}/{r.capacity} crew · {r.public ? "Public" : "Private"}</small></span>
+        <button className="secondary" aria-expanded={crewOpen} aria-controls="lobby-crew-panel" onClick={() => setCrewOpen(!crewOpen)}>
+          {crewOpen ? <X size={17} /> : <Users size={17} />}{crewOpen ? "Close crew" : "Crew & room"}
+        </button>
+      </div>
       <form
         className="room-profile"
         onSubmit={(e) => {
@@ -1109,7 +1116,7 @@ function Lobby() {
           <Pencil size={17} />
         </button>
       </form>
-      <aside className="lobby-deck">
+      <aside className="lobby-deck" id="lobby-crew-panel">
         <div className="lobby-title">
           <div>
             <span className="eyebrow">DEPARTURE LOUNGE</span>
@@ -1201,6 +1208,9 @@ function Lobby() {
           )}
         </div>
         <button className="secondary full" onClick={openPractice}>Practice at console</button>
+        {host && <button className="secondary full fill-crew" disabled={addingTestPlayers} onClick={() => void addTestPlayers()}>
+          {addingTestPlayers ? "Adding test players…" : r.population < r.capacity ? `Fill to ${r.capacity} players` : "Ready added players"}
+        </button>}
         <div className="lobby-rules-summary">
           <span>TASK BAR: <strong>{(r.taskBarMode || "always").toUpperCase()}</strong></span>
           <i>·</i>
@@ -1213,19 +1223,6 @@ function Lobby() {
           {r.impostors} impostor{r.impostors > 1 ? "s" : ""}
         </span>
         <div>
-          {host && (
-            <button
-              className="secondary"
-              disabled={addingTestPlayers}
-              onClick={() => void addTestPlayers()}
-            >
-              {addingTestPlayers
-                ? "Adding test players…"
-                : r.population < r.capacity
-                  ? `Fill to ${r.capacity} players`
-                  : "Ready added players"}
-            </button>
-          )}
           <button
             className={me?.ready ? "secondary" : "primary"}
             onClick={() => act("ready")}
