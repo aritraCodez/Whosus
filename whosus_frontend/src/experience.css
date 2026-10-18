@@ -507,6 +507,8 @@
   .in-lobby .scene-wrap { position: absolute; top: calc(168px + env(safe-area-inset-top, 0px)); bottom: calc(190px + env(safe-area-inset-bottom, 0px)); height: auto; min-height: 0; width: 100%; }
   .in-game .joystick { width: 88px; height: 88px; left: 14px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
   .bay-hint { display: none; }
+  .in-lobby .bay-sign { display: none; }
+  .in-lobby .station-label.practice { transform: translateY(-42px); }
   dialog { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
   dialog input, dialog select { font-size: 16px; }
   .task-game { min-width: 0; }

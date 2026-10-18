@@ -108,9 +108,22 @@ try {
   await page
     .getByRole("heading", { name: "Practice station", exact: true })
     .waitFor();
+  await page.getByText("Tap or press E", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.screenshot({ path: "artifacts/room-controls.png" });
+  assert.equal(await page.locator(".bay-sign").evaluate(el => getComputedStyle(el).display), "inline");
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByText("Tap to interact", { exact: true }).waitFor();
+  assert.equal(await page.locator(".bay-sign").evaluate(el => getComputedStyle(el).display), "none");
+  assert.notEqual(await page.locator(".nameplate.you").evaluate(el => getComputedStyle(el).display), "none");
+  const practiceLabel = await page.locator(".station-label.practice").boundingBox();
+  const playerName = await page.locator(".nameplate.you").boundingBox();
+  assert(practiceLabel && playerName);
+  assert(
+    practiceLabel.y + practiceLabel.height <= playerName.y ||
+      playerName.y + playerName.height <= practiceLabel.y,
+    "Practice label does not overlap the player's nameplate on mobile",
+  );
   await page
     .getByRole("button", { name: "Room settings", exact: true })
     .click();

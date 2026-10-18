@@ -280,7 +280,7 @@ function Plant({
     </group>
   );
 }
-function Console({ x, z, color, stationId, practice = false }: { x: number; z: number; color: string; stationId?: string; practice?: boolean }) {
+function Console({ x, z, color, stationId, practice = false, touchControls }: { x: number; z: number; color: string; stationId?: string; practice?: boolean; touchControls: boolean }) {
   const { scene } = useGLTF("/models/task-console.glb");
   const model = useMemo(() => {
     const copy = scene.clone(true);
@@ -320,9 +320,9 @@ function Console({ x, z, color, stationId, practice = false }: { x: number; z: n
         <ringGeometry args={[.7,success ? .95 : .75,32]} /><meshBasicMaterial color={statusColor} transparent opacity={success ? 1 : near ? .8 : .3} />
       </mesh>}
       {(near || practice) && <Html position={[0, 1.95, 0]} center zIndexRange={[10, 1]}>
-        <button className={`station-label ${active ? "active" : ""}`} onClick={e => { e.stopPropagation(); activate(); }}>
+        <button className={`station-label ${practice ? "practice" : ""} ${active ? "active" : ""}`} onClick={e => { e.stopPropagation(); activate(); }}>
           <strong>{practice ? "Practice station" : repair ? "Repair reactor" : definition?.name}</strong>
-          <small>{success ? "Task complete" : near ? active ? "Tap or press E" : done ? "Complete" : "Task console" : "Walk closer to try tasks"}</small>
+          <small>{success ? "Task complete" : near ? active ? touchControls ? "Tap to interact" : "Tap or press E" : done ? "Complete" : "Task console" : "Walk closer to try tasks"}</small>
         </button>
       </Html>}
     </group>
@@ -422,7 +422,7 @@ const consoleColors = [
   "#c5db79",
 ];
 
-const Station = memo(function Station() {
+const Station = memo(function Station({ touchControls }: { touchControls: boolean }) {
   const sabotage = useGame((s) => !!s.room?.sabotage);
   return (
     <group>
@@ -534,6 +534,7 @@ const Station = memo(function Station() {
           stationId={s.id}
           x={s.x}
           z={s.z}
+          touchControls={touchControls}
           color={
             s.id === "start_reactor" && sabotage
               ? "#ff6c67"
@@ -610,7 +611,7 @@ function MotionFrame() {
   return null;
 }
 
-const WaitingRoom = memo(function WaitingRoom() {
+const WaitingRoom = memo(function WaitingRoom({ touchControls }: { touchControls: boolean }) {
   return (
     <group>
       <Box
@@ -708,7 +709,7 @@ const WaitingRoom = memo(function WaitingRoom() {
           />
         </group>
       ))}
-      <Console x={0} z={-3.8} color="#a8e4b3" practice />
+      <Console x={0} z={-3.8} color="#a8e4b3" practice touchControls={touchControls} />
       <Html
         position={[0, 2.5, -5]}
         center
@@ -879,6 +880,9 @@ function World({
 }) {
   const lobby = useGame((s) => s.room?.phase === "lobby");
   const quality = useGame((s) => s.quality);
+  const viewportWidth = useThree((s) => s.size.width);
+  const touchControls =
+    viewportWidth <= 700 || window.matchMedia("(pointer: coarse)").matches;
   return (
     <>
       <color attach="background" args={["#152b35"]} />
@@ -908,7 +912,11 @@ function World({
         shadow-camera-bottom={-22}
         shadow-bias={-0.001}
       />
-      {lobby ? <WaitingRoom /> : <Station />}
+      {lobby ? (
+        <WaitingRoom touchControls={touchControls} />
+      ) : (
+        <Station touchControls={touchControls} />
+      )}
       <Actors menu={menu} color={color} hat={hat} />
       {quality === "high" &&
         Array.from({ length: 12 }, (_, i) => (
