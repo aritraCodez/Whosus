@@ -579,6 +579,9 @@ function Menu({
             <div>
               <strong>“I was in Botanical.”</strong>
               <small>Sure you were, Miso.</small>
+              <small className="hero-controls-hint">
+                WASD / arrows · swipe left or right to move
+              </small>
             </div>
             <span className="note-dot" />
           </div>
@@ -594,7 +597,7 @@ function Menu({
             </p>
           </div>
           <span className="coordinate">
-            ALT. 08,420 M &nbsp; / &nbsp; ALL SYSTEMS NOMINAL
+            KILLER APPROACHING &nbsp; / &nbsp; COORDINATES SHARED
           </span>
         </section>
       </main>
@@ -602,14 +605,8 @@ function Menu({
         <span>
           <span className="live-dot" /> ALL ABOARD, TRUST OPTIONAL.
         </span>
-        <button onClick={() => setHelp(true)}>
-          New around here?{" "}
-          <strong>
-            How to play <ArrowRight size={14} />
-          </strong>
-        </button>
         <span>
-          WHOSUS? <b>VOL. 01</b>
+          WHOSUS? <b className="footer-killer">SOMEONE'S NOT WHO THEY SEEM</b>
         </span>
       </footer>
       {form && (
@@ -652,8 +649,9 @@ function Menu({
               <h3>Talk it out.</h3>
               <p>
                 Report a body or call a meeting at the central beacon. Discuss,
-                then vote or skip. A tie ejects nobody. Ghosts only speak and
-                text to ghosts until the match ends.
+                then vote or skip. A tie ejects nobody. During a match, living
+                crew can talk and text with the living; ghosts can talk and text
+                with other ghosts, never the living.
               </p>
             </article>
           </div>
@@ -1729,6 +1727,7 @@ export default function App() {
     if (roomName) setName(roomName);
   }, [roomName]);
   useEffect(() => {
+    let swipe: { pointerId: number; startX: number; startY: number } | undefined;
     const down = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest("input,textarea,select,dialog"))
         return;
@@ -1779,16 +1778,48 @@ export default function App() {
     const reset = () => {
       motion.keys.clear();
       motion.dx = motion.dz = 0;
+      swipe = undefined;
       voice.ptt(false);
+    };
+    const pointerDown = (e: PointerEvent) => {
+      if (
+        e.pointerType !== "touch" ||
+        useGame.getState().room ||
+        !(e.target instanceof Element) ||
+        !e.target.closest(".scene-wrap") ||
+        e.target.closest("button,input,select,a,dialog")
+      )
+        return;
+      swipe = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY };
+    };
+    const pointerMove = (e: PointerEvent) => {
+      if (!swipe || e.pointerId !== swipe.pointerId) return;
+      const dx = e.clientX - swipe.startX;
+      const dy = e.clientY - swipe.startY;
+      motion.dx =
+        Math.abs(dx) > 18 && Math.abs(dx) > Math.abs(dy) ? Math.sign(dx) : 0;
+    };
+    const pointerUp = (e: PointerEvent) => {
+      if (!swipe || e.pointerId !== swipe.pointerId) return;
+      swipe = undefined;
+      motion.dx = 0;
     };
     window.addEventListener("keydown", down, true);
     window.addEventListener("keyup", up, true);
     window.addEventListener("blur", reset);
+    window.addEventListener("pointerdown", pointerDown, true);
+    window.addEventListener("pointermove", pointerMove, true);
+    window.addEventListener("pointerup", pointerUp, true);
+    window.addEventListener("pointercancel", pointerUp, true);
     document.addEventListener("visibilitychange", reset);
     return () => {
       window.removeEventListener("keydown", down, true);
       window.removeEventListener("keyup", up, true);
       window.removeEventListener("blur", reset);
+      window.removeEventListener("pointerdown", pointerDown, true);
+      window.removeEventListener("pointermove", pointerMove, true);
+      window.removeEventListener("pointerup", pointerUp, true);
+      window.removeEventListener("pointercancel", pointerUp, true);
       document.removeEventListener("visibilitychange", reset);
     };
   }, []);
