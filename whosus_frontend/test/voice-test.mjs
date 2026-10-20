@@ -157,7 +157,9 @@ async function approachAlongRing(page, target) {
 
 try {
   for (let i = 0; i < 5; i++) {
-    const context = await browser.newContext({ permissions: ["microphone"] });
+    const context = await browser.newContext({
+      permissions: ["microphone", "local-network-access"],
+    });
     contexts.push(context);
     const page = await context.newPage();
     pages.push(page);

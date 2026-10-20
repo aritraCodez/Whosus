@@ -1,4 +1,7 @@
 .venv
+venv
+.mypy_cache
+.ruff_cache
 __pycache__
 **/__pycache__
 .pytest_cache
@@ -6,4 +9,5 @@ __pycache__
 .env
 tests
 docs
+scripts
 *.log
