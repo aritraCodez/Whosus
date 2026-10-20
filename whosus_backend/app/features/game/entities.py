@@ -38,3 +38,4 @@ class Player:
     boots: str = "original"
     seat: int = -1
     seated_until: float = 0
+    bot: bool = False

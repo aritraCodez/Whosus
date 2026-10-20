@@ -3,7 +3,6 @@ import { sound } from "@/features/game/audio/sounds";
 import { useGame } from "@/features/game/model/game-store";
 import { motion, movementInput } from "@/features/game/model/motion";
 import { move } from "@/features/game/model/world";
-import { closeTestPlayers } from "@/features/lobby/model/test-players";
 import { voice } from "@/features/voice/voice-client";
 import { send, setGameSocket } from "@/services/game-socket";
 import { parseServerMessage } from "./protocol";
@@ -167,7 +166,6 @@ export function connect(message?: Record<string, unknown>) {
 }
 export function leave() {
   stopped = true;
-  closeTestPlayers();
   send({ type: "leave" });
   token = "";
   sessionStorage.removeItem("whosus-session");

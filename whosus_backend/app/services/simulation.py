@@ -18,8 +18,9 @@ def tick(runtime: Runtime, now: float) -> None:
                     for token, session in list(runtime.sessions.items()):
                         if session.pid == pid:
                             runtime.sessions.pop(token, None)
-        if not any(p.connected for p in room.players.values()) and all(
-            now - p.disconnected_at > SESSION_RETENTION for p in room.players.values()
+        humans = [p for p in room.players.values() if not p.bot]
+        if not any(p.connected for p in humans) and all(
+            now - p.disconnected_at > SESSION_RETENTION for p in humans
         ):
             runtime.rooms.pop(code, None)
             for token, session in list(runtime.sessions.items()):
@@ -27,7 +28,9 @@ def tick(runtime: Runtime, now: float) -> None:
                     runtime.sessions.pop(token, None)
             continue
         if room.host not in room.players or not room.players[room.host].connected:
-            room.host = next((p.id for p in room.players.values() if p.connected), room.host)
+            room.host = next(
+                (p.id for p in room.players.values() if p.connected and not p.bot), room.host
+            )
         for session in list(runtime.sessions.values()):
             if session.room is room and session.conn and session.pid in room.players:
                 session.conn.send(

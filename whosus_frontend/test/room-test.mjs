@@ -36,7 +36,6 @@ try {
             voice: "/src/features/voice/voice-client.ts",
             appearance: "/src/features/appearance/model/appearance-store.ts",
             interactions: "/src/features/game/actions/interactions.ts",
-            devPlayers: "/src/features/lobby/model/test-players.ts",
             audio: "/src/features/game/audio/sounds.ts",
             backend: "/src/config/backend.ts",
           }[name],
@@ -49,23 +48,45 @@ try {
   assert.equal((await room()).movementSpeed, 1.5);
   assert.equal((await room()).rules.voting, 60);
   await page
-    .getByRole("button", { name: "Fill to 8 players", exact: true })
+    .getByRole("button", { name: "Fill to 8 with bots", exact: true })
     .click();
   await waitFor(page, () => window.gameStore.getState().room.population === 8);
+  const bots = (await room()).players.filter((p) => p.bot);
+  assert.equal(bots.length, 7);
+  assert.deepEqual(
+    bots.map((p) => p.name).sort(),
+    Array.from({ length: 7 }, (_, i) => `bot-${i + 1}`),
+  );
+  assert.equal(
+    await page.locator(".crew-card small").filter({ hasText: "BOT" }).count(),
+    7,
+  );
   assert.equal(new Set((await room()).players.map((p) => p.color)).size, 8);
-  console.log("Eight unique players connected");
+  const original = new Map(bots.map((p) => [p.id, [p.x, p.z]]));
+  await waitFor(
+    page,
+    (positions) =>
+      window.gameStore.getState().room.players.some((p) => {
+        const before = positions[p.id];
+        return (
+          p.bot && before && Math.hypot(p.x - before[0], p.z - before[1]) > 0.5
+        );
+      }),
+    Object.fromEntries(original),
+  );
+  console.log(
+    "Seven named bots are marked in the crew list and walk independently",
+  );
   assert.equal(await page.locator(".lobby-colors button:disabled").count(), 7);
-  await page
-    .getByRole("button", { name: "Kick Test Crew 1", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Kick bot-1", exact: true }).click();
   await waitFor(page, () => window.gameStore.getState().room.population === 7);
   await page
-    .getByRole("button", { name: "Fill to 8 players", exact: true })
+    .getByRole("button", { name: "Fill to 8 with bots", exact: true })
     .click();
   await waitFor(page, () => window.gameStore.getState().room.population === 8);
   await selectOption(page, "Room visibility", "true");
   await waitFor(page, () => window.gameStore.getState().room.public);
-  assert.equal((await room()).players.filter((p) => p.ready).length, 0);
+  assert.equal((await room()).players.filter((p) => p.ready).length, 7);
   await page
     .getByRole("button", { name: "Room settings", exact: true })
     .click();

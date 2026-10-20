@@ -8,6 +8,7 @@ from collections import Counter, deque
 from app.features.appearance.catalog import COSMETICS
 
 from .actions import handle_match_action
+from .bots import Bot, tick_bots
 from .communication import add_chat, can_chat, voice_gain
 from .entities import Player
 from .exceptions import GameError
@@ -36,6 +37,7 @@ class Room:
         self.movement_speed, self.voting = movement_speed, voting
         self.emergency_meetings, self.meeting_cooldown = emergency_meetings, meeting_cooldown
         self.players: dict[str, Player] = {}
+        self.bots: dict[str, Bot] = {}
         self.host = ""
         self.phase = "lobby"
         self.now = time.monotonic()
@@ -178,6 +180,7 @@ class Room:
 
     def tick(self, now: float | None = None) -> None:
         self.now = time.monotonic() if now is None else now
+        tick_bots(self)
         self.eliminations = [e for e in self.eliminations if self.now - e["started"] < 2.4]
         for p in self.players.values():
             if (

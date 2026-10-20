@@ -23,6 +23,7 @@ export interface Player {
   alive: boolean;
   connected: boolean;
   ready: boolean;
+  bot?: boolean;
   ack: number;
   role?: "crew" | "killer";
   voted: boolean;

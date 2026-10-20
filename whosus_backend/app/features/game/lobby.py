@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from app.core.security import clean_text
 from app.features.appearance.catalog import COSMETICS
 
+from .bots import fill_bots
 from .entities import Player
 from .exceptions import GameError
 from .types import ActionValue
@@ -20,6 +21,13 @@ def handle_lobby_action(
     room: Room, p: Player, action: str, target: str, value: ActionValue
 ) -> bool:
     pid = p.id
+    if action == "fill_bots":
+        room.require(
+            pid == room.host and room.phase == "lobby" and not p.bot,
+            "Only the host can add bots in the waiting room.",
+        )
+        fill_bots(room)
+        return True
     if action in ("sit", "stand"):
         room.require(room.phase == "lobby", "Use the chairs in the waiting room.")
         if action == "stand":
@@ -69,7 +77,7 @@ def handle_lobby_action(
         else:
             raise GameError("Unknown setting.")
         for q in room.players.values():
-            q.ready = False
+            q.ready = q.bot
             q.inputs.clear()
         return True
     if action == "customize":
@@ -93,6 +101,7 @@ def handle_lobby_action(
         )
         room.require(target != pid and target in room.players, "Choose another player to kick.")
         room.players.pop(target)
+        room.bots.pop(target, None)
         return True
     if action == "rename":
         room.require(room.phase == "lobby", "Change your name in the waiting room.")
@@ -117,7 +126,7 @@ def handle_lobby_action(
         room.votes.clear()
         room.eliminations.clear()
         for i, q in enumerate(room.players.values()):
-            q.ready = False
+            q.ready = q.bot
             q.alive = True
             q.role = "crew"
             q.vent = -1

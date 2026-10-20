@@ -74,6 +74,14 @@ Resume takeovers are serialized and recheck revocation after closing the previou
 
 `ALLOWED_ORIGINS` is required and accepts comma/semicolon-separated exact HTTP(S) origins. Credentials, paths, wildcards, fragments and invalid ports fail configuration. `STUN_URL` retains comma/semicolon parsing, validates address/port syntax and injects no defaults when absent or empty. Voice remains browser-to-browser WebRTC locally and in deployment. See the [project guide](../README.md) for client/network requirements.
 
+## Bot players
+
+The host can send `{"type":"action","action":"fill_bots"}` in the lobby to fill the selected capacity with server-controlled `bot-1`, `bot-2`, etc. Snapshots add `bot: true` only to bot players. Bots use no browser connections, session tokens, microphone, database, or external service. They auto-ready, walk around the lobby, navigate the station's collision map at the configured player speed, and pause during reveals, meetings, and elimination animations.
+
+Crew bots choose unfinished tasks, walk into interaction range, wait at the station and submit the normal task challenge (including timed circuit steps). Ghost crew bots continue their tasks. Impostor bots roam during cooldown and pursue living crewmates when a kill becomes available, using the normal range, cooldown and animation checks. Crew bots also repair an active reactor emergency. Bots vote skip; they do not infer suspects, chat, report bodies, or operate voice chat.
+
+`features/game/bots.py` owns bot decisions and transient per-bot state; `navigation.py` provides bounded A* paths with a 256-route cache over the static collision map. Host permissions, room capacity, role visibility and all action validation remain in the existing game authority. Rule changes and rematches keep bots ready. Hosts can kick bots normally; hosting transfers only to humans. Bot decisions pause when no humans are connected, and bots do not prevent abandoned rooms from expiring after the normal retention period. Restarting still clears all matches.
+
 ## Runtime limits without persistence
 
 Run **one Uvicorn worker**. Room and token registries contain temporary match state only. They are private to that application process, are cleared at shutdown, and are neither durable nor shared between workers. Ordinary round-robin replicas cannot discover or resume each other's rooms. This architecture does not support critical durable user records or persistent account credentials.
