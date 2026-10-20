@@ -158,7 +158,7 @@ export function Menu({
             </span>
             <i />
             <span>
-              <Mic size={13} /> Proximity voice
+              <Mic size={13} /> Crew voice
             </span>
             <i />
             <span>Free to play</span>

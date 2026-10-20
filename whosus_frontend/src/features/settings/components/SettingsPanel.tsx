@@ -41,9 +41,8 @@ export function SettingsPanel() {
         </p>
       </div>
       <p className="hint">
-        Voice changes with the game: everyone in the lobby, nearby living
-        players during exploration, all living players in meetings, and ghosts
-        with ghosts.
+        Voice reaches across the station: everyone in the lobby, all living
+        players during exploration and meetings, and ghosts with ghosts.
       </p>
     </Modal>
   );
