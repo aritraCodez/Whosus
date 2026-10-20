@@ -38,7 +38,6 @@ try {
             voice: "/src/features/voice/voice-client.ts",
             appearance: "/src/features/appearance/model/appearance-store.ts",
             interactions: "/src/features/game/actions/interactions.ts",
-            devPlayers: "/src/features/lobby/model/test-players.ts",
             audio: "/src/features/game/audio/sounds.ts",
             backend: "/src/config/backend.ts",
           }[name],

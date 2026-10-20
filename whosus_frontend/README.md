@@ -22,7 +22,7 @@ src/
       hooks/              Keyboard, focus, and touch input lifecycle
       model/              Shared game types, Zustand state, world and movement
       network/            Session client and typed server-message boundary
-    lobby/                Home/menu, room forms, room rules, discovery API, test crew
+    lobby/                Home/menu, room forms, room rules, discovery API, bot controls
     scene/                Station, waiting room, actors, camera, effects, diagnostics
     settings/             Mission, sound, graphics, and microphone settings
     tasks/                Task lifecycle, practice, individual minigames and sounds
@@ -60,6 +60,7 @@ The original flat modules were moved or split as follows:
 - `game-client.ts` owns session recovery and dispatch. `services/game-socket.ts` owns send access so voice does not import the game client. Movement state has a separate model. The client's explicit movement/send exports remain the integration/diagnostic interface.
 - Preserve existing endpoint names, payloads, session keys, game timing, collision data, DOM classes, and model URLs. The backend is unchanged by this refactor.
 - Voice remains browser-to-browser WebRTC locally and in deployment, using the configured `STUN_URL`. There is no WSS audio transport or transport-selection setting.
+- The host's **Fill to N with bots** control sends `fill_bots` over the existing game socket. Bots are server-controlled, named `bot-1`, `bot-2`, etc., marked **BOT** in the crew list and auto-ready. Crew bots complete tasks; impostor bots pursue and eliminate crewmates. The old browser test-player sockets have been removed.
 - Tap headphones to join and listen with the microphone muted. Tap the mic to unmute, or hold the talk button / V to speak temporarily. Joining still requests browser microphone permission. Game controls suppress mobile text selection and long-press menus; chat inputs retain normal editing.
 - Keep global CSS import order: base styles, then responsive/experience overrides. The stylesheet cascade remains global to preserve existing UI; wardrobe styles stay with appearance.
 
@@ -91,13 +92,14 @@ npm.cmd run test:voice-errors
 npm.cmd run test:mobile-chat
 npm.cmd run test:movement
 npm.cmd run test:room
+npm.cmd run test:bots
 npm.cmd run test:scene
 npm.cmd run test:wardrobe
 npm.cmd run test:seating
 npm.cmd run test:browser
 ```
 
-The model checks cover environment validation, message decoding, appearance normalization, collision/movement, socket serialization, and room API success/error validation. Session checks cover room creation/joining, discovery, chat, authenticated resume, and leave. Existing voice tests still measure decoded audio between real browser peers. The mobile test emulates keyboard viewport changes; it does not replace a physical-device check.
+The model checks cover environment validation, message decoding, appearance normalization, collision/movement, socket serialization, and room API success/error validation. Session checks cover room creation/joining, discovery, chat, authenticated resume, and leave. The bot test uses the real lobby, HUD and backend with the scene stubbed out; it checks labels, names, independent movement, kick/refill, readiness, launch and actual task progress (and observes impostor kills when the human is crew). Existing voice tests still measure decoded audio between real browser peers. The mobile test emulates keyboard viewport changes; it does not replace a physical-device check.
 
 Restart Vite after source edits before running browser scripts. Their direct development-module imports must resolve to the same module instances as the app. Browser screenshots and test artifacts stay in the ignored `artifacts/` directory.
 

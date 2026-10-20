@@ -28,7 +28,6 @@ try {
             voice: "/src/features/voice/voice-client.ts",
             appearance: "/src/features/appearance/model/appearance-store.ts",
             interactions: "/src/features/game/actions/interactions.ts",
-            devPlayers: "/src/features/lobby/model/test-players.ts",
             audio: "/src/features/game/audio/sounds.ts",
             backend: "/src/config/backend.ts",
           }[name],
@@ -51,7 +50,7 @@ try {
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();
   await page
-    .getByRole("button", { name: "Fill to 8 players", exact: true })
+    .getByRole("button", { name: "Fill to 8 with bots", exact: true })
     .waitFor();
   await page.getByLabel("Edit lobby name").click();
   await page.getByLabel("Lobby explorer name").fill("Renamed Pilot");

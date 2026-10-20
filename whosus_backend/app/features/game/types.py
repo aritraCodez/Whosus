@@ -45,6 +45,7 @@ class CharacterSnapshot(TypedDict):
 
 
 class PlayerSnapshot(CharacterSnapshot):
+    bot: NotRequired[bool]
     alive: bool
     connected: bool
     ready: bool

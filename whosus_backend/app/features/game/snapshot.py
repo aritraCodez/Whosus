@@ -57,6 +57,8 @@ def build_snapshot(room: Room, pid: str) -> Snapshot:
             "seat": p.seat,
             "voted": p.id in room.votes,
         }
+        if p.bot:
+            row["bot"] = True
         if p.id == pid or room.phase == "gameover" or me.role == "killer" and p.role == "killer":
             row["role"] = p.role
         players.append(row)

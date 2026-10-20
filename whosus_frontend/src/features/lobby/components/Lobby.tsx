@@ -4,7 +4,6 @@ import { openPractice } from "@/features/game/actions/interactions";
 import { useGame } from "@/features/game/model/game-store";
 import { COLORS } from "@/features/game/model/types";
 import { act } from "@/features/game/network/game-client";
-import { fillLobbyWithTestPlayers } from "@/features/lobby/model/test-players";
 import { ArrowRight, Check, Copy, Pencil, Plus, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 export function Lobby() {
@@ -12,8 +11,7 @@ export function Lobby() {
     r = s.room!,
     me = r.players.find((p) => p.id === s.id),
     host = s.id === r.host;
-  const [copied, setCopied] = useState(false),
-    [addingTestPlayers, setAddingTestPlayers] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [draftName, setDraftName] = useState(me?.name || "");
   const [crewOpen, setCrewOpen] = useState(false);
   const lobbyName = useRef<HTMLInputElement>(null);
@@ -29,21 +27,6 @@ export function Lobby() {
     if (next !== me?.name) act("rename", next);
     lobbyName.current?.blur();
   };
-  async function addTestPlayers() {
-    setAddingTestPlayers(true);
-    try {
-      await fillLobbyWithTestPlayers(r.code, r.players, r.capacity);
-    } catch (error) {
-      s.set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Could not add test players.",
-      });
-    } finally {
-      setAddingTestPlayers(false);
-    }
-  }
   return (
     <div className={`waiting-ui ${crewOpen ? "crew-open" : ""}`}>
       <div className="mobile-lobby-bar">
@@ -186,6 +169,7 @@ export function Lobby() {
                 </strong>
                 <small>
                   {p.id === r.host ? "HOST · " : ""}
+                  {p.bot ? "BOT · " : ""}
                   {!p.connected
                     ? "Reconnecting…"
                     : p.ready
@@ -221,14 +205,12 @@ export function Lobby() {
         {host && (
           <button
             className="secondary full fill-crew"
-            disabled={addingTestPlayers}
-            onClick={() => void addTestPlayers()}
+            disabled={r.population >= r.capacity}
+            onClick={() => act("fill_bots")}
           >
-            {addingTestPlayers
-              ? "Adding test players…"
-              : r.population < r.capacity
-                ? `Fill to ${r.capacity} players`
-                : "Ready added players"}
+            {r.population < r.capacity
+              ? `Fill to ${r.capacity} with bots`
+              : "Room full"}
           </button>
         )}
         <div className="lobby-rules-summary">
