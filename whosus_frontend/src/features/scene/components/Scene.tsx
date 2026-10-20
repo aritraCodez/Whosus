@@ -16,6 +16,7 @@ export default memo(function Scene({
   const quality = useGame((s) => s.quality);
   return (
     <Canvas
+      style={{ touchAction: menu ? "pan-y pinch-zoom" : "none" }}
       onCreated={(s) => {
         setSceneRendererState(s);
       }}

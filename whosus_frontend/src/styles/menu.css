@@ -1,0 +1,169 @@
+/* Keep menu overflow reachable even when browser chrome or the keyboard opens. */
+.app.at-menu {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.at-menu .menu {
+  height: auto;
+  min-height: 100%;
+}
+.at-menu .menu-main {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .at-menu .menu {
+    padding: env(safe-area-inset-top, 0px)
+      max(18px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(18px, env(safe-area-inset-left, 0px));
+  }
+  .at-menu .masthead {
+    height: 58px;
+    gap: 12px;
+  }
+  .at-menu .wordmark {
+    font-size: 25px;
+  }
+  .at-menu .masthead nav {
+    margin-left: auto;
+  }
+  .at-menu .nav-active {
+    display: none;
+  }
+  .at-menu .masthead nav button {
+    min-height: 44px;
+    padding: 0;
+    font-size: 8px;
+    letter-spacing: 0.6px;
+  }
+  .at-menu .masthead > .icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+  .at-menu .menu-main {
+    display: block;
+    padding-bottom: 0;
+  }
+  .at-menu .intro {
+    position: relative;
+    max-width: 450px;
+    padding-top: clamp(12px, 2svh, 24px);
+  }
+  .at-menu .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .at-menu h1 {
+    width: auto;
+    font-size: clamp(32px, min(11vw, 6svh), 52px);
+    letter-spacing: -2px;
+    margin-top: 12px;
+  }
+  .at-menu h1 > svg {
+    right: 0;
+    bottom: -10px;
+    height: 14px;
+  }
+  .at-menu .lead {
+    margin-top: 18px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .at-menu .lead br:first-child {
+    display: initial;
+  }
+  .at-menu .lead strong {
+    display: inline;
+  }
+  .at-menu .player-custom,
+  .at-menu .custom-options,
+  .at-menu .create,
+  .at-menu .join-actions {
+    width: 100%;
+    max-width: 100%;
+  }
+  .at-menu .player-custom {
+    height: auto;
+    min-height: 64px;
+    padding: 5px 12px;
+    margin-top: 12px;
+    gap: 12px;
+    pointer-events: auto;
+  }
+  .at-menu .player-custom .bot-icon {
+    transform: none;
+    margin: 0;
+  }
+  .at-menu .player-custom label {
+    font-size: 9px;
+  }
+  .at-menu .player-custom input {
+    font-size: 16px;
+  }
+  .at-menu .pencil {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .at-menu .custom-options {
+    gap: 8px;
+    margin: 8px 0 12px;
+  }
+  .at-menu .colors {
+    gap: 4px;
+  }
+  .at-menu .colors > button {
+    width: 32px;
+    height: 32px;
+    /* A generous touch target around each color without enlarging the dot. */
+    border: 4px solid transparent;
+    background-clip: padding-box;
+  }
+  .at-menu .colors > button[aria-pressed="true"] {
+    outline-offset: 0;
+  }
+  .at-menu .wardrobe-launch {
+    min-height: 44px;
+  }
+  .at-menu .create {
+    height: auto;
+    min-height: 48px;
+    font-size: 13px;
+  }
+  .at-menu .join-actions {
+    margin-top: 8px;
+    gap: 12px;
+  }
+  .at-menu .join-actions .secondary,
+  .at-menu .join-actions .text-button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .at-menu .join-actions .secondary {
+    padding: 9px 12px;
+  }
+  .at-menu .play-notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 9px;
+    margin-top: 12px;
+  }
+  .at-menu .scene-copy,
+  .at-menu .menu-footer {
+    display: none;
+  }
+  .at-menu .scene-wrap {
+    left: 35%;
+    top: 25%;
+    right: -42%;
+    bottom: 0;
+    min-height: 0;
+    opacity: 0.45;
+  }
+}
