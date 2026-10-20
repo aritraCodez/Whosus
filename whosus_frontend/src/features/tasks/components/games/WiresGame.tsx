@@ -1,5 +1,5 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import { useRef,useState } from "react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { useRef, useState } from "react";
 export function WiresGame({ finish }: { finish: () => void }) {
   const COLORS = ["#f47785", "#75b8ed", "#f6bd4f", "#e69ed0"];
   const COLOR_NAMES = ["red", "blue", "yellow", "pink"];
@@ -41,8 +41,15 @@ export function WiresGame({ finish }: { finish: () => void }) {
     <div className="task-game wires-game">
       <div className="task-instructions">
         <h3>Match and reconnect color conduits</h3>
-        <p>Select a wire on the left, then connect it to its matching color terminal.</p>
-        {retry && <p className="task-retry" role="status">Wrong connection. Match all wires again from the start.</p>}
+        <p>
+          Select a wire on the left, then connect it to its matching color
+          terminal.
+        </p>
+        {retry && (
+          <p className="task-retry" role="status">
+            Wrong connection. Match all wires again from the start.
+          </p>
+        )}
       </div>
 
       <div className="wires-junction">
@@ -60,7 +67,9 @@ export function WiresGame({ finish }: { finish: () => void }) {
                 onClick={() => handleLeftClick(idx)}
               >
                 <span className="wire-stub" style={{ background: col }} />
-                <span className="terminal-label">{COLOR_NAMES[idx].toUpperCase()}</span>
+                <span className="terminal-label">
+                  {COLOR_NAMES[idx].toUpperCase()}
+                </span>
               </button>
             );
           })}
@@ -100,7 +109,9 @@ export function WiresGame({ finish }: { finish: () => void }) {
                 disabled={isConnected}
                 onClick={() => handleRightClick(idx)}
               >
-                <span className="terminal-label">{COLOR_NAMES[colIdx].toUpperCase()}</span>
+                <span className="terminal-label">
+                  {COLOR_NAMES[colIdx].toUpperCase()}
+                </span>
                 <span className="wire-stub" style={{ background: col }} />
               </button>
             );

@@ -1,7 +1,9 @@
 import { type RootState } from "@react-three/fiber";
-import * as THREE from "three";
+import type * as THREE from "three";
 let rendererState: RootState | undefined;
-export function setSceneRendererState(state: RootState) { rendererState = state; }
+export function setSceneRendererState(state: RootState) {
+  rendererState = state;
+}
 
 export function sceneDiagnostics() {
   const s = rendererState?.get();

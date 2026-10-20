@@ -1,6 +1,4 @@
-import {
-walkable
-} from "@/features/game/model/world";
+import { walkable } from "@/features/game/model/world";
 export function isVisibleToPlayer(
   targetX: number,
   targetZ: number,

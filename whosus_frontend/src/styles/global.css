@@ -1911,7 +1911,9 @@ dialog.wide:has(.universal-task-console) {
   border-radius: 10px;
   background: color-mix(in srgb, var(--game-accent) 12%, #10232c);
   font-size: 25px;
-  transition: transform 0.15s, background 0.15s;
+  transition:
+    transform 0.15s,
+    background 0.15s;
 }
 .sequence-game .circuit-btn:not(:disabled):hover {
   transform: translateY(-2px);
@@ -1974,9 +1976,18 @@ dialog.wide:has(.universal-task-console) {
   border-radius: 50%;
   background: #ffffff25;
 }
-.light.red.on { background: #f47785; box-shadow: 0 0 8px #f47785; }
-.light.yellow.on { background: #f6bd4f; box-shadow: 0 0 8px #f6bd4f; }
-.light.green.on { background: #6ad9c5; box-shadow: 0 0 8px #6ad9c5; }
+.light.red.on {
+  background: #f47785;
+  box-shadow: 0 0 8px #f47785;
+}
+.light.yellow.on {
+  background: #f6bd4f;
+  box-shadow: 0 0 8px #f6bd4f;
+}
+.light.green.on {
+  background: #6ad9c5;
+  box-shadow: 0 0 8px #6ad9c5;
+}
 .reader-screen {
   margin: 13px 0;
   padding: 12px;
@@ -1995,7 +2006,11 @@ dialog.wide:has(.universal-task-console) {
   padding: 0 8px;
   border: 1px dashed #78cbe055;
   border-radius: 8px;
-  background: repeating-linear-gradient(90deg, #0a1b21 0 12px, #122a33 12px 24px);
+  background: repeating-linear-gradient(
+    90deg,
+    #0a1b21 0 12px,
+    #122a33 12px 24px
+  );
 }
 .card-slider {
   position: absolute;
@@ -2039,7 +2054,10 @@ dialog.wide:has(.universal-task-console) {
 }
 .wires-junction {
   display: grid;
-  grid-template-columns: minmax(90px, 1fr) minmax(100px, 1.4fr) minmax(90px, 1fr);
+  grid-template-columns: minmax(90px, 1fr) minmax(100px, 1.4fr) minmax(
+      90px,
+      1fr
+    );
   align-items: stretch;
   max-width: 500px;
   min-height: 210px;
@@ -2131,8 +2149,14 @@ dialog.wide:has(.universal-task-console) {
   color: #24363a;
   background: #f1d98a;
 }
-.sticky-note small { font-size: 8px; letter-spacing: 1px; }
-.sticky-note strong { font: 700 22px monospace; letter-spacing: 3px; }
+.sticky-note small {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.sticky-note strong {
+  font: 700 22px monospace;
+  letter-spacing: 3px;
+}
 .keypad-display {
   display: flex;
   align-items: center;
@@ -2145,7 +2169,9 @@ dialog.wide:has(.universal-task-console) {
   font: 700 20px monospace;
   letter-spacing: 4px;
 }
-.keypad-display.success { color: #6ad9c5; }
+.keypad-display.success {
+  color: #6ad9c5;
+}
 .keypad-grid {
   display: grid;
   grid-column: 1 / -1;
@@ -2160,9 +2186,17 @@ dialog.wide:has(.universal-task-console) {
   background: #ffffff0a;
   font: 700 13px monospace;
 }
-.key-btn:hover { border-color: var(--game-accent); background: var(--task-glow); }
-.key-btn.action-key { color: var(--game-accent); font-size: 10px; }
-.shields-game { --game-accent: #6ad9c5; }
+.key-btn:hover {
+  border-color: var(--game-accent);
+  background: var(--task-glow);
+}
+.key-btn.action-key {
+  color: var(--game-accent);
+  font-size: 10px;
+}
+.shields-game {
+  --game-accent: #6ad9c5;
+}
 .hex-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(70px, 1fr));
@@ -2197,9 +2231,13 @@ dialog.wide:has(.universal-task-console) {
   letter-spacing: 1px;
   text-align: center;
 }
-.shields-status strong { color: var(--game-accent); }
+.shields-status strong {
+  color: var(--game-accent);
+}
 .course-game,
-.asteroids-game { --game-accent: #b2a1e4; }
+.asteroids-game {
+  --game-accent: #b2a1e4;
+}
 .course-chart {
   position: relative;
   width: min(100%, 440px);
@@ -2209,12 +2247,24 @@ dialog.wide:has(.universal-task-console) {
   border-radius: 50%;
   overflow: hidden;
   background:
-    radial-gradient(ellipse, transparent 29%, #b2a1e422 30% 30.5%, transparent 31% 55%, #b2a1e422 56% 56.5%, transparent 57%),
+    radial-gradient(
+      ellipse,
+      transparent 29%,
+      #b2a1e422 30% 30.5%,
+      transparent 31% 55%,
+      #b2a1e422 56% 56.5%,
+      transparent 57%
+    ),
     linear-gradient(0deg, transparent 49.7%, #b2a1e422 50%, transparent 50.3%),
     linear-gradient(90deg, transparent 49.7%, #b2a1e422 50%, transparent 50.3%),
     #101f2a;
 }
-.course-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+.course-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 .waypoint-node {
   position: absolute;
   z-index: 1;
@@ -2238,8 +2288,15 @@ dialog.wide:has(.universal-task-console) {
   background: #b2a1e4;
   animation: waypoint-arrive 350ms ease-out both;
 }
-.wp-badge { position: absolute; top: -7px; right: -7px; font-size: 8px; }
-.asteroids-game { padding: 12px; }
+.wp-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  font-size: 8px;
+}
+.asteroids-game {
+  padding: 12px;
+}
 .gunner-hud {
   position: relative;
   height: 250px;
@@ -2250,9 +2307,18 @@ dialog.wide:has(.universal-task-console) {
     linear-gradient(#ffffff0a 1px, transparent 1px),
     linear-gradient(90deg, #ffffff0a 1px, transparent 1px),
     radial-gradient(ellipse, #18283a, #09171f);
-  background-size: 24px 24px, 24px 24px, auto;
+  background-size:
+    24px 24px,
+    24px 24px,
+    auto;
 }
-.hud-crosshair { position: absolute; top: 50%; left: 50%; color: #b2a1e455; transform: translate(-50%, -50%); }
+.hud-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #b2a1e455;
+  transform: translate(-50%, -50%);
+}
 .hud-stats {
   position: absolute;
   z-index: 1;
@@ -2265,8 +2331,14 @@ dialog.wide:has(.universal-task-console) {
   font-size: 8px;
   letter-spacing: 1px;
 }
-.hud-stats strong { color: var(--game-accent); font-size: 13px; }
-.radar-field { position: absolute; inset: 0; }
+.hud-stats strong {
+  color: var(--game-accent);
+  font-size: 13px;
+}
+.radar-field {
+  position: absolute;
+  inset: 0;
+}
 .asteroid-btn {
   position: absolute;
   display: grid;
@@ -2286,7 +2358,9 @@ dialog.wide:has(.universal-task-console) {
   animation: asteroid-burst 450ms ease-out forwards;
 }
 .clean-game,
-.fuel-game { --game-accent: #9ecc85; }
+.fuel-game {
+  --game-accent: #9ecc85;
+}
 .vent-chamber {
   position: relative;
   height: 190px;
@@ -2321,7 +2395,9 @@ dialog.wide:has(.universal-task-console) {
   pointer-events: none;
   animation: debris-eject 550ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
-.scan-game { --game-accent: #6ad9c5; }
+.scan-game {
+  --game-accent: #6ad9c5;
+}
 .medbay-scanner {
   position: relative;
   max-width: 470px;
@@ -2340,15 +2416,47 @@ dialog.wide:has(.universal-task-console) {
   box-shadow: 0 0 22px 8px #6ad9c544;
   animation: scan-sweep 2s linear infinite;
 }
-.scan-icon { display: block; margin: 0 auto 12px; color: var(--game-accent); }
-.bio-readout { display: grid; gap: 8px; }
-.bio-readout h4 { margin: 0 0 3px; color: var(--game-accent); font-size: 10px; letter-spacing: 1px; text-align: center; }
-.bio-row { display: flex; justify-content: space-between; gap: 10px; font-size: 9px; }
-.bio-row span { color: #91a99f; }
-.bio-row strong { color: #e5e9de; }
-.bio-row .clean-status { color: var(--game-accent); }
-.medbay-scanner > small { display: block; margin-top: 9px; color: #a2b7a9; font-size: 9px; text-align: center; }
-.divert-game { --game-accent: #f47785; }
+.scan-icon {
+  display: block;
+  margin: 0 auto 12px;
+  color: var(--game-accent);
+}
+.bio-readout {
+  display: grid;
+  gap: 8px;
+}
+.bio-readout h4 {
+  margin: 0 0 3px;
+  color: var(--game-accent);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.bio-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 9px;
+}
+.bio-row span {
+  color: #91a99f;
+}
+.bio-row strong {
+  color: #e5e9de;
+}
+.bio-row .clean-status {
+  color: var(--game-accent);
+}
+.medbay-scanner > small {
+  display: block;
+  margin-top: 9px;
+  color: #a2b7a9;
+  font-size: 9px;
+  text-align: center;
+}
+.divert-game {
+  --game-accent: #f47785;
+}
 .breakers-panel {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2365,7 +2473,11 @@ dialog.wide:has(.universal-task-console) {
   background: #ffffff06;
 }
 .slot-num,
-.target-indicator { color: #91a99f; font: 8px monospace; letter-spacing: 1px; }
+.target-indicator {
+  color: #91a99f;
+  font: 8px monospace;
+  letter-spacing: 1px;
+}
 .breaker-switch {
   display: flex;
   align-items: center;
@@ -2380,9 +2492,17 @@ dialog.wide:has(.universal-task-console) {
   background: #0e2028;
   font-size: 8px;
 }
-.breaker-switch.on { color: #6ad9c5; border-color: #6ad9c555; }
-.breaker-switch.target { outline: 1px dashed var(--game-accent); outline-offset: 3px; }
-.target-indicator { color: var(--game-accent); }
+.breaker-switch.on {
+  color: #6ad9c5;
+  border-color: #6ad9c555;
+}
+.breaker-switch.target {
+  outline: 1px dashed var(--game-accent);
+  outline-offset: 3px;
+}
+.target-indicator {
+  color: var(--game-accent);
+}
 .fuel-canister {
   display: flex;
   align-items: center;
@@ -2405,11 +2525,34 @@ dialog.wide:has(.universal-task-console) {
   background: linear-gradient(#c5db79, #438c74);
   transition: height 0.12s linear;
 }
-.fill-mark { position: absolute; top: 8px; right: 5px; color: #e5e9de; font-size: 8px; }
-.bubble { position: absolute; bottom: 12px; width: 6px; height: 6px; border-radius: 50%; background: #e8ffd477; }
-.bubble.b1 { left: 18px; }
-.bubble.b2 { right: 17px; bottom: 27px; }
-.fuel-controls { display: flex; align-items: center; flex-direction: column; gap: 10px; }
+.fill-mark {
+  position: absolute;
+  top: 8px;
+  right: 5px;
+  color: #e5e9de;
+  font-size: 8px;
+}
+.bubble {
+  position: absolute;
+  bottom: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e8ffd477;
+}
+.bubble.b1 {
+  left: 18px;
+}
+.bubble.b2 {
+  right: 17px;
+  bottom: 27px;
+}
+.fuel-controls {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+}
 .fuel-dispense-btn {
   display: flex;
   align-items: center;
@@ -2432,9 +2575,17 @@ dialog.wide:has(.universal-task-console) {
 .fuel-liquid .bubble.b2 {
   animation-delay: -0.6s;
 }
-.fuel-dispense-btn strong { font-size: 8px; letter-spacing: 1px; }
-.fuel-controls small { color: #a2b7a9; font-size: 10px; }
-.dial-game { --game-accent: #78cbe0; }
+.fuel-dispense-btn strong {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.fuel-controls small {
+  color: #a2b7a9;
+  font-size: 10px;
+}
+.dial-game {
+  --game-accent: #78cbe0;
+}
 .dial-display {
   display: flex;
   align-items: center;
@@ -2448,66 +2599,157 @@ dialog.wide:has(.universal-task-console) {
   color: var(--game-accent);
   background: #091b21;
 }
-.dial-readout { display: flex; flex-direction: column; gap: 5px; }
-.dial-readout strong { color: #d9f4ea; font: 700 25px monospace; }
-.dial-readout span { color: #9baea5; font: 8px monospace; letter-spacing: 2px; }
-.dial-readout span.locked { color: #6ad9c5; }
-.dial-control { max-width: 420px; margin: auto; }
-.dial-control input { width: 100%; accent-color: var(--game-accent); }
+.dial-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.dial-readout strong {
+  color: #d9f4ea;
+  font: 700 25px monospace;
+}
+.dial-readout span {
+  color: #9baea5;
+  font: 8px monospace;
+  letter-spacing: 2px;
+}
+.dial-readout span.locked {
+  color: #6ad9c5;
+}
+.dial-control {
+  max-width: 420px;
+  margin: auto;
+}
+.dial-control input {
+  width: 100%;
+  accent-color: var(--game-accent);
+}
 @keyframes scan-sweep {
-  from { transform: translateY(0); }
-  to { transform: translateY(210px); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(210px);
+  }
 }
 @keyframes task-node-pulse {
-  50% { box-shadow: 0 0 22px var(--task-glow); }
+  50% {
+    box-shadow: 0 0 22px var(--task-glow);
+  }
 }
 @keyframes terminal-signal {
-  to { box-shadow: 0 0 18px var(--wire-color); }
+  to {
+    box-shadow: 0 0 18px var(--wire-color);
+  }
 }
 @keyframes wire-connect {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 @keyframes shield-online {
-  0% { transform: scale(0.82); box-shadow: 0 0 22px #6ad9c599; }
-  100% { transform: scale(1); box-shadow: none; }
+  0% {
+    transform: scale(0.82);
+    box-shadow: 0 0 22px #6ad9c599;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
 }
 @keyframes waypoint-arrive {
-  0% { transform: translate(-50%, -50%) scale(1.35); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% {
+    transform: translate(-50%, -50%) scale(1.35);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 @keyframes asteroid-drift {
-  to { transform: translate(12px, -9px) rotate(24deg); }
+  to {
+    transform: translate(12px, -9px) rotate(24deg);
+  }
 }
 @keyframes asteroid-burst {
-  0% { opacity: 1; transform: scale(1) rotate(0); filter: brightness(1); }
-  45% { opacity: 1; transform: scale(1.5) rotate(80deg); filter: brightness(2.5); }
-  100% { opacity: 0; transform: scale(0.15) rotate(180deg); filter: brightness(3); }
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+    filter: brightness(1);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.5) rotate(80deg);
+    filter: brightness(2.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.15) rotate(180deg);
+    filter: brightness(3);
+  }
 }
 @keyframes debris-drift {
-  to { transform: translate(9px, -13px) rotate(18deg); }
+  to {
+    transform: translate(9px, -13px) rotate(18deg);
+  }
 }
 @keyframes debris-eject {
-  to { opacity: 0; transform: translate(95px, 65px) rotate(240deg) scale(0.35); }
+  to {
+    opacity: 0;
+    transform: translate(95px, 65px) rotate(240deg) scale(0.35);
+  }
 }
 @keyframes fuel-bubble {
-  from { transform: translateY(0); opacity: 0.75; }
-  to { transform: translateY(-30px); opacity: 0; }
+  from {
+    transform: translateY(0);
+    opacity: 0.75;
+  }
+  to {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
 }
 @media (max-width: 560px) {
   dialog.wide:has(.universal-task-console) {
     padding: 16px;
   }
-  .task-game { padding: 14px; }
-  .task-instructions h3 { font-size: 17px; }
-  .wires-junction { grid-template-columns: minmax(76px, 1fr) minmax(45px, 0.6fr) minmax(76px, 1fr); padding: 7px; }
-  .terminal-btn { padding: 5px 3px; font-size: 7px; }
-  .hex-grid { grid-template-columns: repeat(4, minmax(50px, 1fr)); }
-  .hex-tile { min-height: 63px; }
-  .course-chart { height: 180px; }
-  .gunner-hud { height: 210px; }
-  .keypad-unit { padding: 10px; }
-  .breaker-slot { padding-inline: 3px; }
-  .breaker-switch { width: 48px; }
+  .task-game {
+    padding: 14px;
+  }
+  .task-instructions h3 {
+    font-size: 17px;
+  }
+  .wires-junction {
+    grid-template-columns: minmax(76px, 1fr) minmax(45px, 0.6fr) minmax(
+        76px,
+        1fr
+      );
+    padding: 7px;
+  }
+  .terminal-btn {
+    padding: 5px 3px;
+    font-size: 7px;
+  }
+  .hex-grid {
+    grid-template-columns: repeat(4, minmax(50px, 1fr));
+  }
+  .hex-tile {
+    min-height: 63px;
+  }
+  .course-chart {
+    height: 180px;
+  }
+  .gunner-hud {
+    height: 210px;
+  }
+  .keypad-unit {
+    padding: 10px;
+  }
+  .breaker-slot {
+    padding-inline: 3px;
+  }
+  .breaker-switch {
+    width: 48px;
+  }
 }
 .webgl-error {
   position: absolute;
@@ -3723,7 +3965,13 @@ dialog.wide:has(.universal-task-console) {
   /* Scanline overlay for depth */
   background-image:
     linear-gradient(175deg, #1a3b47 0%, #142e39 50%, #0e2430 100%),
-    repeating-linear-gradient(0deg, transparent, transparent 3px, #ffffff03 3px, #ffffff03 4px);
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      #ffffff03 3px,
+      #ffffff03 4px
+    );
   background-blend-mode: normal;
 }
 /* Option rows */
@@ -3864,13 +4112,22 @@ dialog.wide:has(.universal-task-console) {
     pointer-events: none;
   }
   @keyframes action-pulse {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 0.15; transform: scale(1.06); }
+    0%,
+    100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.15;
+      transform: scale(1.06);
+    }
   }
 
   /* Danger (F/Kill) button: large red glow */
   .action.danger {
-    box-shadow: 0 0 16px #f4778520, 0 4px 14px #00000050;
+    box-shadow:
+      0 0 16px #f4778520,
+      0 4px 14px #00000050;
   }
 
   /* joystick: always visible on touch, safe from bottom bar */

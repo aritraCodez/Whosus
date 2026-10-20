@@ -1,13 +1,8 @@
-import { BotIcon } from '@/features/appearance/components/BotIcon';
+import { BotIcon } from "@/features/appearance/components/BotIcon";
 import { useGame } from "@/features/game/model/game-store";
-import {
-act
-} from "@/features/game/network/game-client";
-import {
-ArrowRight,
-Radio
-} from "lucide-react";
-import { useEffect,useState } from "react";
+import { act } from "@/features/game/network/game-client";
+import { ArrowRight, Radio } from "lucide-react";
+import { useEffect, useState } from "react";
 export function Meeting() {
   const s = useGame(),
     r = s.room!,

@@ -1,3 +1,5 @@
+export type VoiceStatus =
+  "off" | "connecting" | "live" | "reconnecting" | "error";
 export type VoicePeer = { id: string; gain: number; sendGain: number };
 export type VoiceSignal = {
   from: string;
@@ -26,4 +28,3 @@ export type Peer = {
   timeout?: ReturnType<typeof setTimeout>;
   deadline: number;
 };
-

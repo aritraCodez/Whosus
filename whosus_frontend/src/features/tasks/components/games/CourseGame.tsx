@@ -1,7 +1,5 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Compass
-} from "lucide-react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Compass } from "lucide-react";
 import { useState } from "react";
 export function CourseGame({ finish }: { finish: () => void }) {
   const [step, setStep] = useState(0);
@@ -28,11 +26,17 @@ export function CourseGame({ finish }: { finish: () => void }) {
     <div className="task-game course-game">
       <div className="task-instructions">
         <h3>Plot orbital trajectory</h3>
-        <p>Confirm the navigational path through each coordinate in sequence.</p>
+        <p>
+          Confirm the navigational path through each coordinate in sequence.
+        </p>
       </div>
 
       <div className="course-chart">
-        <svg className="course-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg
+          className="course-lines"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
           {waypoints.slice(0, step).map((wp, i) => {
             if (i === 0) return null;
             const prev = waypoints[i - 1];

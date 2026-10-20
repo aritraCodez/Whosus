@@ -1,11 +1,11 @@
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL } from "./helpers/browser.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { waitFor } from "./wait.mjs";
 
 // Exercise real browser-to-browser WebRTC, microphone and signaling without 3D/GPU load.
-const base = process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173";
+const base = baseURL;
 await mkdir("artifacts", { recursive: true });
 const samples = 48000 * 3;
 const wav = Buffer.alloc(44 + samples * 2);
@@ -27,9 +27,7 @@ for (let i = 0; i < samples; i++)
     44 + i * 2,
   );
 await writeFile("artifacts/voice-tone.wav", wav);
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
+const browser = await launchBrowser({
   args: [
     "--use-fake-ui-for-media-stream",
     "--use-fake-device-for-media-stream",
@@ -57,24 +55,34 @@ const state = (page) =>
   });
 const diagnostics = (page) =>
   page.evaluate(async () =>
-    (await import("/src/features/voice/voice-client.ts")).voice.getDiagnostics(),
+    (
+      await import("/src/features/voice/voice-client.ts")
+    ).voice.getDiagnostics(),
   );
 const action = (page, name, target = "") =>
   page.evaluate(
     async ({ name, target }) =>
-      (await import("/src/features/game/network/game-client.ts")).act(name, target),
+      (await import("/src/features/game/network/game-client.ts")).act(
+        name,
+        target,
+      ),
     { name, target },
   );
 const muted = (page, value) =>
   page.evaluate(
-    async (value) => (await import("/src/features/voice/voice-client.ts")).voice.setMuted(value),
+    async (value) =>
+      (await import("/src/features/voice/voice-client.ts")).voice.setMuted(
+        value,
+      ),
     value,
   );
 async function waitVoice(page) {
   await waitFor(
     page,
     async () => {
-      const s = (await import("/src/features/game/model/game-store.ts")).useGame.getState();
+      const s = (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState();
       if (s.voiceStatus === "error") throw Error(s.voiceError);
       return s.voiceStatus === "live";
     },
@@ -88,7 +96,9 @@ async function audible(page, expected, label) {
     await waitFor(
       page,
       async () => {
-        const d = await (await import("/src/features/voice/voice-client.ts")).voice.getDiagnostics();
+        const d = await (
+          await import("/src/features/voice/voice-client.ts")
+        ).voice.getDiagnostics();
         return (
           d.receivedLevel > 0.003 &&
           !d.playbackPaused &&
@@ -121,7 +131,8 @@ async function approachAlongRing(page, target) {
     const angle = start + (delta * i) / steps;
     await page.evaluate(
       async (target) => {
-        const { motion } = await import("/src/features/game/network/game-client.ts");
+        const { motion } =
+          await import("/src/features/game/network/game-client.ts");
         const until = Date.now() + 4000;
         try {
           while (Date.now() < until) {
@@ -159,7 +170,8 @@ try {
     );
     await page.goto(`${base}/__voice_test__`);
     await page.evaluate(async () => {
-      const { initializeNetwork } = await import("/src/features/game/network/game-client.ts");
+      const { initializeNetwork } =
+        await import("/src/features/game/network/game-client.ts");
       const { voice } = await import("/src/features/voice/voice-client.ts");
       initializeNetwork();
       document
@@ -172,7 +184,8 @@ try {
     const code = i ? (await state(pages[0])).room.code : "";
     await page.evaluate(
       async ({ i, code }) => {
-        const { connect } = await import("/src/features/game/network/game-client.ts");
+        const { connect } =
+          await import("/src/features/game/network/game-client.ts");
         connect({
           type: i ? "join" : "create",
           name: `Voice ${i}`,
@@ -186,7 +199,10 @@ try {
     );
     await waitFor(
       page,
-      async () => !!(await import("/src/features/game/model/game-store.ts")).useGame.getState().room,
+      async () =>
+        !!(
+          await import("/src/features/game/model/game-store.ts")
+        ).useGame.getState().room,
     );
     await page.evaluate(async () => {
       (await import("/src/features/voice/voice-client.ts")).voice.configure([]);
@@ -258,14 +274,18 @@ try {
   await waitFor(
     pages[1],
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().playbackBlocked,
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().playbackBlocked,
   );
   await pages[1].evaluate(() => window.restorePlayback());
   await pages[1].getByText("Enable voice", { exact: true }).click();
   await waitFor(
     pages[1],
     async () =>
-      !(await import("/src/features/game/model/game-store.ts")).useGame.getState().playbackBlocked,
+      !(
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().playbackBlocked,
   );
   console.log("PASS: A user gesture recovers blocked audio playback");
   await audible(pages[0], true, "Lobby audio reaches a muted listener");
@@ -310,11 +330,15 @@ try {
   await muted(pages[0], false);
   await audible(pages[1], true, "Unmute restores audio");
   await pages[1].evaluate(async () =>
-    (await import("/src/features/voice/voice-client.ts")).voice.setDeafened(true),
+    (await import("/src/features/voice/voice-client.ts")).voice.setDeafened(
+      true,
+    ),
   );
   await audible(pages[1], false, "Deafen suppresses received audio");
   await pages[1].evaluate(async () =>
-    (await import("/src/features/voice/voice-client.ts")).voice.setDeafened(false),
+    (await import("/src/features/voice/voice-client.ts")).voice.setDeafened(
+      false,
+    ),
   );
   await audible(pages[1], true, "Undeafen restores audio");
   const generation = (await diagnostics(pages[0])).generation;
@@ -355,8 +379,9 @@ try {
   await waitFor(
     pages[4],
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().voiceStatus ===
-      "error",
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().voiceStatus === "error",
   );
   assert.equal((await diagnostics(pages[4])).microphoneEnabled, false);
   await pages[4].evaluate(() => window.restoreMicrophone());
@@ -375,8 +400,9 @@ try {
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
-      "playing",
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().room.phase === "playing",
     null,
     { timeout: 10000 },
   );
@@ -401,14 +427,17 @@ try {
     await waitFor(
       killer.page,
       async () =>
-        (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.killCooldown ===
-        0,
+        (
+          await import("/src/features/game/model/game-store.ts")
+        ).useGame.getState().room.killCooldown === 0,
       null,
       { timeout: 15000 },
     );
     await action(killer.page, "kill", victim.me.id);
     await waitFor(victim.page, async () => {
-      const s = (await import("/src/features/game/model/game-store.ts")).useGame.getState();
+      const s = (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState();
       return !s.room.players.find((p) => p.id === s.id).alive;
     });
   }
@@ -435,15 +464,17 @@ try {
   await waitFor(
     killer.page,
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room
-        .meetingCooldown === 0,
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().room.meetingCooldown === 0,
   );
   await action(killer.page, "meeting");
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
-      "discussion",
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().room.phase === "discussion",
   );
   await audible(
     crew[2].page,
@@ -453,8 +484,9 @@ try {
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
-      "voting",
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().room.phase === "voting",
     null,
     { timeout: 15000 },
   );
@@ -463,12 +495,15 @@ try {
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
-      "gameover",
+      (
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().room.phase === "gameover",
   );
   await audible(crew[2].page, true, "Game over reopens all-player audio");
   for (const page of pages)
-    await page.evaluate(async () => (await import("/src/features/game/network/game-client.ts")).leave());
+    await page.evaluate(async () =>
+      (await import("/src/features/game/network/game-client.ts")).leave(),
+    );
   assert.equal((await diagnostics(pages[0])).microphoneEnabled, false);
   assert.equal((await diagnostics(pages[0])).contextState, "closed");
   assert.deepEqual(errors, []);

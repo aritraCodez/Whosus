@@ -1,17 +1,14 @@
 import { GameSelect } from "@/components/ui/GameSelect";
 import { Modal } from "@/components/ui/Modal";
-import { backendApiUrl } from "@/config/backend";
 import { useAppearance } from "@/features/appearance/model/appearance-store";
+import { connect } from "@/features/game/network/game-client";
 import {
-connect
-} from "@/features/game/network/game-client";
+  fetchPublicRooms,
+  type PublicRoomSummary,
+} from "@/features/lobby/api/rooms";
 import { NumberRule } from "@/features/lobby/components/RoomRules";
-import {
-ArrowRight,
-Leaf,
-Radio
-} from "lucide-react";
-import { useEffect,useState } from "react";
+import { ArrowRight, Leaf, Radio } from "lucide-react";
+import { useEffect, useState } from "react";
 export function RoomForm({
   mode,
   name,
@@ -37,17 +34,13 @@ export function RoomForm({
     [voting, setVoting] = useState(30),
     [meetings, setMeetings] = useState(1),
     [meetingCooldown, setMeetingCooldown] = useState(20);
-  const [list, setList] = useState<
-      { code: string; players: number; capacity: number; host: string }[]
-    >([]),
+  const [list, setList] = useState<PublicRoomSummary[]>([]),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
   async function refresh() {
     setLoading(true);
     try {
-      const res = await fetch(backendApiUrl("/api/rooms"));
-      if (!res.ok) throw Error();
-      setList(await res.json());
+      setList(await fetchPublicRooms());
       setError("");
     } catch {
       setError(
@@ -66,7 +59,14 @@ export function RoomForm({
       setError("Enter an explorer name before joining.");
       return;
     }
-    connect({ ...useAppearance.getState().appearance, type: "join", name: playerName, color, hat, code: roomCode });
+    connect({
+      ...useAppearance.getState().appearance,
+      type: "join",
+      name: playerName,
+      color,
+      hat,
+      code: roomCode,
+    });
     close();
   }
   const nameField = (
@@ -145,38 +145,73 @@ export function RoomForm({
             <span className="tag">ORIGINAL</span>
           </div>
           <div className="form-grid">
-            <NumberRule label="Movement speed" value={speed} options={[.5,.75,1,1.25,1.5,1.75,2]} suffix="×" onChange={setSpeed} />
-            <NumberRule label="Voting time" value={voting} options={[10,15,30,45,60,90,120]} suffix=" s" onChange={setVoting} />
-            <NumberRule label="Emergency meetings per player" value={meetings} options={[0,1,2,3]} onChange={setMeetings} />
-            <NumberRule label="Meeting cooldown" value={meetingCooldown} options={[10,15,20,25,30,45,60]} suffix=" s" onChange={setMeetingCooldown} />
+            <NumberRule
+              label="Movement speed"
+              value={speed}
+              options={[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]}
+              suffix="×"
+              onChange={setSpeed}
+            />
+            <NumberRule
+              label="Voting time"
+              value={voting}
+              options={[10, 15, 30, 45, 60, 90, 120]}
+              suffix=" s"
+              onChange={setVoting}
+            />
+            <NumberRule
+              label="Emergency meetings per player"
+              value={meetings}
+              options={[0, 1, 2, 3]}
+              onChange={setMeetings}
+            />
+            <NumberRule
+              label="Meeting cooldown"
+              value={meetingCooldown}
+              options={[10, 15, 20, 25, 30, 45, 60]}
+              suffix=" s"
+              onChange={setMeetingCooldown}
+            />
             <GameSelect
               label="Crew capacity"
               value={capacity}
-              options={Array.from({ length: 9 }, (_, i) => ({ value: i + 4, label: `${i + 4} players` }))}
+              options={Array.from({ length: 9 }, (_, i) => ({
+                value: i + 4,
+                label: `${i + 4} players`,
+              }))}
               onChange={(v) => setCapacity(Number(v))}
             />
             <GameSelect
               label="killers"
               value={killers}
-              options={[1, 2, 3].map((n) => ({ value: n, label: n === 1 ? "1 killer" : `${n} killers` }))}
+              options={[1, 2, 3].map((n) => ({
+                value: n,
+                label: n === 1 ? "1 killer" : `${n} killers`,
+              }))}
               onChange={(v) => setKillers(Number(v))}
             />
             <GameSelect
               label="Elimination cooldown"
               value={cooldown}
-              options={[10, 20, 25, 30, 45, 60].map((n) => ({ value: n, label: `${n} seconds` }))}
+              options={[10, 20, 25, 30, 45, 60].map((n) => ({
+                value: n,
+                label: `${n} seconds`,
+              }))}
               onChange={(v) => setCooldown(Number(v))}
             />
             <GameSelect
               label="Discussion time"
               value={discussion}
-              options={[10, 25, 45, 60, 90].map((n) => ({ value: n, label: `${n} seconds` }))}
+              options={[10, 25, 45, 60, 90].map((n) => ({
+                value: n,
+                label: `${n} seconds`,
+              }))}
               onChange={(v) => setDiscussion(Number(v))}
             />
           </div>
           <p className="hint">
-            killers are capped at one per three other players to keep the
-            match fair.
+            killers are capped at one per three other players to keep the match
+            fair.
           </p>
           <label className="toggle-line">
             <span>

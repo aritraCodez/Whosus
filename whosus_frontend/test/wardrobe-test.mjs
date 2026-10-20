@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL } from "./helpers/browser.mjs";
 import { waitFor } from "./wait.mjs";
 
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
+const browser = await launchBrowser({
   args: ["--enable-unsafe-swiftshader"],
 });
 await mkdir("artifacts", { recursive: true });
@@ -28,7 +26,7 @@ try {
     });
     ws.on("socketerror", (error) => console.log("Socket error:", error));
   });
-  await page.goto(process.env.WHOSUS_TEST_URL || "http://localhost:5173");
+  await page.goto(baseURL);
   await page
     .getByRole("button", { name: "Customize character", exact: true })
     .click();
@@ -83,8 +81,11 @@ try {
           await import(
             performance
               .getEntriesByType("resource")
-              .find((entry) => new URL(entry.name).pathname === "/src/features/game/model/game-store.ts")
-              .name
+              .find(
+                (entry) =>
+                  new URL(entry.name).pathname ===
+                  "/src/features/game/model/game-store.ts",
+              ).name
           )
         ).useGame.getState().room,
     );
@@ -111,18 +112,26 @@ try {
   await page.keyboard.down("KeyS");
   try {
     await waitFor(page, async () => {
-      const url = performance.getEntriesByType("resource").find(entry => new URL(entry.name).pathname === "/src/features/game/model/game-store.ts").name;
+      const url = performance
+        .getEntriesByType("resource")
+        .find(
+          (entry) =>
+            new URL(entry.name).pathname ===
+            "/src/features/game/model/game-store.ts",
+        ).name;
       const state = (await import(url)).useGame.getState();
-      return state.room.players.find(p => p.id === state.id).z >= 1.8;
+      return state.room.players.find((p) => p.id === state.id).z >= 1.8;
     });
-  } finally { await page.keyboard.up("KeyS"); }
+  } finally {
+    await page.keyboard.up("KeyS");
+  }
   await page.keyboard.down("ArrowRight");
   try {
     await station.waitFor();
   } finally {
     await page.keyboard.up("ArrowRight");
   }
-  await page.keyboard.press("KeyE");
+  await station.click();
   await page.getByRole("heading", { name: "Explorer wardrobe" }).waitFor();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.keyboard.down("ArrowLeft");
@@ -135,7 +144,9 @@ try {
     const url = performance
       .getEntriesByType("resource")
       .find(
-        (entry) => new URL(entry.name).pathname === "/src/features/game/actions/interactions.ts",
+        (entry) =>
+          new URL(entry.name).pathname ===
+          "/src/features/game/actions/interactions.ts",
       ).name;
     (await import(url)).openWardrobe();
   });
@@ -209,8 +220,11 @@ try {
       await import(
         performance
           .getEntriesByType("resource")
-          .find((entry) => new URL(entry.name).pathname === "/src/features/game/network/game-client.ts")
-          .name
+          .find(
+            (entry) =>
+              new URL(entry.name).pathname ===
+              "/src/features/game/network/game-client.ts",
+          ).name
       )
     ).leave(),
   );
@@ -221,7 +235,7 @@ try {
   await page.screenshot({ path: "artifacts/wardrobe-hero-mobile.png" });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: wardrobe categories, station proximity, E interaction, persistence, create/join, live peer updates, resume, mobile, and no browser errors",
+    "PASS: wardrobe categories, station proximity, console interaction, persistence, create/join, live peer updates, resume, mobile, and no browser errors",
   );
 } finally {
   await browser.close();

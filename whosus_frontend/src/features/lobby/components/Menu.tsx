@@ -1,27 +1,27 @@
 import { Modal } from "@/components/ui/Modal";
-import { BotIcon } from '@/features/appearance/components/BotIcon';
+import { BotIcon } from "@/features/appearance/components/BotIcon";
 import { sound } from "@/features/game/audio/sounds";
 import { useGame } from "@/features/game/model/game-store";
 import { COLORS } from "@/features/game/model/types";
-import { RoomForm } from '@/features/lobby/components/RoomForm';
+import { RoomForm } from "@/features/lobby/components/RoomForm";
 import {
-ArrowDown,
-ArrowRight,
-Check,
-ChevronRight,
-HelpCircle,
-MessageCircle,
-Mic,
-Pencil,
-Plus,
-Radio,
-Settings,
-Shield,
-Shirt,
-Skull,
-Users
+  ArrowDown,
+  ArrowRight,
+  Check,
+  ChevronRight,
+  HelpCircle,
+  MessageCircle,
+  Mic,
+  Pencil,
+  Plus,
+  Radio,
+  Settings,
+  Shield,
+  Shirt,
+  Skull,
+  Users,
 } from "lucide-react";
-import { useRef,useState } from "react";
+import { useRef, useState } from "react";
 export function Menu({
   name,
   setName,
@@ -126,7 +126,12 @@ export function Menu({
                 </button>
               ))}
             </div>
-            <button className="secondary wardrobe-launch" onClick={() => useGame.setState({ wardrobe: true })}><Shirt size={18} /> Customize character</button>
+            <button
+              className="secondary wardrobe-launch"
+              onClick={() => useGame.setState({ wardrobe: true })}
+            >
+              <Shirt size={18} /> Customize character
+            </button>
           </div>
           <button
             className="primary create"

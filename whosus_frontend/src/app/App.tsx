@@ -1,15 +1,13 @@
 import { usePlayerSession } from "@/app/hooks/use-player-session";
-import { SceneBoundary } from '@/components/feedback/SceneBoundary';
+import { SceneBoundary } from "@/components/feedback/SceneBoundary";
 import { Wardrobe } from "@/features/appearance/components/Wardrobe";
-import { GameHUD } from '@/features/game/components/GameHUD';
+import { GameHUD } from "@/features/game/components/GameHUD";
 import { useGameControls } from "@/features/game/hooks/use-game-controls";
 import { useGame } from "@/features/game/model/game-store";
-import { Menu } from '@/features/lobby/components/Menu';
+import { Menu } from "@/features/lobby/components/Menu";
 import Scene from "@/features/scene/components/Scene";
-import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
-import {
-X
-} from "lucide-react";
+import { SettingsPanel } from "@/features/settings/components/SettingsPanel";
+import { X } from "lucide-react";
 import { useEffect } from "react";
 export default function App() {
   const s = useGame();
@@ -35,7 +33,11 @@ export default function App() {
         <Menu {...{ name, setName, color, setColor, hat }} />
       )}
       {s.settings && <SettingsPanel />}
-      {s.wardrobe && <SceneBoundary><Wardrobe /></SceneBoundary>}
+      {s.wardrobe && (
+        <SceneBoundary>
+          <Wardrobe />
+        </SceneBoundary>
+      )}
       {(s.error || s.voiceError) && (
         <div className="toast" role="alert">
           <span>{s.error || s.voiceError}</span>

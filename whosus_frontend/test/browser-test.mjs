@@ -1,9 +1,9 @@
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL, selectOption } from "./helpers/browser.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { waitFor } from "./wait.mjs";
-const base = process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173";
+const base = baseURL;
 await mkdir("artifacts", { recursive: true });
 const wav = Buffer.alloc(44 + 48000 * 2 * 3);
 wav.write("RIFF");
@@ -24,9 +24,7 @@ for (let i = 0; i < 48000 * 3; i++)
     44 + i * 2,
   );
 await writeFile("artifacts/test-tone.wav", wav);
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
+const browser = await launchBrowser({
   args: [
     "--use-fake-ui-for-media-stream",
     "--use-fake-device-for-media-stream",
@@ -61,13 +59,14 @@ try {
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
   await page.locator("dialog").getByLabel("Explorer name").fill("Host Pilot");
-  await page.getByLabel("Elimination cooldown").selectOption("10");
-  await page.getByLabel("Discussion time").selectOption("10");
+  await selectOption(page, "Elimination cooldown", "10");
+  await selectOption(page, "Discussion time", "10");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();
   const getRoom = (p) =>
     p.evaluate(async () => {
-      const { useGame } = await import("/src/features/game/model/game-store.ts");
+      const { useGame } =
+        await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room;
     });
   assert(
@@ -89,7 +88,8 @@ try {
     });
     await p.goto(base);
     await p.evaluate(async () => {
-      const { useGame } = await import("/src/features/game/model/game-store.ts");
+      const { useGame } =
+        await import("/src/features/game/model/game-store.ts");
       useGame.setState({ quality: "low" });
     });
     await p.getByRole("button", { name: "Join with code" }).click();
@@ -121,7 +121,8 @@ try {
     await waitFor(
       p,
       async () => {
-        const { useGame } = await import("/src/features/game/model/game-store.ts");
+        const { useGame } =
+          await import("/src/features/game/model/game-store.ts");
         return useGame.getState().voiceStatus === "live";
       },
       null,
@@ -156,7 +157,8 @@ try {
   await waitFor(
     page,
     async () => {
-      const { useGame } = await import("/src/features/game/model/game-store.ts");
+      const { useGame } =
+        await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room?.phase === "playing";
     },
     null,
@@ -164,21 +166,24 @@ try {
   );
   await page.screenshot({ path: "artifacts/game-desktop.png" });
   const before = await page.evaluate(async () => {
-    const { motion } = await import("/src/features/game/network/game-client.ts");
+    const { motion } =
+      await import("/src/features/game/network/game-client.ts");
     return motion.x;
   });
   await page.keyboard.down("KeyD");
   await page.waitForTimeout(400);
   await page.keyboard.up("KeyD");
   const after = await page.evaluate(async () => {
-    const { motion } = await import("/src/features/game/network/game-client.ts");
+    const { motion } =
+      await import("/src/features/game/network/game-client.ts");
     return motion.x;
   });
   assert(after > before + 0.3, "Movement must be synchronized");
   const infos = await Promise.all(
     pages.map((p) =>
       p.evaluate(async () => {
-        const { useGame } = await import("/src/features/game/model/game-store.ts");
+        const { useGame } =
+          await import("/src/features/game/model/game-store.ts");
         const s = useGame.getState();
         return { id: s.id, me: s.room.players.find((p) => p.id === s.id) };
       }),
@@ -190,7 +195,8 @@ try {
   const crew = pages[crewIndex];
   // Reach the central beacon via ordinary movement inputs, then exercise meeting/vote/rematch.
   await crew.evaluate(async () => {
-    const { motion } = await import("/src/features/game/network/game-client.ts");
+    const { motion } =
+      await import("/src/features/game/network/game-client.ts");
     motion.keys.clear();
   });
   await page.waitForTimeout(16000);
@@ -201,7 +207,8 @@ try {
   await waitFor(
     page,
     async () => {
-      const { useGame } = await import("/src/features/game/model/game-store.ts");
+      const { useGame } =
+        await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room?.phase === "discussion";
     },
     null,
@@ -211,7 +218,8 @@ try {
   await waitFor(
     page,
     async () => {
-      const { useGame } = await import("/src/features/game/model/game-store.ts");
+      const { useGame } =
+        await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room?.phase === "voting";
     },
     null,
@@ -238,7 +246,8 @@ try {
   await pages[1].getByText("The usual suspects.").waitFor();
   assert.equal(
     await pages[1].evaluate(async () => {
-      const { useGame } = await import("/src/features/game/model/game-store.ts");
+      const { useGame } =
+        await import("/src/features/game/model/game-store.ts");
       return useGame.getState().id;
     }),
     oldId,
@@ -257,7 +266,7 @@ try {
   await mp.getByRole("button", { name: "Join with code" }).click();
   await mp.getByLabel("ROOM CODE").fill(code);
   await mp.getByRole("button", { name: "Join expedition" }).click();
-  await mp.getByText("The usual suspects.").waitFor();
+  await mp.getByRole("button", { name: "Crew & room", exact: true }).waitFor();
   await mp.screenshot({ path: "artifacts/lobby-mobile-landscape.png" });
   assert.equal(
     await mp.evaluate(() => document.documentElement.scrollWidth > innerWidth),

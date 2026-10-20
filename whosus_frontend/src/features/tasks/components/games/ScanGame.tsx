@@ -1,9 +1,7 @@
 import { useGame } from "@/features/game/model/game-store";
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Activity
-} from "lucide-react";
-import { useEffect,useState } from "react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Activity } from "lucide-react";
+import { useEffect, useState } from "react";
 export function ScanGame({ finish }: { finish: () => void }) {
   const s = useGame();
   const me = s.room?.players.find((p) => p.id === s.id);
@@ -51,7 +49,11 @@ export function ScanGame({ finish }: { finish: () => void }) {
         <div className="task-meter">
           <i style={{ width: `${progress}%` }} />
         </div>
-        <small>{progress < 100 ? "Hold position on the diagnostic pad…" : "Diagnostic Complete."}</small>
+        <small>
+          {progress < 100
+            ? "Hold position on the diagnostic pad…"
+            : "Diagnostic Complete."}
+        </small>
       </div>
     </div>
   );

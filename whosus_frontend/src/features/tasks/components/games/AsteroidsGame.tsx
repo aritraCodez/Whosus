@@ -1,8 +1,6 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Crosshair
-} from "lucide-react";
-import { useRef,useState } from "react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Crosshair } from "lucide-react";
+import { useRef, useState } from "react";
 export function AsteroidsGame({ finish }: { finish: () => void }) {
   const [destroyed, setDestroyed] = useState(0);
   const total = 5;
@@ -15,7 +13,7 @@ export function AsteroidsGame({ finish }: { finish: () => void }) {
       size: 26 + Math.random() * 16,
       hit: false,
       exploding: false,
-    }))
+    })),
   );
   const hitTargets = useRef(new Set<number>());
 
@@ -24,11 +22,11 @@ export function AsteroidsGame({ finish }: { finish: () => void }) {
     hitTargets.current.add(id);
     playTaskSound("laser");
     setAsteroids((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, exploding: true } : a))
+      prev.map((a) => (a.id === id ? { ...a, exploding: true } : a)),
     );
     setTimeout(() => {
       setAsteroids((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, hit: true } : a))
+        prev.map((a) => (a.id === id ? { ...a, hit: true } : a)),
       );
     }, 450);
     const nextCount = hitTargets.current.size;
@@ -48,30 +46,33 @@ export function AsteroidsGame({ finish }: { finish: () => void }) {
         </div>
         <div className="hud-stats">
           <span>TARGETS CLEARED</span>
-          <strong>{destroyed} / {total}</strong>
+          <strong>
+            {destroyed} / {total}
+          </strong>
         </div>
 
         <div className="radar-field">
-          {asteroids.map((ast) => (
-            !ast.hit && (
-              <button
-                key={ast.id}
-                style={{
-                  left: `${ast.x}%`,
-                  top: `${ast.y}%`,
-                  width: `${ast.size}px`,
-                  height: `${ast.size}px`,
-                  animationDelay: `${-ast.id * 0.65}s`,
-                }}
-                className={`asteroid-btn ${ast.exploding ? "exploding" : ""}`}
-                onClick={() => hitAsteroid(ast.id)}
-                disabled={ast.exploding}
-                aria-label="Destroy asteroid"
-              >
-                ☄
-              </button>
-            )
-          ))}
+          {asteroids.map(
+            (ast) =>
+              !ast.hit && (
+                <button
+                  key={ast.id}
+                  style={{
+                    left: `${ast.x}%`,
+                    top: `${ast.y}%`,
+                    width: `${ast.size}px`,
+                    height: `${ast.size}px`,
+                    animationDelay: `${-ast.id * 0.65}s`,
+                  }}
+                  className={`asteroid-btn ${ast.exploding ? "exploding" : ""}`}
+                  onClick={() => hitAsteroid(ast.id)}
+                  disabled={ast.exploding}
+                  aria-label="Destroy asteroid"
+                >
+                  ☄
+                </button>
+              ),
+          )}
         </div>
       </div>
     </div>

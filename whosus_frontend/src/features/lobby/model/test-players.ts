@@ -76,7 +76,12 @@ function addTestPlayer(roomCode: string): Promise<void> {
     };
 
     socket.onmessage = (event) => {
-      let message: { type?: string; id?: string; message?: string; room?: { phase: string; players: { id: string; ready: boolean }[] } };
+      let message: {
+        type?: string;
+        id?: string;
+        message?: string;
+        room?: { phase: string; players: { id: string; ready: boolean }[] };
+      };
       try {
         message = JSON.parse(event.data);
       } catch {
@@ -88,7 +93,9 @@ function addTestPlayer(roomCode: string): Promise<void> {
         session.id = message.id;
         send(session, { type: "action", action: "ready" });
       } else if (message.type === "snapshot" && message.room) {
-        const player = message.room.players.find((candidate) => candidate.id === session.id);
+        const player = message.room.players.find(
+          (candidate) => candidate.id === session.id,
+        );
         if (player) {
           session.ready = player.ready;
           if (player.ready && !settled) {
@@ -113,7 +120,9 @@ function addTestPlayer(roomCode: string): Promise<void> {
     socket.onclose = () => {
       removeSession(session);
       if (!session.closing && settled)
-        useGame.setState({ error: `${name} disconnected. Add test players again.` });
+        useGame.setState({
+          error: `${name} disconnected. Add test players again.`,
+        });
       else if (!settled)
         fail(new Error(`Connection closed while adding ${name}.`));
     };
@@ -145,8 +154,7 @@ export async function fillLobbyWithTestPlayers(
   }
 
   const needed = Math.max(0, capacity - players.length);
-  for (let index = 0; index < needed; index++)
-    await addTestPlayer(roomCode);
+  for (let index = 0; index < needed; index++) await addTestPlayer(roomCode);
 }
 
 export function closeTestPlayers() {

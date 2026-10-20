@@ -1,4 +1,4 @@
-import { Component,type ReactNode } from "react";
+import { Component, type ReactNode } from "react";
 export class SceneBoundary extends Component<
   { children: ReactNode },
   { failed: boolean }

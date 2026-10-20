@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL, selectOption } from "./helpers/browser.mjs";
 import { waitFor } from "./wait.mjs";
 
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
+const browser = await launchBrowser({
   args: ["--enable-unsafe-swiftshader"],
 });
 await mkdir("artifacts", { recursive: true });
@@ -15,21 +13,34 @@ try {
   });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(process.env.WHOSUS_TEST_URL || "http://localhost:5173");
+  await page.goto(baseURL);
   await page
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
   await page.locator("dialog").getByLabel("Explorer name").fill("Rules Host");
-  await page.getByLabel("Crew capacity").selectOption("8");
-  await page.getByLabel("Movement speed").selectOption("1.5");
-  await page.getByLabel("Voting time").selectOption("60");
+  await selectOption(page, "Crew capacity", "8");
+  await selectOption(page, "Movement speed", "1.5");
+  await selectOption(page, "Voting time", "60");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();
   await page.evaluate(async () => {
     window.gameModule = (name) =>
-      performance
-        .getEntriesByType("resource")
-        .find((e) => new URL(e.name).pathname === ({"store":"/src/features/game/model/game-store.ts","types":"/src/features/game/model/types.ts","world":"/src/features/game/model/world.ts","network":"/src/features/game/network/game-client.ts","voice":"/src/features/voice/voice-client.ts","appearance":"/src/features/appearance/model/appearance-store.ts","interactions":"/src/features/game/actions/interactions.ts","devPlayers":"/src/features/lobby/model/test-players.ts","audio":"/src/features/game/audio/sounds.ts","backend":"/src/config/backend.ts"})[name]).name;
+      performance.getEntriesByType("resource").find(
+        (e) =>
+          new URL(e.name).pathname ===
+          {
+            store: "/src/features/game/model/game-store.ts",
+            types: "/src/features/game/model/types.ts",
+            world: "/src/features/game/model/world.ts",
+            network: "/src/features/game/network/game-client.ts",
+            voice: "/src/features/voice/voice-client.ts",
+            appearance: "/src/features/appearance/model/appearance-store.ts",
+            interactions: "/src/features/game/actions/interactions.ts",
+            devPlayers: "/src/features/lobby/model/test-players.ts",
+            audio: "/src/features/game/audio/sounds.ts",
+            backend: "/src/config/backend.ts",
+          }[name],
+      ).name;
     window.gameStore = (await import(window.gameModule("store"))).useGame;
     window.gameStore.setState({ quality: "low" });
   });
@@ -52,7 +63,7 @@ try {
     .getByRole("button", { name: "Fill to 8 players", exact: true })
     .click();
   await waitFor(page, () => window.gameStore.getState().room.population === 8);
-  await page.getByLabel("Lobby room visibility").selectOption("true");
+  await selectOption(page, "Room visibility", "true");
   await waitFor(page, () => window.gameStore.getState().room.public);
   assert.equal((await room()).players.filter((p) => p.ready).length, 0);
   await page
@@ -61,9 +72,9 @@ try {
   await page
     .getByRole("heading", { name: "Station & Mission Settings" })
     .waitFor();
-  await page.getByLabel("Kill cooldown", { exact: true }).selectOption("45");
-  await page.getByLabel("Discussion time", { exact: true }).selectOption("60");
-  await page.getByLabel("Task Progress Bar").selectOption("meetings");
+  await selectOption(page, "Kill cooldown", "45");
+  await selectOption(page, "Discussion time", "60");
+  await selectOption(page, "Task Progress Bar", "meetings");
   await page.getByLabel("Visual Tasks", { exact: true }).click();
   await waitFor(page, () => {
     const r = window.gameStore.getState().room;
@@ -75,15 +86,15 @@ try {
     );
   });
   await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page.keyboard.down("KeyW");
   await page.keyboard.down("KeyD");
+  await page.keyboard.down("KeyS");
   await waitFor(page, () => {
     const s = window.gameStore.getState(),
       p = s.room.players.find((p) => p.id === s.id);
-    return p.z < -2.1;
+    return Math.hypot(p.x, p.z + 3.8) < 2.1;
   });
-  await page.keyboard.up("KeyW");
   await page.keyboard.up("KeyD");
+  await page.keyboard.up("KeyS");
   await page.waitForTimeout(250);
   await page.keyboard.press("KeyE");
   await page
@@ -111,16 +122,35 @@ try {
   await page.getByText("Tap or press E", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Close", exact: true }).click();
   await page.screenshot({ path: "artifacts/room-controls.png" });
-  assert.equal(await page.locator(".bay-sign").evaluate(el => getComputedStyle(el).display), "inline");
+  assert.equal(
+    await page
+      .locator(".bay-sign")
+      .evaluate((el) => getComputedStyle(el).display),
+    "inline",
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByText("Tap to interact", { exact: true }).waitFor();
-  assert.equal(await page.locator(".bay-sign").evaluate(el => getComputedStyle(el).display), "none");
-  assert.notEqual(await page.locator(".nameplate.you").evaluate(el => getComputedStyle(el).display), "none");
-  const practiceLabel = await page.locator(".station-label.practice").boundingBox();
+  assert.equal(
+    await page
+      .locator(".bay-sign")
+      .evaluate((el) => getComputedStyle(el).display),
+    "none",
+  );
+  assert.notEqual(
+    await page
+      .locator(".nameplate.you")
+      .evaluate((el) => getComputedStyle(el).display),
+    "none",
+  );
+  const practiceLabel = await page
+    .locator(".station-label.practice")
+    .boundingBox();
   const playerName = await page.locator(".nameplate.you").boundingBox();
   assert(practiceLabel && playerName);
   assert(
-    practiceLabel.y + practiceLabel.height <= playerName.y ||
+    practiceLabel.x + practiceLabel.width <= playerName.x ||
+      playerName.x + playerName.width <= practiceLabel.x ||
+      practiceLabel.y + practiceLabel.height <= playerName.y ||
       playerName.y + playerName.height <= practiceLabel.y,
     "Practice label does not overlap the player's nameplate on mobile",
   );
@@ -134,10 +164,21 @@ try {
     const s = window.gameStore.getState();
     const room = structuredClone(s.room);
     (await import(window.gameModule("network"))).leave();
-    window.gameStore.setState({ room, id: room.players.find(p => p.id !== room.host).id, settings: true });
+    window.gameStore.setState({
+      room,
+      id: room.players.find((p) => p.id !== room.host).id,
+      settings: true,
+    });
   });
-  await page.getByText("Only the host can change room rules in the waiting room. You can view them here.").waitFor();
-  assert.equal(await page.locator(".host-rules select:enabled").count(), 0);
+  await page
+    .getByText(
+      "Only the host can change room rules in the waiting room. You can view them here.",
+    )
+    .waitFor();
+  assert.equal(
+    await page.locator('.host-rules [role="combobox"]:enabled').count(),
+    0,
+  );
   assert(await page.getByLabel("Visual Tasks", { exact: true }).isDisabled());
   assert(await page.getByLabel("Task Progress Bar").isDisabled());
   assert.deepEqual(errors, []);

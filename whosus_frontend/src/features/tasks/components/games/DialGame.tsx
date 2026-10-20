@@ -1,7 +1,5 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Radio
-} from "lucide-react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Radio } from "lucide-react";
 import { useState } from "react";
 export function DialGame({ finish }: { finish: () => void }) {
   const [val, setVal] = useState(15);
@@ -31,7 +29,9 @@ export function DialGame({ finish }: { finish: () => void }) {
         <Radio size={28} />
         <div className="dial-readout">
           <strong>{val}.0 MHz</strong>
-          <span className={locked ? "locked" : ""}>{locked ? "LOCKED" : "SEARCHING..."}</span>
+          <span className={locked ? "locked" : ""}>
+            {locked ? "LOCKED" : "SEARCHING..."}
+          </span>
         </div>
       </div>
 

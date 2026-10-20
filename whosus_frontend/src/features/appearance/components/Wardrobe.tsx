@@ -1,12 +1,12 @@
 import { Modal } from "@/components/ui/Modal";
 import { Pip } from "@/features/appearance/components/Pip";
 import {
-DEFAULT_APPEARANCE,
-normalizeAppearance,
-useAppearance,
-WARDROBE,
-type Appearance,
-type CosmeticSlot,
+  DEFAULT_APPEARANCE,
+  normalizeAppearance,
+  useAppearance,
+  WARDROBE,
+  type Appearance,
+  type CosmeticSlot,
 } from "@/features/appearance/model/appearance-store";
 import "@/features/appearance/styles/wardrobe.css";
 import { useGame } from "@/features/game/model/game-store";
@@ -14,27 +14,27 @@ import { motion } from "@/features/game/model/motion";
 import { COLORS } from "@/features/game/model/types";
 import { act } from "@/features/game/network/game-client";
 import { OrbitControls } from "@react-three/drei";
-import { Canvas,useThree } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import {
-Backpack,
-Cat,
-Check,
-Crown,
-Footprints,
-Glasses,
-Headphones,
-Leaf,
-Paintbrush,
-Radio,
-RotateCcw,
-Shirt,
-Shuffle,
-Sparkles,
-WandSparkles,
-X,
-type LucideIcon,
+  Backpack,
+  Cat,
+  Check,
+  Crown,
+  Footprints,
+  Glasses,
+  Headphones,
+  Leaf,
+  Paintbrush,
+  Radio,
+  RotateCcw,
+  Shirt,
+  Shuffle,
+  Sparkles,
+  WandSparkles,
+  X,
+  type LucideIcon,
 } from "lucide-react";
-import { Suspense,useEffect,useLayoutEffect,useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { OrthographicCamera } from "three";
 
 const ICONS: Record<CosmeticSlot | "color", LucideIcon> = {
@@ -95,6 +95,7 @@ export function Wardrobe() {
   const [turn, setTurn] = useState(0);
   const close = () => useGame.setState({ wardrobe: false });
   const available = !room || (room.phase === "lobby" && status === "connected");
+  const phase = room?.phase;
   useEffect(() => {
     motion.keys.clear();
     motion.dx = motion.dz = 0;
@@ -104,8 +105,8 @@ export function Wardrobe() {
     };
   }, []);
   useEffect(() => {
-    if (room && room.phase !== "lobby") close();
-  }, [room?.phase]);
+    if (phase && phase !== "lobby") close();
+  }, [phase]);
   function change(patch: Partial<Appearance>) {
     if (!available) return;
     if (!room) update(patch);
@@ -140,7 +141,7 @@ export function Wardrobe() {
               dpr={[1, 1.5]}
             >
               <ambientLight intensity={1.8} />
-            <FitPreview />
+              <FitPreview />
               <directionalLight position={[3, 5, 4]} intensity={3} />
               <directionalLight
                 position={[-3, 2, -3]}
@@ -337,7 +338,8 @@ export function Wardrobe() {
               className="text-button"
               disabled={!available}
               onClick={() => {
-                const { color: _color, ...original } = DEFAULT_APPEARANCE;
+                const original: Partial<Appearance> = { ...DEFAULT_APPEARANCE };
+                delete original.color;
                 change(original);
               }}
             >

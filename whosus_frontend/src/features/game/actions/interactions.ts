@@ -1,15 +1,29 @@
 import { useGame } from "@/features/game/model/game-store";
 import { motion } from "@/features/game/model/motion";
-import { STATIONS,nearWardrobe,nearestLobbySeat } from "@/features/game/model/world";
+import {
+  STATIONS,
+  nearWardrobe,
+  nearestLobbySeat,
+} from "@/features/game/model/world";
 import { act } from "@/features/game/network/game-client";
 
 export function interactWithSeat(index?: number) {
-  const s = useGame.getState(), r = s.room;
-  if (r?.phase !== "lobby" || s.wardrobe || s.practiceOpen || s.settings) return;
-  const me = r.players.find(p => p.id === s.id);
-  if ((me?.seat ?? -1) >= 0) { act("stand"); return; }
-  const nearest = nearestLobbySeat(motion.x, motion.z, r.players.map(p => p.seat ?? -1));
-  if (nearest === undefined || (index !== undefined && nearest !== index)) return;
+  const s = useGame.getState(),
+    r = s.room;
+  if (r?.phase !== "lobby" || s.wardrobe || s.practiceOpen || s.settings)
+    return;
+  const me = r.players.find((p) => p.id === s.id);
+  if ((me?.seat ?? -1) >= 0) {
+    act("stand");
+    return;
+  }
+  const nearest = nearestLobbySeat(
+    motion.x,
+    motion.z,
+    r.players.map((p) => p.seat ?? -1),
+  );
+  if (nearest === undefined || (index !== undefined && nearest !== index))
+    return;
   act("sit", "", nearest);
 }
 
@@ -36,14 +50,31 @@ export function openPractice() {
 export function interactWithStation(id?: string) {
   const s = useGame.getState(),
     r = s.room;
-  if (!r || r.challenge || s.fakeChallenge || s.wardrobe || s.practiceOpen || s.settings || r.movementLock > 0) return;
+  if (
+    !r ||
+    r.challenge ||
+    s.fakeChallenge ||
+    s.wardrobe ||
+    s.practiceOpen ||
+    s.settings ||
+    r.movementLock > 0
+  )
+    return;
   if (r.phase === "lobby") {
-    const me = r.players.find(p => p.id === s.id);
-    const seat = nearestLobbySeat(motion.x, motion.z, r.players.map(p => p.seat ?? -1));
+    const me = r.players.find((p) => p.id === s.id);
+    const seat = nearestLobbySeat(
+      motion.x,
+      motion.z,
+      r.players.map((p) => p.seat ?? -1),
+    );
     if ((me?.seat ?? -1) >= 0 || seat !== undefined) interactWithSeat(seat);
     else if (nearWardrobe(motion.x, motion.z)) openWardrobe();
     else if (Math.hypot(motion.x, motion.z + 3.8) <= 2.5) openPractice();
-    else s.set({ error: "Walk closer to a chair, the wardrobe box or the practice console." });
+    else
+      s.set({
+        error:
+          "Walk closer to a chair, the wardrobe box or the practice console.",
+      });
     return;
   }
   if (r.phase !== "playing") return;

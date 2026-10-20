@@ -1,7 +1,7 @@
 import { useGame } from "@/features/game/model/game-store";
 import { motion } from "@/features/game/model/motion";
 
-import { useFrame,useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 export function CameraRig({ menu, lobby }: { menu: boolean; lobby: boolean }) {
   const { camera, size } = useThree();

@@ -1,10 +1,13 @@
-import { Bodywear,BOOT_COLORS,Headwear,OUTFIT_COLORS } from "@/features/appearance/components/CharacterClothes";
-import { type Cosmetics } from "@/features/appearance/model/appearance-store";
 import {
-useGLTF
-} from "@react-three/drei";
+  Bodywear,
+  BOOT_COLORS,
+  Headwear,
+  OUTFIT_COLORS,
+} from "@/features/appearance/components/CharacterClothes";
+import { type Cosmetics } from "@/features/appearance/model/appearance-store";
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect,useMemo,useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 export function Pip({
   color,
@@ -46,8 +49,10 @@ export function Pip({
         const m = o.material as THREE.MeshStandardMaterial;
         if (m.name === "Shell") m.color.set(color);
         if (o.name === "Badge" && outfit !== "none") o.visible = false;
-        if (["Torso", "ArmL", "ArmR"].includes(o.name) && OUTFIT_COLORS[outfit]) m.color.set(OUTFIT_COLORS[outfit]);
-        if (o.name.startsWith("Foot") && BOOT_COLORS[boots]) m.color.set(BOOT_COLORS[boots]);
+        if (["Torso", "ArmL", "ArmR"].includes(o.name) && OUTFIT_COLORS[outfit])
+          m.color.set(OUTFIT_COLORS[outfit]);
+        if (o.name.startsWith("Foot") && BOOT_COLORS[boots])
+          m.color.set(BOOT_COLORS[boots]);
         if (ghost) {
           m.transparent = true;
           m.opacity = 0.35;
@@ -82,10 +87,16 @@ export function Pip({
     [model],
   );
   useFrame(({ clock }, dt) => {
-    sitBlend.current = THREE.MathUtils.damp(sitBlend.current, seated ? 1 : 0, 10, dt);
+    sitBlend.current = THREE.MathUtils.damp(
+      sitBlend.current,
+      seated ? 1 : 0,
+      10,
+      dt,
+    );
     const sitting = sitBlend.current;
     const t = clock.elapsedTime,
-      moving = !seated && (typeof walking === "boolean" ? walking : walking.current);
+      moving =
+        !seated && (typeof walking === "boolean" ? walking : walking.current);
     if (moving) {
       hasMoved.current = true;
       lastMovementAt.current = t;
@@ -96,10 +107,7 @@ export function Pip({
     const jumpDelay = hasMoved.current ? 7 : 0;
     const jumpTime = (idleTime - jumpDelay) % 2.6;
     const idleJump =
-      !moving &&
-      idleBounce > 0.1 &&
-      idleTime >= jumpDelay &&
-      jumpTime < 0.7
+      !moving && idleBounce > 0.1 && idleTime >= jumpDelay && jumpTime < 0.7
         ? Math.sin((Math.PI * jumpTime) / 0.7)
         : 0;
     if (headPivot) headPivot.rotation.y = headTurn?.current || 0;
@@ -112,25 +120,29 @@ export function Pip({
         : idleJump
           ? (limb.name.startsWith("Foot") ? -0.3 : 0.18) * idleJump * sign
           : 0;
-      limb.rotation.x = THREE.MathUtils.lerp(stride, limb.name.startsWith("Foot") ? -.12 : -.6, sitting);
+      limb.rotation.x = THREE.MathUtils.lerp(
+        stride,
+        limb.name.startsWith("Foot") ? -0.12 : -0.6,
+        sitting,
+      );
       if (limb.name.startsWith("Foot")) {
-        limb.position.y = .2 - .04 * sitting;
-        limb.position.z = .045 + .29 * sitting;
+        limb.position.y = 0.2 - 0.04 * sitting;
+        limb.position.z = 0.045 + 0.29 * sitting;
       } else {
-        limb.position.y = .67 - .045 * sitting;
-        limb.position.z = .09 * sitting;
+        limb.position.y = 0.67 - 0.045 * sitting;
+        limb.position.z = 0.09 * sitting;
       }
     }
     if (group.current)
       group.current.position.y = ghost
         ? 0.3 + Math.sin(t * 2) * 0.12
-        : sitting > .001
-          ? .085 * sitting
+        : sitting > 0.001
+          ? 0.085 * sitting
           : moving
-          ? Math.abs(Math.sin(t * 12)) * 0.06
-          : idleBounce > 0.1
-            ? Math.pow(idleJump, 0.7) * idleBounce
-            : Math.sin(t * 2) * idleBounce;
+            ? Math.abs(Math.sin(t * 12)) * 0.06
+            : idleBounce > 0.1
+              ? Math.pow(idleJump, 0.7) * idleBounce
+              : Math.sin(t * 2) * idleBounce;
   });
   return (
     <group ref={group}>

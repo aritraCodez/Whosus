@@ -1,6 +1,6 @@
 import type { Challenge } from "@/features/game/model/types";
 import { act } from "@/features/game/network/game-client";
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
 import { useState } from "react";
 export function SequenceGame({
   c,
@@ -32,7 +32,9 @@ export function SequenceGame({
       } else {
         playTaskSound("buzz");
         setLocalStep(0);
-        setLocalError("Wrong symbol. Start matching again from the first symbol.");
+        setLocalError(
+          "Wrong symbol. Start matching again from the first symbol.",
+        );
       }
       setTimeout(() => setBusy(false), 300);
     } else {
@@ -48,7 +50,11 @@ export function SequenceGame({
       <div className="task-instructions">
         <h3>Follow the signal sequence</h3>
         <p>Match the symbols in order. A wrong symbol resets this task.</p>
-        {(c.error || localError) && <p className="task-retry" role="status">{c.error || localError}</p>}
+        {(c.error || localError) && (
+          <p className="task-retry" role="status">
+            {c.error || localError}
+          </p>
+        )}
       </div>
 
       <div className="sequence-display">

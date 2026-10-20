@@ -1,8 +1,6 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Fuel
-} from "lucide-react";
-import { useEffect,useRef,useState } from "react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Fuel } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 export function FuelGame({ finish }: { finish: () => void }) {
   const [level, setLevel] = useState(0);
   const holding = useRef(false);
@@ -45,7 +43,10 @@ export function FuelGame({ finish }: { finish: () => void }) {
         <div className="fuel-controls">
           <button
             className="fuel-dispense-btn"
-            onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); startFill(); }}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              startFill();
+            }}
             onPointerUp={stopFill}
             onPointerCancel={stopFill}
             onLostPointerCapture={stopFill}

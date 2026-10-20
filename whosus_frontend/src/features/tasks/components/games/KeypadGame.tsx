@@ -1,7 +1,5 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Check
-} from "lucide-react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Check } from "lucide-react";
 import { useState } from "react";
 export function KeypadGame({ finish }: { finish: () => void }) {
   const [targetCode] = useState(() =>

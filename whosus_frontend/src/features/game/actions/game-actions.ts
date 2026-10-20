@@ -2,7 +2,9 @@ import { interactWithStation } from "@/features/game/actions/interactions";
 import { useGame } from "@/features/game/model/game-store";
 import { motion } from "@/features/game/model/motion";
 import { act } from "@/features/game/network/game-client";
-export function interact() { interactWithStation(); }
+export function interact() {
+  interactWithStation();
+}
 
 export function report() {
   const r = useGame.getState().room;

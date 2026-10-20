@@ -2,7 +2,7 @@
 
 WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on Cloudline Station. Crewmates maintain the station and investigate; killers sabotage it and eliminate crew. A FastAPI server owns the match, while a React Three Fiber client renders the world and handles player input.
 
-This README is the single project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts.
+This README is the project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts; the frontend has an additional architecture and validation guide.
 
 ## Project preview
 
@@ -49,13 +49,22 @@ whosus/
 |   `-- requirements.txt
 `-- whosus_frontend/
     |-- src/
-    |   |-- App.tsx                   Menu, lobby, HUD, tasks, meetings, touch controls
-    |   |-- Scene.tsx                 Station, GLB characters, camera, interpolation
-    |   |-- network.ts                WebSockets, prediction, reconciliation
-    |   |-- voice.ts                  Microphone, WebRTC, playback, mute/PTT/deafen
-    |   |-- store.ts                  Zustand client state
-    |   |-- world.ts                  Client collision geometry
-    |   `-- audio.ts                  Synthesized interaction sounds
+    |   |-- app/                      Entry point, composition, session lifecycle
+    |   |-- components/               Reusable controls and error boundary
+    |   |-- config/                   Public environment and backend URL helpers
+    |   |-- features/
+    |   |   |-- appearance/           Wardrobe, appearance state, character model
+    |   |   |-- chat/                 Chat and mobile keyboard behavior
+    |   |   |-- game/                 State, input, prediction, networking, HUD
+    |   |   |-- lobby/                Menu, room forms, discovery API, room rules
+    |   |   |-- scene/                Station, actors, camera, effects, diagnostics
+    |   |   |-- settings/             Mission, graphics, sound, microphone settings
+    |   |   |-- tasks/                Task lifecycle and individual minigames
+    |   |   `-- voice/                WebRTC lifecycle and voice controls
+    |   |-- lib/                      Feature-independent validation helpers
+    |   |-- services/                 HTTP client and shared socket send access
+    |   `-- styles/                   Global styles and responsive overrides
+    |-- README.md                    Frontend boundaries, conventions, validation
     |-- public/models/                Exported GLBs and editable Blender source
     |-- assets/build_assets.py        Original model generator
     |-- test/browser-test.mjs         Browser integration checks
@@ -79,7 +88,7 @@ Generated files stay inside their application: Python packages in `whosus_backen
 
 | Dependency | Required for |
 | --- | --- |
-| Node.js 22+ and npm | Frontend development, production builds, browser tests |
+| Node.js 22.13+ and npm | Frontend development, production builds, browser tests |
 | Python 3.11-3.13 with pip and venv | Backend and Python tests |
 | A current WebGL-capable browser | Rendering and gameplay |
 | Microphone permission and headphones | Manual voice testing |
@@ -183,8 +192,8 @@ The server trusts session identity established on the WebSocket, rather than a p
 | --- | --- |
 | Room creation, joining and public discovery | `app/main.py`; six-character codes; `/api/rooms` lists eligible public lobbies |
 | Simulation | `app/game.py`; fixed 50 ms steps, bounded input queues, collision checks and server-owned timers |
-| Client responsiveness | `src/network.ts` predicts local inputs and replays unacknowledged inputs over server positions |
-| Remote movement | `src/Scene.tsx` smooths received player positions during rendering |
+| Client responsiveness | `src/features/game/network/game-client.ts` and `src/features/game/model/motion.ts` predict local inputs and replay unacknowledged inputs over server positions |
+| Remote movement | `src/features/scene/components/Avatar.tsx` smooths received player positions during rendering |
 | Role secrecy | Per-recipient snapshots disclose the player's own role, killer teammates when applicable, and all roles after game over |
 | Task validation | Station range, issued challenge nonce, expected sequence, and minimum step timing |
 | Communication validation | Server-side text recipients and voice signaling eligibility; browsers apply server-provided audio gains |
@@ -293,10 +302,16 @@ In a separate terminal, starting at the repository root:
 
 ```powershell
 cd whosus_frontend
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd run check:architecture
+npm.cmd run format:check
 npm.cmd run build
 ```
 
 Success means TypeScript checking and Vite compilation finish with exit code zero and produce `dist/`. A build alone does not establish that multiplayer or microphone playback works. The current bundle may produce a size warning; inspect actual errors and the exit code separately.
+
+See the [frontend architecture guide](whosus_frontend/README.md) for module boundaries, the file migration map, test commands, and the refactor validation record.
 
 ### Waiting room and elimination animations
 
@@ -315,6 +330,8 @@ In another terminal at the repository root:
 ```powershell
 cd whosus_frontend
 npx.cmd playwright install chromium
+npm.cmd run test:models
+npm.cmd run test:session
 npm.cmd run test:voice
 npm.cmd run test:voice-errors
 npm.cmd run test:browser

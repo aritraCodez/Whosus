@@ -1,13 +1,17 @@
 import { backendWebSocketUrl } from "@/config/backend";
 import { sound } from "@/features/game/audio/sounds";
 import { useGame } from "@/features/game/model/game-store";
-import { motion,movementInput } from "@/features/game/model/motion";
-import type { Snapshot } from "@/features/game/model/types";
+import { motion, movementInput } from "@/features/game/model/motion";
 import { move } from "@/features/game/model/world";
 import { closeTestPlayers } from "@/features/lobby/model/test-players";
 import { voice } from "@/features/voice/voice-client";
-import { send,setGameSocket } from "@/services/game-socket";
-export { motion,movementInput,renderPosition } from "@/features/game/model/motion";
+import { send, setGameSocket } from "@/services/game-socket";
+import { parseServerMessage } from "./protocol";
+export {
+  motion,
+  movementInput,
+  renderPosition,
+} from "@/features/game/model/motion";
 export { send } from "@/services/game-socket";
 let ws: WebSocket | null = null,
   retry: ReturnType<typeof setTimeout> | undefined,
@@ -56,7 +60,11 @@ export function connect(message?: Record<string, unknown>) {
     }
   };
   socket.onmessage = (event) => {
-    const m = JSON.parse(event.data);
+    const m = parseServerMessage(event.data);
+    if (!m) {
+      useGame.setState({ error: "Received an invalid game server response." });
+      return;
+    }
     if (m.type === "joined") {
       token = m.token;
       sessionStorage.setItem("whosus-session", token);
@@ -69,10 +77,12 @@ export function connect(message?: Record<string, unknown>) {
       void voice.reconnect();
     }
     if (m.type === "snapshot") {
-      const r = m.room as Snapshot,
+      const r = m.room,
         me = r.players.find((p) => p.id === useGame.getState().id);
       if (me) {
-        const previousMe = useGame.getState().room?.players.find(p => p.id === me.id);
+        const previousMe = useGame
+          .getState()
+          .room?.players.find((p) => p.id === me.id);
         if (me.seat !== previousMe?.seat) motion.pending = [];
         if (r.vent !== useGame.getState().room?.vent) {
           motion.pending = [];
@@ -86,7 +96,8 @@ export function connect(message?: Record<string, unknown>) {
           motion.pending = [];
           motion.revision++;
           useGame.setState({ map: false });
-          if (r.phase !== lastPhase) useGame.setState({ fakeChallenge: null, practiceOpen: false });
+          if (r.phase !== lastPhase)
+            useGame.setState({ fakeChallenge: null, practiceOpen: false });
           if (r.round !== lastRound) useGame.setState({ fakeDone: {} });
           lastRound = r.round;
           if (r.phase === "discussion") sound("meeting");
@@ -94,11 +105,20 @@ export function connect(message?: Record<string, unknown>) {
         }
         motion.seq = Math.max(motion.seq, me.ack);
         motion.pending = motion.pending.filter((i) => i.seq > me.ack);
-        if (r.movementLock > 0 || r.vent >= 0 || (me.seat ?? -1) >= 0) motion.pending = [];
+        if (r.movementLock > 0 || r.vent >= 0 || (me.seat ?? -1) >= 0)
+          motion.pending = [];
         let [x, z] = [me.x, me.z];
         if (["playing", "lobby"].includes(r.phase) && r.vent < 0)
           for (const i of motion.pending)
-            [x, z] = move(x, z, i.dx, i.dz, !me.alive, r.phase === "lobby", r.movementSpeed ?? 1);
+            [x, z] = move(
+              x,
+              z,
+              i.dx,
+              i.dz,
+              !me.alive,
+              r.phase === "lobby",
+              r.movementSpeed ?? 1,
+            );
         motion.x = x;
         motion.z = z;
       }

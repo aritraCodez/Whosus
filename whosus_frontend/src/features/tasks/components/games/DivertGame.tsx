@@ -1,7 +1,5 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-Sliders
-} from "lucide-react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { Sliders } from "lucide-react";
 import { useState } from "react";
 export function DivertGame({ finish }: { finish: () => void }) {
   const [switches, setSwitches] = useState([false, false, false, false]);
@@ -37,7 +35,9 @@ export function DivertGame({ finish }: { finish: () => void }) {
               <Sliders size={20} />
               <span>{on ? "ROUTE" : "IDLE"}</span>
             </button>
-            {i === targetIdx && <span className="target-indicator">TARGET</span>}
+            {i === targetIdx && (
+              <span className="target-indicator">TARGET</span>
+            )}
           </div>
         ))}
       </div>

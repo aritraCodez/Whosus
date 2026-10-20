@@ -1,6 +1,6 @@
 import { motion } from "@/features/game/model/motion";
 
-import { useEffect,useRef,useState } from "react";
+import { useEffect, useRef, useState } from "react";
 export function Joystick() {
   const [pos, setPos] = useState([0, 0]);
   const pointer = useRef<number | null>(null);

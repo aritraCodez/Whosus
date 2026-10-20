@@ -43,8 +43,26 @@ export const OBSTACLES = [
 ];
 
 export const STATIONS = [
-  { id: "security", name: "Tune Security Signal", room: "Security", x: -12, z: -12, category: "short", kind: "dial", visual: false },
-  { id: "reactor_monitor", name: "Calibrate Reactor Monitor", room: "Reactor", x: 2, z: -12, category: "short", kind: "dial", visual: false },
+  {
+    id: "security",
+    name: "Tune Security Signal",
+    room: "Security",
+    x: -12,
+    z: -12,
+    category: "short",
+    kind: "dial",
+    visual: false,
+  },
+  {
+    id: "reactor_monitor",
+    name: "Calibrate Reactor Monitor",
+    room: "Reactor",
+    x: 2,
+    z: -12,
+    category: "short",
+    kind: "dial",
+    visual: false,
+  },
   {
     id: "garden",
     name: "Balance the biofilter",
@@ -201,15 +219,27 @@ export const WARDROBE_STATION = {
   range: 2.25,
 };
 export function nearWardrobe(x: number, z: number) {
-  return Math.hypot(x - WARDROBE_STATION.x, z - WARDROBE_STATION.z) <= WARDROBE_STATION.range;
+  return (
+    Math.hypot(x - WARDROBE_STATION.x, z - WARDROBE_STATION.z) <=
+    WARDROBE_STATION.range
+  );
 }
 export const SEAT_RANGE = 1.35;
-export const LOBBY_SEATS = [-1, 1].flatMap(side =>
-  [-3.75, -2.25, -.75, .75, 2.25, 3.75].map(z => ({ x: side * 5.3, z, side })),
+export const LOBBY_SEATS = [-1, 1].flatMap((side) =>
+  [-3.75, -2.25, -0.75, 0.75, 2.25, 3.75].map((z) => ({
+    x: side * 5.3,
+    z,
+    side,
+  })),
 );
 export function nearestLobbySeat(x: number, z: number, occupied: number[]) {
-  return LOBBY_SEATS.map((seat, index) => ({ index, distance: Math.hypot(x - seat.x, z - seat.z) }))
-    .filter(seat => seat.distance <= SEAT_RANGE && !occupied.includes(seat.index))
+  return LOBBY_SEATS.map((seat, index) => ({
+    index,
+    distance: Math.hypot(x - seat.x, z - seat.z),
+  }))
+    .filter(
+      (seat) => seat.distance <= SEAT_RANGE && !occupied.includes(seat.index),
+    )
     .sort((a, b) => a.distance - b.distance)[0]?.index;
 }
 export function walkable(x: number, z: number, lobby = false) {

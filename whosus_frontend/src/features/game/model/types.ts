@@ -1,3 +1,13 @@
+export type ConnectionStatus = "offline" | "connecting" | "connected";
+export type GamePhase =
+  | "lobby"
+  | "reveal"
+  | "playing"
+  | "discussion"
+  | "voting"
+  | "results"
+  | "gameover";
+
 export interface Player {
   id: string;
   name: string;
@@ -60,7 +70,7 @@ export interface Snapshot {
     meetingCooldown: number;
   };
   killers: number;
-  phase: string;
+  phase: GamePhase;
   round: number;
   players: Player[];
   bodies: { id: string; x: number; z: number; color: string }[];
@@ -86,8 +96,32 @@ export type Elimination = {
   id: string;
   style: number;
   elapsed: number;
-  attacker: Pick<Player, "id" | "name" | "color" | "hat" | "outfit" | "visor" | "accessory" | "boots" | "x" | "z">;
-  victim: Pick<Player, "id" | "name" | "color" | "hat" | "outfit" | "visor" | "accessory" | "boots" | "x" | "z">;
+  attacker: Pick<
+    Player,
+    | "id"
+    | "name"
+    | "color"
+    | "hat"
+    | "outfit"
+    | "visor"
+    | "accessory"
+    | "boots"
+    | "x"
+    | "z"
+  >;
+  victim: Pick<
+    Player,
+    | "id"
+    | "name"
+    | "color"
+    | "hat"
+    | "outfit"
+    | "visor"
+    | "accessory"
+    | "boots"
+    | "x"
+    | "z"
+  >;
 };
 export interface Chat {
   id: string;

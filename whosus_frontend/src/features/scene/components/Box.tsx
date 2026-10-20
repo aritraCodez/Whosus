@@ -1,6 +1,4 @@
-import {
-RoundedBox
-} from "@react-three/drei";
+import { RoundedBox } from "@react-three/drei";
 import { memo } from "react";
 export const Box = memo(function Box({
   at,

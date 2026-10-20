@@ -1,6 +1,6 @@
 import type { Elimination } from "@/features/game/model/types";
 import { useFrame } from "@react-three/fiber";
-import { useRef,type ComponentType } from "react";
+import { useRef, type ComponentType } from "react";
 import * as THREE from "three";
 
 export const ELIMINATION_NAMES = [
@@ -145,7 +145,10 @@ export function EliminationEffect({
         rotation={[0, Math.PI, 0]}
       >
         <Actor
-          outfit={event.victim.outfit} visor={event.victim.visor} accessory={event.victim.accessory} boots={event.victim.boots}
+          outfit={event.victim.outfit}
+          visor={event.victim.visor}
+          accessory={event.victim.accessory}
+          boots={event.victim.boots}
           color={event.victim.color}
           hat={event.victim.hat}
           headTurn={headTurn}

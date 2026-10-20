@@ -6,6 +6,15 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src vite.config.ts",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "format:check": "prettier --check src test scripts *.js *.json vite.config.ts index.html README.md",
+    "format": "prettier --write src test scripts *.js *.json vite.config.ts index.html README.md",
+    "test:models": "node test/model-test.mjs",
+    "test:session": "node test/session-test.mjs",
+    "test:wardrobe": "node test/wardrobe-test.mjs",
+    "test:seating": "node test/seating-test.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test:browser": "node test/browser-test.mjs",
     "test:scene": "node test/scene-test.mjs",
@@ -25,14 +34,18 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.51.0",
     "@types/node": "^22.20.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.175.0",
     "@vitejs/plugin-react": "^4.4.0",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "prettier": "^3.9.10",
     "typescript": "~5.7.2",
+    "typescript-eslint": "^8.72.0",
     "vite": "^6.3.0"
   }
 }
