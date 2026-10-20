@@ -48,7 +48,7 @@ export function RoomRules() {
           ? "Only the host can change room rules in the waiting room. You can view them here."
           : r.phase !== "lobby"
             ? "Room rules are locked during a match. Change them in the waiting room."
-          : "Changes apply to everyone. Players must ready up again after a rule changes."}
+            : "Changes apply to everyone. Players must ready up again after a rule changes."}
       </p>
       <GameSelect
         label="Room visibility"

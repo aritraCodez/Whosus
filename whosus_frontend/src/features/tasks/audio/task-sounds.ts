@@ -1,12 +1,20 @@
 import { useGame } from "@/features/game/model/game-store";
-export function playTaskSound(type: "click" | "beep" | "success" | "laser" | "buzz" | "spark") {
+export function playTaskSound(
+  type: "click" | "beep" | "success" | "laser" | "buzz" | "spark",
+) {
   if (!useGame.getState().sound) return;
   try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const ctx = new (
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext
+    )();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
-    osc.onended = () => { void ctx.close(); };
+    osc.onended = () => {
+      void ctx.close();
+    };
     gain.connect(ctx.destination);
     const now = ctx.currentTime;
 

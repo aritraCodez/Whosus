@@ -1,7 +1,7 @@
 import { useGame } from "@/features/game/model/game-store";
 import { send } from "@/services/game-socket";
 
-import type { Peer,VoicePeer,VoiceSignal,Watch } from "./types";
+import type { Peer, VoicePeer, VoiceSignal, Watch } from "./types";
 /** One WebRTC audio connection per player, with room-scoped WebSocket signaling. */
 export class VoiceChat {
   private peers = new Map<string, Peer>();

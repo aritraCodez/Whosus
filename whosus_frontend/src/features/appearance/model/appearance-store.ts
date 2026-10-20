@@ -76,15 +76,18 @@ export const DEFAULT_APPEARANCE: Appearance = {
 };
 export function normalizeAppearance(value: Partial<Appearance>): Appearance {
   const result = { ...DEFAULT_APPEARANCE };
+  const color = value.color;
   if (
-    Number.isInteger(value.color) &&
-    value.color! >= 0 &&
-    value.color! < COLORS.length
+    typeof color === "number" &&
+    Number.isInteger(color) &&
+    color >= 0 &&
+    color < COLORS.length
   )
-    result.color = value.color!;
+    result.color = color;
   for (const slot of Object.keys(WARDROBE) as CosmeticSlot[]) {
-    if (WARDROBE[slot].items.some(([id]) => id === value[slot]))
-      result[slot] = value[slot]!;
+    const item = value[slot];
+    if (item && WARDROBE[slot].items.some(([id]) => id === item))
+      result[slot] = item;
   }
   return result;
 }

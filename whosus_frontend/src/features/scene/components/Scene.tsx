@@ -1,9 +1,9 @@
 import { useGame } from "@/features/game/model/game-store";
-import { World } from '@/features/scene/components/World';
-import { setSceneRendererState } from '@/features/scene/model/scene-diagnostics';
+import { World } from "@/features/scene/components/World";
+import { setSceneRendererState } from "@/features/scene/model/scene-diagnostics";
 import { Canvas } from "@react-three/fiber";
-import { memo,Suspense } from "react";
-export { sceneDiagnostics } from '@/features/scene/model/scene-diagnostics';
+import { memo, Suspense } from "react";
+export { sceneDiagnostics } from "@/features/scene/model/scene-diagnostics";
 export default memo(function Scene({
   menu,
   color,

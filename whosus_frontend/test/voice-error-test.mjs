@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL } from "./helpers/browser.mjs";
 
-const browser = await chromium.launch({
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
-  headless: true,
-});
+const browser = await launchBrowser({});
 try {
   const page = await browser.newPage();
   await page.route("**/__voice_error__", (route) =>
@@ -13,9 +10,7 @@ try {
       body: "<!doctype html><title>Voice failure checks</title>",
     }),
   );
-  await page.goto(
-    `${process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173"}/__voice_error__`,
-  );
+  await page.goto(`${baseURL}/__voice_error__`);
   await page.clock.install();
   await page.evaluate(async () => {
     const { VoiceChat } = await import("/src/features/voice/voice-client.ts");
@@ -93,7 +88,9 @@ try {
   assert.equal(
     await page.evaluate(
       async () =>
-        (await import("/src/features/game/model/game-store.ts")).useGame.getState().voiceStatus,
+        (
+          await import("/src/features/game/model/game-store.ts")
+        ).useGame.getState().voiceStatus,
     ),
     "error",
   );

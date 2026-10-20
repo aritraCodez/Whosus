@@ -1,13 +1,7 @@
 import { useGame } from "@/features/game/model/game-store";
-import {
-send
-} from "@/features/game/network/game-client";
-import {
-ArrowRight,
-MessageCircle,
-X
-} from "lucide-react";
-import { useEffect,useRef,useState } from "react";
+import { send } from "@/services/game-socket";
+import { ArrowRight, MessageCircle, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 export function ChatPanel() {
   const s = useGame(),
     [text, setText] = useState("");
@@ -22,7 +16,10 @@ export function ChatPanel() {
     const element = panel.current;
     if (!s.chatOpen || !viewport || !element) return;
     const resize = () => {
-      element.style.setProperty("--chat-viewport-height", `${viewport.height}px`);
+      element.style.setProperty(
+        "--chat-viewport-height",
+        `${viewport.height}px`,
+      );
       element.style.setProperty(
         "--chat-keyboard-offset",
         `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`,
@@ -38,7 +35,6 @@ export function ChatPanel() {
   }, [s.chatOpen]);
   if (!s.chatOpen) return null;
   const me = s.room?.players.find((p) => p.id === s.id);
-  const allowed = true;
   return (
     <aside className="chat-panel" ref={panel}>
       <header>
@@ -95,16 +91,13 @@ export function ChatPanel() {
           enterKeyHint="send"
           maxLength={280}
           aria-label="Chat message"
-          disabled={!allowed}
           placeholder={
-            me?.alive
-              ? "Message your crew…"
-              : "Ghost message (ghosts only)…"
+            me?.alive ? "Message your crew…" : "Ghost message (ghosts only)…"
           }
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <button aria-label="Send message" disabled={!allowed || !text.trim()}>
+        <button aria-label="Send message" disabled={!text.trim()}>
           <ArrowRight size={18} />
         </button>
       </form>

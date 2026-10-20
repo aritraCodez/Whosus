@@ -15,7 +15,12 @@ export function VisualTaskEffects() {
             <group key={i} position={[-8, 0, 2]}>
               <mesh position={[0, 1.2, 0]}>
                 <cylinderGeometry args={[0.9, 0.9, 2.4, 32, 1, true]} />
-                <meshBasicMaterial color="#4ef6c5" transparent opacity={0.35} side={THREE.DoubleSide} />
+                <meshBasicMaterial
+                  color="#4ef6c5"
+                  transparent
+                  opacity={0.35}
+                  side={THREE.DoubleSide}
+                />
               </mesh>
               <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[0.7, 0.95, 32]} />
@@ -29,7 +34,12 @@ export function VisualTaskEffects() {
             <group key={i} position={[12, 0.5, 10]}>
               <mesh position={[0, 1, 0]}>
                 <sphereGeometry args={[1.5, 16, 16]} />
-                <meshBasicMaterial color="#6ad9c5" transparent opacity={0.25} wireframe />
+                <meshBasicMaterial
+                  color="#6ad9c5"
+                  transparent
+                  opacity={0.25}
+                  wireframe
+                />
               </mesh>
             </group>
           );

@@ -1,4 +1,8 @@
-import { eliminate,interact,report } from "@/features/game/actions/game-actions";
+import {
+  eliminate,
+  interact,
+  report,
+} from "@/features/game/actions/game-actions";
 import { useGame } from "@/features/game/model/game-store";
 import { motion } from "@/features/game/model/motion";
 import { STATIONS } from "@/features/game/model/world";
@@ -6,10 +10,15 @@ import { act } from "@/features/game/network/game-client";
 import { voice } from "@/features/voice/voice-client";
 import { useEffect } from "react";
 export function useGameControls() {
-useEffect(() => {
-    let swipe: { pointerId: number; startX: number; startY: number } | undefined;
+  useEffect(() => {
+    let swipe:
+      { pointerId: number; startX: number; startY: number } | undefined;
     const down = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest("input,textarea,select,dialog,.task-list"))
+      if (
+        (e.target as HTMLElement).closest(
+          "input,textarea,select,dialog,.task-list",
+        )
+      )
         return;
       if (e.code === "Tab") {
         e.preventDefault();

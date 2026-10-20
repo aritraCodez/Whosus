@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useEffect,useRef,type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 export function Modal({
   title,
@@ -14,8 +14,9 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    ref.current?.showModal();
-    return () => ref.current?.close();
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
   }, []);
   return (
     <dialog

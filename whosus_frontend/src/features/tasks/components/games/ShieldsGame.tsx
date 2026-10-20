@@ -1,11 +1,17 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-ShieldAlert
-} from "lucide-react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
 export function ShieldsGame({ finish }: { finish: () => void }) {
   // 7 hexes: indices 0 to 6. Some initially red (false), goal is all true.
-  const [shields, setShields] = useState<boolean[]>([false, true, false, false, true, false, false]);
+  const [shields, setShields] = useState<boolean[]>([
+    false,
+    true,
+    false,
+    false,
+    true,
+    false,
+    false,
+  ]);
 
   const toggleHex = (idx: number) => {
     playTaskSound("spark");
@@ -41,7 +47,8 @@ export function ShieldsGame({ finish }: { finish: () => void }) {
       </div>
 
       <div className="shields-status">
-        STATUS: <strong>{shields.filter(Boolean).length} / 7 NODES ENGAGED</strong>
+        STATUS:{" "}
+        <strong>{shields.filter(Boolean).length} / 7 NODES ENGAGED</strong>
       </div>
     </div>
   );

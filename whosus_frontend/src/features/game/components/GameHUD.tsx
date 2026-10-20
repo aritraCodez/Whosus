@@ -1,34 +1,35 @@
-import { BotIcon } from '@/features/appearance/components/BotIcon';
-import { ChatPanel } from '@/features/chat/components/ChatPanel';
-import { eliminate,interact,report } from '@/features/game/actions/game-actions';
-import { HoldButton } from '@/features/game/components/HoldButton';
-import { Joystick } from '@/features/game/components/Joystick';
-import { Meeting } from '@/features/game/components/Meeting';
-import { useGame } from "@/features/game/model/game-store";
+import { BotIcon } from "@/features/appearance/components/BotIcon";
+import { ChatPanel } from "@/features/chat/components/ChatPanel";
 import {
-act,
-leave
-} from "@/features/game/network/game-client";
-import { Lobby } from '@/features/lobby/components/Lobby';
+  eliminate,
+  interact,
+  report,
+} from "@/features/game/actions/game-actions";
+import { HoldButton } from "@/features/game/components/HoldButton";
+import { Joystick } from "@/features/game/components/Joystick";
+import { Meeting } from "@/features/game/components/Meeting";
+import { useGame } from "@/features/game/model/game-store";
+import { act, leave } from "@/features/game/network/game-client";
+import { Lobby } from "@/features/lobby/components/Lobby";
 import { ELIMINATION_NAMES } from "@/features/scene/components/EliminationEffect";
 import { PracticePanel } from "@/features/tasks/components/PracticePanel";
 import { UniversalTaskPanel } from "@/features/tasks/components/TaskPanels";
-import { VoiceBar } from '@/features/voice/components/VoiceBar';
+import { VoiceBar } from "@/features/voice/components/VoiceBar";
 import {
-ArrowRight,
-Check,
-ChevronDown,
-ChevronUp,
-DoorOpen,
-Map,
-MessageCircle,
-Radio,
-Settings,
-Shield,
-Skull,
-Sparkles,
-Wifi,
-Zap
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  DoorOpen,
+  Map,
+  MessageCircle,
+  Radio,
+  Settings,
+  Shield,
+  Skull,
+  Sparkles,
+  Wifi,
+  Zap,
 } from "lucide-react";
 import { useState } from "react";
 export function GameHUD() {
@@ -48,7 +49,8 @@ export function GameHUD() {
       Math.hypot(p.x - me.x, p.z - me.z) <= 1.8,
   );
   const nearTask = r.tasks.find(
-    (t) => !t.done && !s.fakeDone[t.id] && Math.hypot(t.x - me.x, t.z - me.z) <= 2.5,
+    (t) =>
+      !t.done && !s.fakeDone[t.id] && Math.hypot(t.x - me.x, t.z - me.z) <= 2.5,
   );
   const nearBeacon =
     me.alive &&
@@ -119,9 +121,7 @@ export function GameHUD() {
               aria-label={tasksCollapsed ? "Expand tasks" : "Collapse tasks"}
               title={tasksCollapsed ? "Expand tasks" : "Collapse tasks"}
             >
-              <span>
-                {killer ? "A LITTLE TREACHERY" : "A LITTLE TEAMWORK"}
-              </span>
+              <span>{killer ? "A LITTLE TREACHERY" : "A LITTLE TEAMWORK"}</span>
               <span className="task-header-right">
                 <strong>{Math.round(r.progress * 100)}%</strong>
                 <span className="task-toggle-icon">
@@ -138,48 +138,54 @@ export function GameHUD() {
                 <div className="progress">
                   <i style={{ width: `${r.progress * 100}%` }} />
                 </div>
-                <div className="task-content" id="mission-tasks" role="region" aria-label="Mission tasks" tabIndex={0}>
-                <h3>
-                  {!me.alive
-                    ? "Your shift isn’t over."
-                    : killer
-                      ? "Make yourself believable."
-                      : "Keep the station alive."}
-                </h3>
-                {!me.alive && (
-                  <p className="ghost-note">
-                    You’re a ghost.{" "}
-                    {killer
-                      ? "Watch the mystery unfold."
-                      : "Finish your tasks and help your crew."}
-                  </p>
-                )}
-                {killer ? (
-                  <p>
-                    Blend in. Create a distraction.
-                    <br />
-                    Eliminate the crew without being caught.
-                  </p>
-                ) : (
-                  r.tasks.map((t) => (
-                    <div
-                      className={`task-row ${t.done ? "done" : ""}`}
-                      key={t.id}
-                    >
-                      <span>
-                        {t.done ? (
-                          <Check size={13} />
-                        ) : (
-                          <span className="task-dot" />
-                        )}
-                      </span>
-                      <div>
-                        <strong>{t.name}</strong>
-                        <small>{t.room}</small>
+                <div
+                  className="task-content"
+                  id="mission-tasks"
+                  role="region"
+                  aria-label="Mission tasks"
+                  tabIndex={0}
+                >
+                  <h3>
+                    {!me.alive
+                      ? "Your shift isn’t over."
+                      : killer
+                        ? "Make yourself believable."
+                        : "Keep the station alive."}
+                  </h3>
+                  {!me.alive && (
+                    <p className="ghost-note">
+                      You’re a ghost.{" "}
+                      {killer
+                        ? "Watch the mystery unfold."
+                        : "Finish your tasks and help your crew."}
+                    </p>
+                  )}
+                  {killer ? (
+                    <p>
+                      Blend in. Create a distraction.
+                      <br />
+                      Eliminate the crew without being caught.
+                    </p>
+                  ) : (
+                    r.tasks.map((t) => (
+                      <div
+                        className={`task-row ${t.done ? "done" : ""}`}
+                        key={t.id}
+                      >
+                        <span>
+                          {t.done ? (
+                            <Check size={13} />
+                          ) : (
+                            <span className="task-dot" />
+                          )}
+                        </span>
+                        <div>
+                          <strong>{t.name}</strong>
+                          <small>{t.room}</small>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
                 </div>
               </>
             )}
@@ -384,7 +390,9 @@ export function GameHUD() {
           </section>
         </div>
       )}
-      {s.practiceOpen && r.phase === "lobby" && !s.fakeChallenge && <PracticePanel />}
+      {s.practiceOpen && r.phase === "lobby" && !s.fakeChallenge && (
+        <PracticePanel />
+      )}
       {((r.challenge && r.phase === "playing") || s.fakeChallenge) && (
         <UniversalTaskPanel />
       )}

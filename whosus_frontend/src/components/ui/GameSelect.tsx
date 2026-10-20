@@ -1,31 +1,33 @@
-import { Check,ChevronDown } from "lucide-react";
-import { useEffect,useId,useRef,useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 
-export interface GameSelectOption {
-  value: string | number;
+export interface GameSelectOption<T extends string | number = string | number> {
+  value: T;
   label: string;
 }
 
-interface GameSelectProps {
+interface GameSelectProps<T extends string | number> {
   id?: string;
   label?: string;
-  value: string | number;
-  options: GameSelectOption[];
-  onChange: (value: string | number) => void;
+  ariaLabel?: string;
+  value: T;
+  options: readonly GameSelectOption<T>[];
+  onChange: (value: T) => void;
   disabled?: boolean;
   /** Small accent text shown below the label, e.g. "current: 1×" */
   hint?: string;
 }
 
-export function GameSelect({
+export function GameSelect<const T extends string | number>({
   id: externalId,
   label,
+  ariaLabel,
   value,
   options,
   onChange,
   disabled = false,
   hint,
-}: GameSelectProps) {
+}: GameSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -67,7 +69,7 @@ export function GameSelect({
     }
   };
 
-  const pick = (opt: GameSelectOption) => {
+  const pick = (opt: GameSelectOption<T>) => {
     onChange(opt.value);
     setOpen(false);
   };
@@ -85,6 +87,8 @@ export function GameSelect({
         type="button"
         role="combobox"
         aria-haspopup="listbox"
+        aria-label={ariaLabel}
+        aria-controls={`${id}-options`}
         aria-expanded={open}
         aria-disabled={disabled}
         disabled={disabled}
@@ -101,6 +105,7 @@ export function GameSelect({
       {open && (
         <ul
           ref={listRef}
+          id={`${id}-options`}
           role="listbox"
           className="gs-dropdown"
           aria-label={label}
@@ -110,6 +115,7 @@ export function GameSelect({
             return (
               <li
                 key={opt.value}
+                data-value={opt.value}
                 role="option"
                 aria-selected={isActive}
                 className={`gs-option ${isActive ? "gs-option-active" : ""}`}

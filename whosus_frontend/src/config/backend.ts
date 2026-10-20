@@ -1,4 +1,5 @@
-const backendOrigin = import.meta.env.VITE_BACKEND_ORIGIN?.replace(/\/+$/, "");
+import { parseBackendOrigin } from "./environment";
+const backendOrigin = parseBackendOrigin(import.meta.env.VITE_BACKEND_ORIGIN);
 
 export function backendApiUrl(path: string) {
   return backendOrigin ? new URL(path, `${backendOrigin}/`).toString() : path;

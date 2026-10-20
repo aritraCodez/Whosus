@@ -1,10 +1,10 @@
-import { playTaskSound } from '@/features/tasks/audio/task-sounds';
-import {
-CreditCard
-} from "lucide-react";
-import { useRef,useState } from "react";
+import { playTaskSound } from "@/features/tasks/audio/task-sounds";
+import { CreditCard } from "lucide-react";
+import { useRef, useState } from "react";
 export function SwipeGame({ finish }: { finish: () => void }) {
-  const [status, setStatus] = useState<"idle" | "reading" | "fast" | "slow" | "accepted">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "reading" | "fast" | "slow" | "accepted"
+  >("idle");
   const [progress, setProgress] = useState(0);
   const startTime = useRef(0);
   const isDragging = useRef(false);
@@ -25,11 +25,17 @@ export function SwipeGame({ finish }: { finish: () => void }) {
       if (duration < 0.25) {
         setStatus("fast");
         playTaskSound("buzz");
-        setTimeout(() => { setProgress(0); setStatus("idle"); }, 1200);
+        setTimeout(() => {
+          setProgress(0);
+          setStatus("idle");
+        }, 1200);
       } else if (duration > 1.8) {
         setStatus("slow");
         playTaskSound("buzz");
-        setTimeout(() => { setProgress(0); setStatus("idle"); }, 1200);
+        setTimeout(() => {
+          setProgress(0);
+          setStatus("idle");
+        }, 1200);
       } else {
         setStatus("accepted");
         playTaskSound("success");
@@ -45,9 +51,15 @@ export function SwipeGame({ finish }: { finish: () => void }) {
           <CreditCard size={18} />
           <span>ADMIN ACCESS PORTAL</span>
           <div className="status-lights">
-            <span className={`light red ${status === "idle" || status === "fast" || status === "slow" ? "on" : ""}`} />
-            <span className={`light yellow ${status === "reading" ? "on" : ""}`} />
-            <span className={`light green ${status === "accepted" ? "on" : ""}`} />
+            <span
+              className={`light red ${status === "idle" || status === "fast" || status === "slow" ? "on" : ""}`}
+            />
+            <span
+              className={`light yellow ${status === "reading" ? "on" : ""}`}
+            />
+            <span
+              className={`light green ${status === "accepted" ? "on" : ""}`}
+            />
           </div>
         </div>
 

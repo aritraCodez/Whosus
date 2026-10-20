@@ -3,7 +3,7 @@ import { useGame } from "@/features/game/model/game-store";
 import { COLORS } from "@/features/game/model/types";
 import { initializeNetwork } from "@/features/game/network/game-client";
 import { makeDefaultName } from "@/features/lobby/utils/player-name";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 export function usePlayerSession() {
   const s = useGame(),
     [name, setName] = useState(() => {
@@ -13,10 +13,32 @@ export function usePlayerSession() {
   const { appearance, update: updateAppearance } = useAppearance();
   const { color, hat } = appearance;
   const setColor = (color: number) => updateAppearance({ color });
-  const roomLook = s.room?.players.find(p => p.id === s.id);
+  const roomLook = s.room?.players.find((p) => p.id === s.id);
+  const roomColor = roomLook?.color;
+  const roomHat = roomLook?.hat;
+  const roomOutfit = roomLook?.outfit;
+  const roomVisor = roomLook?.visor;
+  const roomAccessory = roomLook?.accessory;
+  const roomBoots = roomLook?.boots;
   useEffect(() => {
-    if (roomLook) updateAppearance({ color: COLORS.indexOf(roomLook.color), hat: roomLook.hat, outfit: roomLook.outfit, visor: roomLook.visor, accessory: roomLook.accessory, boots: roomLook.boots });
-  }, [roomLook?.color, roomLook?.hat, roomLook?.outfit, roomLook?.visor, roomLook?.accessory, roomLook?.boots, updateAppearance]);
+    if (roomColor !== undefined)
+      updateAppearance({
+        color: COLORS.indexOf(roomColor),
+        hat: roomHat,
+        outfit: roomOutfit,
+        visor: roomVisor,
+        accessory: roomAccessory,
+        boots: roomBoots,
+      });
+  }, [
+    roomColor,
+    roomHat,
+    roomOutfit,
+    roomVisor,
+    roomAccessory,
+    roomBoots,
+    updateAppearance,
+  ]);
   useEffect(() => initializeNetwork(), []);
   useEffect(() => {
     localStorage.setItem("whosus-name", name);
@@ -26,5 +48,5 @@ export function usePlayerSession() {
     if (roomName) setName(roomName);
   }, [roomName]);
 
-return { name, setName, color, setColor, hat };
+  return { name, setName, color, setColor, hat };
 }

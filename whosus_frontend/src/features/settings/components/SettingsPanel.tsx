@@ -1,15 +1,10 @@
 import { GameSelect } from "@/components/ui/GameSelect";
 import { Modal } from "@/components/ui/Modal";
 import { useGame } from "@/features/game/model/game-store";
-import {
-act,
-leave
-} from "@/features/game/network/game-client";
+import { act, leave } from "@/features/game/network/game-client";
 import { RoomRules } from "@/features/lobby/components/RoomRules";
 import { voice } from "@/features/voice/voice-client";
-import {
-Headphones
-} from "lucide-react";
+import { Headphones } from "lucide-react";
 export function SettingsPanel() {
   const s = useGame();
   return (
@@ -31,6 +26,7 @@ export function SettingsPanel() {
               </small>
             </span>
             <GameSelect
+              ariaLabel="Task Progress Bar"
               value={s.room.taskBarMode || "always"}
               disabled={s.id !== s.room.host || s.room.phase !== "lobby"}
               options={[
@@ -44,7 +40,10 @@ export function SettingsPanel() {
           <label className="toggle-line">
             <span>
               <strong>Visual Tasks</strong>
-              <small>Show completion lights and effects only to the player doing the task</small>
+              <small>
+                Show completion lights and effects only to the player doing the
+                task
+              </small>
             </span>
             <input
               type="checkbox"
@@ -78,7 +77,7 @@ export function SettingsPanel() {
             { value: "high", label: "High" },
             { value: "low", label: "Low / mobile" },
           ]}
-          onChange={(v) => s.set({ quality: v as "high" | "low" })}
+          onChange={(v) => s.set({ quality: v })}
         />
       </div>
       <div className="settings-voice">

@@ -258,7 +258,9 @@ dialog.wide:has(.wardrobe) {
     flex-direction: column;
     overflow: hidden;
   }
-  dialog:has(.wardrobe) > header { flex-shrink: 0; }
+  dialog:has(.wardrobe) > header {
+    flex-shrink: 0;
+  }
   .wardrobe {
     grid-template-columns: 1fr;
     grid-template-rows: max-content max-content;
@@ -267,7 +269,11 @@ dialog.wide:has(.wardrobe) {
     overflow-y: auto;
     min-height: 0;
   }
-  .wardrobe-footer { flex-shrink: 0; margin-top: 12px; padding-top: 12px; }
+  .wardrobe-footer {
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
   .wardrobe-preview {
     padding: 12px;
   }

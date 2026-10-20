@@ -1,14 +1,10 @@
 import { useGame } from "@/features/game/model/game-store";
-import { Actors } from '@/features/scene/components/Actors';
-import { CameraRig } from '@/features/scene/components/CameraRig';
-import { MotionFrame } from '@/features/scene/components/MotionFrame';
-import { Station } from '@/features/scene/components/Station';
-import { WaitingRoom } from '@/features/scene/components/WaitingRoom';
-import {
-ContactShadows,
-Float,
-OrthographicCamera
-} from "@react-three/drei";
+import { Actors } from "@/features/scene/components/Actors";
+import { CameraRig } from "@/features/scene/components/CameraRig";
+import { MotionFrame } from "@/features/scene/components/MotionFrame";
+import { Station } from "@/features/scene/components/Station";
+import { WaitingRoom } from "@/features/scene/components/WaitingRoom";
+import { ContactShadows, Float, OrthographicCamera } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 export function World({
   menu,

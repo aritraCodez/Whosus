@@ -1,16 +1,22 @@
-import type { Chat,Snapshot } from "@/features/game/model/types";
+import type {
+  Chat,
+  Snapshot,
+  Challenge,
+  ConnectionStatus,
+} from "@/features/game/model/types";
+import type { VoiceStatus } from "@/features/voice/types";
 import { create } from "zustand";
 type State = {
   room: Snapshot | null;
   id: string;
-  status: string;
+  status: ConnectionStatus;
   error: string;
   chat: Chat[];
   speaking: string[];
   muted: boolean;
   deafened: boolean;
   ptt: boolean;
-  voiceStatus: string;
+  voiceStatus: VoiceStatus;
   voiceError: string;
   playbackBlocked: boolean;
   map: boolean;
@@ -20,7 +26,7 @@ type State = {
   quality: "high" | "low";
   sound: boolean;
   eliminationStyle: number;
-  fakeChallenge: import("./types").Challenge | null;
+  fakeChallenge: Challenge | null;
   fakeDone: Record<string, boolean>;
   practiceOpen: boolean;
   set: (v: Partial<State>) => void;

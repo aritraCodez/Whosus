@@ -1,18 +1,19 @@
-import { Pip } from '@/features/appearance/components/Pip';
+import { Pip } from "@/features/appearance/components/Pip";
 import { useAppearance } from "@/features/appearance/model/appearance-store";
 import { useGame } from "@/features/game/model/game-store";
 import { motion } from "@/features/game/model/motion";
-import { COLORS,type Player } from "@/features/game/model/types";
-import {
-move as movePlayer
-} from "@/features/game/model/world";
+import { COLORS, type Player } from "@/features/game/model/types";
+import { move as movePlayer } from "@/features/game/model/world";
 
-import { Avatar } from '@/features/scene/components/Avatar';
+import { Avatar } from "@/features/scene/components/Avatar";
 import { EliminationEffect } from "@/features/scene/components/EliminationEffect";
-import { heroCanOccupy,isVisibleToPlayer } from '@/features/scene/model/visibility';
+import {
+  heroCanOccupy,
+  isVisibleToPlayer,
+} from "@/features/scene/model/visibility";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import * as THREE from "three";
+import type * as THREE from "three";
 export const showcase: Player[] = Array.from({ length: 5 }, (_, i) => ({
   id: `show${i}`,
   name: ["Miso", "Sprout", "Pip", "Echo", "Pebble"][i],
@@ -40,7 +41,7 @@ export function Actors({
     id = useGame((s) => s.id),
     map = useGame((s) => s.map);
   const hero = useRef<THREE.Group>(null);
-  const appearance = useAppearance(s => s.appearance);
+  const appearance = useAppearance((s) => s.appearance);
   const heroPosition = useRef({ x: -2, z: 2 });
   const heroWalking = useRef(false);
   const heroStep = useRef(0);
@@ -57,10 +58,8 @@ export function Actors({
     }
     const held = (a: string, b: string) =>
       motion.keys.has(a) || motion.keys.has(b) ? 1 : 0;
-    let x =
-      held("KeyD", "ArrowRight") - held("KeyA", "ArrowLeft") + motion.dx;
-    let z =
-      held("KeyS", "ArrowDown") - held("KeyW", "ArrowUp") + motion.dz;
+    let x = held("KeyD", "ArrowRight") - held("KeyA", "ArrowLeft") + motion.dx;
+    let z = held("KeyS", "ArrowDown") - held("KeyW", "ArrowUp") + motion.dz;
     const length = Math.max(1, Math.hypot(x, z));
     x /= length;
     z /= length;
@@ -122,27 +121,36 @@ export function Actors({
     }
   });
   const animated = new Set(events.flatMap((e) => [e.attacker.id, e.victim.id]));
-  const visibleEvents = map ? [] : events.filter((e) => {
-    if (!r || r.phase !== "playing" || isGhost) return true;
-    if (e.attacker.id === id || e.victim.id === id) return true;
-    return isVisibleToPlayer(e.victim.x, e.victim.z, lx, lz, isGhost, r.phase);
-  });
-  const visibleBodies = map ? [] : (r?.bodies || []).filter((b) => {
-    if (animated.has(b.id)) return false;
-    if (!r || r.phase !== "playing" || isGhost) return true;
-    return isVisibleToPlayer(b.x, b.z, lx, lz, isGhost, r.phase);
-  });
-  const visiblePlayers = (
-    menu
-      ? showcase
-      : (r?.players || []).filter((p) => {
-          if (animated.has(p.id)) return false;
-          if (p.id === id) return map || (r?.vent ?? -1) < 0;
-          if (map) return false;
-          if (!r || r.phase !== "playing" || isGhost) return true;
-          return isVisibleToPlayer(p.x, p.z, lx, lz, isGhost, r.phase);
-        })
-  );
+  const visibleEvents = map
+    ? []
+    : events.filter((e) => {
+        if (!r || r.phase !== "playing" || isGhost) return true;
+        if (e.attacker.id === id || e.victim.id === id) return true;
+        return isVisibleToPlayer(
+          e.victim.x,
+          e.victim.z,
+          lx,
+          lz,
+          isGhost,
+          r.phase,
+        );
+      });
+  const visibleBodies = map
+    ? []
+    : (r?.bodies || []).filter((b) => {
+        if (animated.has(b.id)) return false;
+        if (!r || r.phase !== "playing" || isGhost) return true;
+        return isVisibleToPlayer(b.x, b.z, lx, lz, isGhost, r.phase);
+      });
+  const visiblePlayers = menu
+    ? showcase
+    : (r?.players || []).filter((p) => {
+        if (animated.has(p.id)) return false;
+        if (p.id === id) return map || (r?.vent ?? -1) < 0;
+        if (map) return false;
+        if (!r || r.phase !== "playing" || isGhost) return true;
+        return isVisibleToPlayer(p.x, p.z, lx, lz, isGhost, r.phase);
+      });
 
   return (
     <>

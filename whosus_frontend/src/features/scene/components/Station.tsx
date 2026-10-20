@@ -1,19 +1,25 @@
 import { useGame } from "@/features/game/model/game-store";
 import {
-FLOORS,
-OBSTACLES,
-STATIONS,
-VENTS
+  FLOORS,
+  OBSTACLES,
+  STATIONS,
+  VENTS,
 } from "@/features/game/model/world";
-import { Box } from '@/features/scene/components/Box';
-import { Console,FloorLabel,Plant } from '@/features/scene/components/SceneObjects';
-import { VisualTaskEffects } from '@/features/scene/components/VisualTaskEffects';
-import { consoleColors,rooms } from '@/features/scene/model/scene-layout';
+import { Box } from "@/features/scene/components/Box";
 import {
-Html
-} from "@react-three/drei";
+  Console,
+  FloorLabel,
+  Plant,
+} from "@/features/scene/components/SceneObjects";
+import { VisualTaskEffects } from "@/features/scene/components/VisualTaskEffects";
+import { consoleColors, rooms } from "@/features/scene/model/scene-layout";
+import { Html } from "@react-three/drei";
 import { memo } from "react";
-export const Station = memo(function Station({ touchControls }: { touchControls: boolean }) {
+export const Station = memo(function Station({
+  touchControls,
+}: {
+  touchControls: boolean;
+}) {
   const sabotage = useGame((s) => !!s.room?.sabotage);
   return (
     <group>

@@ -1,22 +1,12 @@
 import { GameSelect } from "@/components/ui/GameSelect";
-import { BotIcon } from '@/features/appearance/components/BotIcon';
+import { BotIcon } from "@/features/appearance/components/BotIcon";
 import { openPractice } from "@/features/game/actions/interactions";
 import { useGame } from "@/features/game/model/game-store";
 import { COLORS } from "@/features/game/model/types";
-import {
-act
-} from "@/features/game/network/game-client";
+import { act } from "@/features/game/network/game-client";
 import { fillLobbyWithTestPlayers } from "@/features/lobby/model/test-players";
-import {
-ArrowRight,
-Check,
-Copy,
-Pencil,
-Plus,
-Users,
-X
-} from "lucide-react";
-import { useEffect,useRef,useState } from "react";
+import { ArrowRight, Check, Copy, Pencil, Plus, Users, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 export function Lobby() {
   const s = useGame(),
     r = s.room!,
@@ -57,9 +47,20 @@ export function Lobby() {
   return (
     <div className={`waiting-ui ${crewOpen ? "crew-open" : ""}`}>
       <div className="mobile-lobby-bar">
-        <span><strong>{r.code}</strong><small>{r.population}/{r.capacity} crew · {r.public ? "Public" : "Private"}</small></span>
-        <button className="secondary" aria-expanded={crewOpen} aria-controls="lobby-crew-panel" onClick={() => setCrewOpen(!crewOpen)}>
-          {crewOpen ? <X size={17} /> : <Users size={17} />}{crewOpen ? "Close crew" : "Crew & room"}
+        <span>
+          <strong>{r.code}</strong>
+          <small>
+            {r.population}/{r.capacity} crew · {r.public ? "Public" : "Private"}
+          </small>
+        </span>
+        <button
+          className="secondary"
+          aria-expanded={crewOpen}
+          aria-controls="lobby-crew-panel"
+          onClick={() => setCrewOpen(!crewOpen)}
+        >
+          {crewOpen ? <X size={17} /> : <Users size={17} />}
+          {crewOpen ? "Close crew" : "Crew & room"}
         </button>
       </div>
       <form
@@ -134,7 +135,10 @@ export function Lobby() {
             PRIVACY<strong>{r.public ? "Public" : "Private"}</strong>
           </span>
         </div>
-        <button className="secondary full" onClick={() => s.set({ settings: true })}>
+        <button
+          className="secondary full"
+          onClick={() => s.set({ settings: true })}
+        >
           {host ? "Room settings" : "View room settings"}
         </button>
         <GameSelect
@@ -147,14 +151,28 @@ export function Lobby() {
           ]}
           onChange={(v) => act("settings", "public", v === "true")}
         />
-        <fieldset className="lobby-colors"><legend>Your color</legend>
+        <fieldset className="lobby-colors">
+          <legend>Your color</legend>
           {COLORS.map((color, index) => {
-            const owner = r.players.find(p => p.color === color && p.id !== s.id);
-            return <button key={color} type="button" aria-label={`Color ${index + 1}${owner ? ` · taken by ${owner.name}` : ""}`}
-              aria-pressed={me?.color === color} title={owner ? `Taken by ${owner.name}` : `Choose color ${index + 1}`}
-              disabled={!!owner} style={{ background: color }} onClick={() => act("color", "", index)}>
-              {owner ? "×" : me?.color === color ? "✓" : ""}
-            </button>;
+            const owner = r.players.find(
+              (p) => p.color === color && p.id !== s.id,
+            );
+            return (
+              <button
+                key={color}
+                type="button"
+                aria-label={`Color ${index + 1}${owner ? ` · taken by ${owner.name}` : ""}`}
+                aria-pressed={me?.color === color}
+                title={
+                  owner ? `Taken by ${owner.name}` : `Choose color ${index + 1}`
+                }
+                disabled={!!owner}
+                style={{ background: color }}
+                onClick={() => act("color", "", index)}
+              >
+                {owner ? "×" : me?.color === color ? "✓" : ""}
+              </button>
+            );
           })}
         </fieldset>
         <div className="crew-list">
@@ -176,7 +194,15 @@ export function Lobby() {
                 </small>
               </span>
               {p.ready && <Check size={17} />}
-              {host && p.id !== s.id && <button className="kick-player" aria-label={`Kick ${p.name}`} onClick={() => act("kick", p.id)}>Kick</button>}
+              {host && p.id !== s.id && (
+                <button
+                  className="kick-player"
+                  aria-label={`Kick ${p.name}`}
+                  onClick={() => act("kick", p.id)}
+                >
+                  Kick
+                </button>
+              )}
             </div>
           ))}
           {Array.from(
@@ -189,14 +215,32 @@ export function Lobby() {
             ),
           )}
         </div>
-        <button className="secondary full" onClick={openPractice}>Practice Task at console</button>
-        {host && <button className="secondary full fill-crew" disabled={addingTestPlayers} onClick={() => void addTestPlayers()}>
-          {addingTestPlayers ? "Adding test players…" : r.population < r.capacity ? `Fill to ${r.capacity} players` : "Ready added players"}
-        </button>}
+        <button className="secondary full" onClick={openPractice}>
+          Practice Task at console
+        </button>
+        {host && (
+          <button
+            className="secondary full fill-crew"
+            disabled={addingTestPlayers}
+            onClick={() => void addTestPlayers()}
+          >
+            {addingTestPlayers
+              ? "Adding test players…"
+              : r.population < r.capacity
+                ? `Fill to ${r.capacity} players`
+                : "Ready added players"}
+          </button>
+        )}
         <div className="lobby-rules-summary">
-          <span>TASK BAR: <strong>{(r.taskBarMode || "always").toUpperCase()}</strong></span>
+          <span>
+            TASK BAR:{" "}
+            <strong>{(r.taskBarMode || "always").toUpperCase()}</strong>
+          </span>
           <i>·</i>
-          <span>VISUAL TASKS: <strong>{(r.visualTasks ?? true) ? "ON" : "OFF"}</strong></span>
+          <span>
+            VISUAL TASKS:{" "}
+            <strong>{(r.visualTasks ?? true) ? "ON" : "OFF"}</strong>
+          </span>
         </div>
       </aside>
       <div className="lobby-bottom">

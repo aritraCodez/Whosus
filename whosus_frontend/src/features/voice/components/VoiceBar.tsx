@@ -1,11 +1,6 @@
 import { useGame } from "@/features/game/model/game-store";
 import { voice } from "@/features/voice/voice-client";
-import {
-Headphones,
-Mic,
-MicOff,
-VolumeX
-} from "lucide-react";
+import { Headphones, Mic, MicOff, VolumeX } from "lucide-react";
 export function VoiceBar() {
   const s = useGame();
   return (

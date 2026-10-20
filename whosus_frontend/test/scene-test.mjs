@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL } from "./helpers/browser.mjs";
 import { waitFor } from "./wait.mjs";
 
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
+const browser = await launchBrowser({
   args: ["--enable-unsafe-swiftshader"],
 });
 await mkdir("artifacts", { recursive: true });
@@ -15,14 +13,26 @@ try {
   });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto(process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173");
+  await page.goto(baseURL);
   await page.evaluate(() => {
     // Match the module version used by the app after a Vite dependency reload.
     window.sceneModuleUrl = (name) =>
-      performance
-        .getEntriesByType("resource")
-        .find((entry) => new URL(entry.name).pathname === ({"store":"/src/features/game/model/game-store.ts","types":"/src/features/game/model/types.ts","world":"/src/features/game/model/world.ts","network":"/src/features/game/network/game-client.ts","voice":"/src/features/voice/voice-client.ts","appearance":"/src/features/appearance/model/appearance-store.ts","interactions":"/src/features/game/actions/interactions.ts","devPlayers":"/src/features/lobby/model/test-players.ts","audio":"/src/features/game/audio/sounds.ts","backend":"/src/config/backend.ts"})[name])
-        .name;
+      performance.getEntriesByType("resource").find(
+        (entry) =>
+          new URL(entry.name).pathname ===
+          {
+            store: "/src/features/game/model/game-store.ts",
+            types: "/src/features/game/model/types.ts",
+            world: "/src/features/game/model/world.ts",
+            network: "/src/features/game/network/game-client.ts",
+            voice: "/src/features/voice/voice-client.ts",
+            appearance: "/src/features/appearance/model/appearance-store.ts",
+            interactions: "/src/features/game/actions/interactions.ts",
+            devPlayers: "/src/features/lobby/model/test-players.ts",
+            audio: "/src/features/game/audio/sounds.ts",
+            backend: "/src/config/backend.ts",
+          }[name],
+      ).name;
   });
   await page.getByLabel("Edit explorer name", { exact: true }).click();
   assert.equal(
@@ -330,15 +340,36 @@ try {
       const { useGame } = await import(window.sceneModuleUrl("store"));
       const { motion } = await import(window.sceneModuleUrl("network"));
       const room = structuredClone(window.effectTestRoom);
-      const player = { ...room.players[0], x: 0, z: -11, alive: true, role: "killer" };
+      const player = {
+        ...room.players[0],
+        x: 0,
+        z: -11,
+        alive: true,
+        role: "killer",
+      };
       motion.x = motion.renderX = player.x;
       motion.z = motion.renderZ = player.z;
       motion.revision++;
-      useGame.setState({ id: player.id, room: { ...room, phase: "playing", vent, players: [player], bodies: [], eliminations: [], movementLock: 0 } });
+      useGame.setState({
+        id: player.id,
+        room: {
+          ...room,
+          phase: "playing",
+          vent,
+          players: [player],
+          bodies: [],
+          eliminations: [],
+          movementLock: 0,
+        },
+      });
     }, vent);
-    if (vent < 0) await page.locator(".nameplate.you").waitFor({ state: "visible" });
+    if (vent < 0)
+      await page.locator(".nameplate.you").waitFor({ state: "visible" });
     else await page.locator(".nameplate.you").waitFor({ state: "detached" });
-    assert.equal(await page.getByRole("button", { name: /Exit duct/ }).count(), vent < 0 ? 0 : 1);
+    assert.equal(
+      await page.getByRole("button", { name: /Exit duct/ }).count(),
+      vent < 0 ? 0 : 1,
+    );
   }
   await page.evaluate(async () => {
     const { useGame } = await import(window.sceneModuleUrl("store"));

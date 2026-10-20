@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
-import { chromium } from "@playwright/test";
+import { launchBrowser, baseURL } from "./helpers/browser.mjs";
 import { waitFor } from "./wait.mjs";
 
-const base = process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173";
+const base = baseURL;
 await mkdir("artifacts", { recursive: true });
-const browser = await chromium.launch({
-  executablePath: process.env.WHOSUS_BROWSER || undefined,
-  headless: true,
+const browser = await launchBrowser({
   args: ["--enable-unsafe-swiftshader"],
 });
 try {
@@ -39,7 +37,10 @@ try {
   });
   await waitFor(
     page,
-    async () => !!(await import("/src/features/game/model/game-store.ts")).useGame.getState().room,
+    async () =>
+      !!(
+        await import("/src/features/game/model/game-store.ts")
+      ).useGame.getState().room,
   );
   await page.getByRole("button", { name: "Toggle chat" }).click();
   const input = page.getByRole("textbox", { name: "Chat message" });

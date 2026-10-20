@@ -1,4 +1,4 @@
-import { motion,renderPosition } from "@/features/game/model/motion";
+import { motion, renderPosition } from "@/features/game/model/motion";
 
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
