@@ -141,6 +141,6 @@ The combined `test:browser` suite passed four rendered players, text chat, decod
 
 The `test:wardrobe` suite passed category selection, station proximity, console interaction, appearance persistence, room creation/joining, live peer updates, authenticated resume and mobile bounds, with no browser errors.
 
-The session test grants Chromium's `local-network-access` permission in its temporary contexts for direct requests between local development ports. This is a test-harness permission; production networking is unchanged. The generated production CSS retains its baseline content hash (`index-DHppf5BM.css`).
+The session and voice tests grant Chromium's `local-network-access` permission in their temporary contexts for direct requests between local development ports. This is a test-harness permission; production networking is unchanged. The generated production CSS retains its baseline content hash (`index-DHppf5BM.css`).
 
 Static-asset generators and editable Blender sources are retained. Global style scoping, deeper splitting of the cohesive WebRTC state machine, production bundle splitting, physical mobile/WebGL performance, internet NAT traversal, and load testing remain separate work. This refactor does not add routing or an account system.

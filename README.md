@@ -2,7 +2,7 @@
 
 WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on Cloudline Station. Crewmates maintain the station and investigate; killers sabotage it and eliminate crew. A FastAPI server owns the match, while a React Three Fiber client renders the world and handles player input.
 
-This README is the project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies and build contexts; the frontend has an additional architecture and validation guide.
+This README is the project guide for setup, architecture, local testing, and deployment. The frontend and backend have separate dependencies, build contexts, and architecture/validation guides.
 
 ## Project preview
 
@@ -29,19 +29,25 @@ whosus/
 |-- whosus_backend/
 |   |-- app/
 |   |   |-- app.py                    Local backend runner
-|   |   |-- main.py                   FastAPI setup and simulation loop
-|   |   |-- config.py                 Pydantic settings and shared app state
-|   |   |-- models.py                 Validated WebSocket message schemas
-|   |   |-- connection.py             WebSocket send queue
-|   |   |-- routes/
-|   |   |   |-- api.py                Health and public-room endpoints
-|   |   |   `-- websocket.py          WebSocket game and voice signaling
-|   |   |-- game.py                   Authoritative rules and communication policy
-|   |   `-- voice.py                  Peer signaling policy and proximity gains
+|   |   |-- main.py                   Application factory, middleware, lifespan
+|   |   |-- core/                     Validated settings, security and limits
+|   |   |-- runtime.py                Application-owned temporary rooms/sessions
+|   |   |-- dependencies.py           Typed runtime dependency
+|   |   |-- features/
+|   |   |   |-- game/                 Rules, world, state, actions and snapshots
+|   |   |   |-- appearance/           Cosmetic catalog and request literals
+|   |   |   |-- health/               Health route and response schema
+|   |   |   |-- lobby/                Public discovery router/schema/service
+|   |   |   |-- realtime/             WebSocket transport, protocol and sessions
+|   |   |   `-- voice/                Peer signaling policy and presence
+|   |   `-- services/simulation.py    Fixed-step scheduling, cleanup, broadcast
 |   |-- tests/
-|   |   |-- test_game.py              Rules, input validation, channel permissions
-|   |   |-- test_network.py           WebSocket clients and session recovery
-|   |   `-- test_voice_signaling.py   Peer signaling, room/channel checks, origins
+|   |   |-- unit/                    Rules, lifecycle, queues, import boundaries
+|   |   |-- integration/             Sessions, chat, appearance and signaling
+|   |   `-- api/                     HTTP/CORS/OpenAPI and transport validation
+|   |-- README.md                    Backend architecture and validation guide
+|   |-- requirements-dev.txt         Testing, linting and type-checking tools
+|   |-- pyproject.toml               Ruff and strict mypy configuration
 |   |-- .env.example                  Backend configuration template
 |   |-- .gitignore
 |   |-- Dockerfile
@@ -190,8 +196,8 @@ The server trusts session identity established on the WebSocket, rather than a p
 
 | Responsibility | Implementation |
 | --- | --- |
-| Room creation, joining and public discovery | `app/main.py`; six-character codes; `/api/rooms` lists eligible public lobbies |
-| Simulation | `app/game.py`; fixed 50 ms steps, bounded input queues, collision checks and server-owned timers |
+| Room creation, joining and public discovery | `app/features/realtime/service.py` and `app/features/lobby/`; six-character codes; `/api/rooms` lists eligible public lobbies |
+| Simulation | `app/features/game/service.py` and `app/services/simulation.py`; fixed 50 ms steps, bounded input queues, collision checks and server-owned timers |
 | Client responsiveness | `src/features/game/network/game-client.ts` and `src/features/game/model/motion.ts` predict local inputs and replay unacknowledged inputs over server positions |
 | Remote movement | `src/features/scene/components/Avatar.tsx` smooths received player positions during rendering |
 | Role secrecy | Per-recipient snapshots disclose the player's own role, killer teammates when applicable, and all roles after game over |
@@ -278,21 +284,27 @@ Use a terminal at the repository root. The Python suite creates its own test app
 
 ```powershell
 cd whosus_backend
+.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
+.venv/Scripts/python.exe -m ruff check app tests
+.venv/Scripts/python.exe -m ruff format --check app tests
+.venv/Scripts/python.exe -m mypy
 .venv/Scripts/python.exe -m pytest -q
 ```
 
 A successful run exits with code zero. The test groups can also be run independently:
 
 ```powershell
-.venv/Scripts/python.exe -m pytest tests/test_game.py tests/test_network.py -q
-.venv/Scripts/python.exe -m pytest tests/test_voice_signaling.py -q
+.venv/Scripts/python.exe -m pytest tests/unit tests/api -q
+.venv/Scripts/python.exe -m pytest tests/integration -q
 ```
 
 | Test file | Evidence it provides |
 | --- | --- |
-| `test_game.py` | Start conditions, private roles, movement bounds, collision, task proofs, kill validation, sabotage, reports, ducts, votes, ghost tasks and channel rules |
-| `test_network.py` | Four connected clients, room discovery, lobby chat, private role snapshots, reconnect tokens and invalid requests |
-| `test_voice_signaling.py` | Browser-to-browser SDP/ICE forwarding, authenticated sender identity, room/channel eligibility, proximity/deafen gains and bounded audio-only messages |
+| `unit/test_game.py` | Start conditions, private roles, movement bounds, collision, task proofs, kill validation, sabotage, reports, ducts, votes, ghost tasks and channel rules |
+| `integration/test_network.py` | Four connected clients, room discovery, lobby chat, private role snapshots, reconnect tokens and invalid requests |
+| `integration/test_voice_signaling.py` | Browser-to-browser SDP/ICE forwarding, authenticated sender identity, room/channel eligibility, proximity/deafen gains and bounded audio-only messages |
+
+See the [backend architecture guide](whosus_backend/README.md) for the migration map, runtime ownership, security limits, development dependencies and verification record.
 
 Backend tests verify signaling and channel policy. The browser voice suite verifies actual ICE/DTLS/Opus audio between independent browsers; physical devices and internet NAT traversal require separate checks.
 
