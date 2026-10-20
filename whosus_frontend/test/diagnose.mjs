@@ -60,7 +60,9 @@ try {
       }),
     );
     await p.screenshot({ path: `artifacts/diagnose-${i}.png` });
-    await p.getByLabel("Toggle microphone").click();
+    await p
+      .getByRole("button", { name: "Unmute microphone", exact: true })
+      .click();
   }
   await pages[1].waitForTimeout(12000);
   for (const p of pages)

@@ -85,14 +85,15 @@ export function SettingsPanel() {
         <h3>A good alibi deserves good audio.</h3>
         <p>
           Headphones recommended. Microphone access needs HTTPS on Android, or
-          localhost on desktop.
+          localhost on desktop. Joining voice requests microphone permission;
+          your mic stays off until you unmute or hold to talk.
         </p>
         {s.room && (
           <button
             className="secondary full"
-            onClick={() => void voice.enable()}
+            onClick={() => void voice.enable(false)}
           >
-            Enable / reconnect microphone
+            Join / reconnect voice (mic off)
           </button>
         )}
       </div>

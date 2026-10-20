@@ -60,6 +60,7 @@ The original flat modules were moved or split as follows:
 - `game-client.ts` owns session recovery and dispatch. `services/game-socket.ts` owns send access so voice does not import the game client. Movement state has a separate model. The client's explicit movement/send exports remain the integration/diagnostic interface.
 - Preserve existing endpoint names, payloads, session keys, game timing, collision data, DOM classes, and model URLs. The backend is unchanged by this refactor.
 - Voice remains browser-to-browser WebRTC locally and in deployment, using the configured `STUN_URL`. There is no WSS audio transport or transport-selection setting.
+- Tap headphones to join and listen with the microphone muted. Tap the mic to unmute, or hold the talk button / V to speak temporarily. Joining still requests browser microphone permission. Game controls suppress mobile text selection and long-press menus; chat inputs retain normal editing.
 - Keep global CSS import order: base styles, then responsive/experience overrides. The stylesheet cascade remains global to preserve existing UI; wardrobe styles stay with appearance.
 
 ## Configuration and commands

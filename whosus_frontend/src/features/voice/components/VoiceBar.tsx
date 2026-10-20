@@ -1,8 +1,17 @@
 import { useGame } from "@/features/game/model/game-store";
 import { voice } from "@/features/voice/voice-client";
-import { Headphones, Mic, MicOff, VolumeX } from "lucide-react";
+import { HeadphoneOff, Headphones, Mic, MicOff } from "lucide-react";
 export function VoiceBar() {
   const s = useGame();
+  const voiceOff = s.voiceStatus === "off" || s.voiceStatus === "error";
+  const micOn = !voiceOff && !s.deafened && (!s.muted || s.ptt);
+  const listening = !voiceOff && !s.deafened;
+  const microphoneLabel = micOn ? "Mute microphone" : "Unmute microphone";
+  const listeningLabel = voiceOff
+    ? "Join voice and listen (mic stays muted)"
+    : s.deafened
+      ? "Turn listening on"
+      : "Turn listening off";
   return (
     <div className="voice-bar">
       <span className={`voice-dot ${s.voiceStatus === "live" ? "live" : ""}`} />
@@ -16,33 +25,42 @@ export function VoiceBar() {
         </strong>
         <small>
           {s.voiceStatus === "off"
-            ? "Tap mic to join voice"
+            ? "Tap to listen · mic off"
             : s.voiceStatus === "live"
-              ? s.muted
-                ? "Mic muted · hold V to talk"
-                : "Voice connected"
+              ? s.deafened
+                ? "Listening off · mic off"
+                : micOn
+                  ? "Listening · mic on"
+                  : "Listening · mic off"
               : s.voiceStatus}
         </small>
       </div>
       <button
-        className={`icon ${!s.muted ? "active" : ""}`}
+        className={`icon ${micOn ? "active" : ""}`}
         onClick={() => voice.mute()}
-        title="Microphone (M)"
-        aria-label="Toggle microphone"
+        title={`${microphoneLabel} (M)`}
+        aria-label={microphoneLabel}
+        aria-pressed={micOn}
       >
-        {s.muted ? <MicOff size={19} /> : <Mic size={19} />}
+        {micOn ? <Mic size={19} /> : <MicOff size={19} />}
       </button>
       <button
-        className="icon"
+        className={`icon ${listening ? "active" : ""}`}
         onClick={() => voice.deafen()}
-        title="Deafen"
-        aria-label="Toggle deafen"
+        title={listeningLabel}
+        aria-label={listeningLabel}
+        aria-pressed={listening}
       >
-        {s.deafened ? <VolumeX size={19} /> : <Headphones size={19} />}
+        {listening ? <Headphones size={19} /> : <HeadphoneOff size={19} />}
       </button>
       <button
         className={`talk-button ${s.ptt ? "held" : ""}`}
+        aria-label="Hold to talk"
+        aria-pressed={s.ptt}
+        title="Hold to talk (V)"
         onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          e.preventDefault();
           e.currentTarget.setPointerCapture(e.pointerId);
           voice.ptt(true);
         }}
