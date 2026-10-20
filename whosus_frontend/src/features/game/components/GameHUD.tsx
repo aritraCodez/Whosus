@@ -100,8 +100,9 @@ export function GameHUD() {
           </button>
           <button
             className="icon"
-            aria-label="Settings"
-            onClick={() => s.set({ settings: true })}
+            aria-label="Mission settings"
+            title="Mission settings"
+            onClick={() => s.set({ missionSettings: true })}
           >
             <Settings size={20} />
           </button>
@@ -305,6 +306,7 @@ export function GameHUD() {
       {["lobby", "playing"].includes(r.phase) &&
         !r.challenge &&
         !s.settings &&
+        !s.missionSettings &&
         !r.movementLock && <Joystick />}
       <ChatPanel />
       {r.phase === "reveal" && (

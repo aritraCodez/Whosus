@@ -24,7 +24,8 @@ export function WardrobeStation({ touchControls }: { touchControls: boolean }) {
       nearWardrobe(me.x, me.z) &&
       !s.wardrobe &&
       !s.practiceOpen &&
-      !s.settings
+      !s.settings &&
+      !s.missionSettings
     );
   });
   return (
@@ -83,7 +84,13 @@ export function LobbyChair({
 }) {
   const chair = LOBBY_SEATS[index];
   const action = useGame((s) => {
-    if (s.room?.phase !== "lobby" || s.wardrobe || s.practiceOpen || s.settings)
+    if (
+      s.room?.phase !== "lobby" ||
+      s.wardrobe ||
+      s.practiceOpen ||
+      s.settings ||
+      s.missionSettings
+    )
       return "";
     const me = s.room.players.find((p) => p.id === s.id);
     if (!me) return "";

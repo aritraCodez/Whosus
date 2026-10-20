@@ -25,6 +25,7 @@ export function movementInput(): [number, number] {
     r.vent >= 0 ||
     r.movementLock > 0 ||
     s.settings ||
+    s.missionSettings ||
     r.challenge ||
     document.querySelector("dialog[open]") ||
     document.activeElement?.matches(

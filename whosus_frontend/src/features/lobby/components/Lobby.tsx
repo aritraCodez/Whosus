@@ -118,12 +118,6 @@ export function Lobby() {
             PRIVACY<strong>{r.public ? "Public" : "Private"}</strong>
           </span>
         </div>
-        <button
-          className="secondary full"
-          onClick={() => s.set({ settings: true })}
-        >
-          {host ? "Room settings" : "View room settings"}
-        </button>
         <GameSelect
           label="Room visibility"
           value={String(r.public)}

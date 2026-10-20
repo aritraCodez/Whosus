@@ -10,7 +10,13 @@ import { act } from "@/features/game/network/game-client";
 export function interactWithSeat(index?: number) {
   const s = useGame.getState(),
     r = s.room;
-  if (r?.phase !== "lobby" || s.wardrobe || s.practiceOpen || s.settings)
+  if (
+    r?.phase !== "lobby" ||
+    s.wardrobe ||
+    s.practiceOpen ||
+    s.settings ||
+    s.missionSettings
+  )
     return;
   const me = r.players.find((p) => p.id === s.id);
   if ((me?.seat ?? -1) >= 0) {
@@ -29,7 +35,13 @@ export function interactWithSeat(index?: number) {
 
 export function openWardrobe() {
   const s = useGame.getState();
-  if (s.room?.phase !== "lobby" || s.practiceOpen || s.settings) return;
+  if (
+    s.room?.phase !== "lobby" ||
+    s.practiceOpen ||
+    s.settings ||
+    s.missionSettings
+  )
+    return;
   if (!nearWardrobe(motion.x, motion.z)) {
     s.set({ error: "Walk closer to the wardrobe box to change your outfit." });
     return;
@@ -57,6 +69,7 @@ export function interactWithStation(id?: string) {
     s.wardrobe ||
     s.practiceOpen ||
     s.settings ||
+    s.missionSettings ||
     r.movementLock > 0
   )
     return;

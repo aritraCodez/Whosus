@@ -6,6 +6,7 @@ import { useGameControls } from "@/features/game/hooks/use-game-controls";
 import { useGame } from "@/features/game/model/game-store";
 import { Menu } from "@/features/lobby/components/Menu";
 import Scene from "@/features/scene/components/Scene";
+import { MissionSettingsPanel } from "@/features/settings/components/MissionSettingsPanel";
 import { SettingsPanel } from "@/features/settings/components/SettingsPanel";
 import { X } from "lucide-react";
 import { useEffect } from "react";
@@ -40,7 +41,8 @@ export default function App() {
       ) : (
         <Menu {...{ name, setName, color, setColor, hat }} />
       )}
-      {s.settings && <SettingsPanel />}
+      {s.settings && !s.room && <SettingsPanel />}
+      {s.missionSettings && s.room && <MissionSettingsPanel />}
       {s.wardrobe && (
         <SceneBoundary>
           <Wardrobe />
