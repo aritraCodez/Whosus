@@ -1,4 +1,4 @@
-# WhoSus?
+# WhoSus? 
 
 WhoSus? is a browser-based 3D social deduction game for **4-12 players**, set on Cloudline Station. Crewmates maintain the station and investigate; killers sabotage it and eliminate crew. A FastAPI server owns the match, while a React Three Fiber client renders the world and handles player input.
 
