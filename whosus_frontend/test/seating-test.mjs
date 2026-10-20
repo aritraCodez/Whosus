@@ -19,7 +19,7 @@ try {
   await page.getByRole('button', { name: 'Create room', exact: true }).click();
   await page.getByText('The usual suspects.').waitFor();
   await page.evaluate(async () => {
-    const url = performance.getEntriesByType('resource').find(entry => new URL(entry.name).pathname === '/src/store.ts').name;
+    const url = performance.getEntriesByType('resource').find(entry => new URL(entry.name).pathname === '/src/features/game/model/game-store.ts').name;
     window.gameStore = (await import(url)).useGame;
   });
   await waitFor(page, () => {

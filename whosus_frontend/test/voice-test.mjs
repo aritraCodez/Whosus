@@ -42,7 +42,7 @@ const contexts = [],
   errors = [];
 const state = (page) =>
   page.evaluate(async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import("/src/features/game/model/game-store.ts");
     const s = useGame.getState();
     return {
       id: s.id,
@@ -57,24 +57,24 @@ const state = (page) =>
   });
 const diagnostics = (page) =>
   page.evaluate(async () =>
-    (await import("/src/voice.ts")).voice.getDiagnostics(),
+    (await import("/src/features/voice/voice-client.ts")).voice.getDiagnostics(),
   );
 const action = (page, name, target = "") =>
   page.evaluate(
     async ({ name, target }) =>
-      (await import("/src/network.ts")).act(name, target),
+      (await import("/src/features/game/network/game-client.ts")).act(name, target),
     { name, target },
   );
 const muted = (page, value) =>
   page.evaluate(
-    async (value) => (await import("/src/voice.ts")).voice.setMuted(value),
+    async (value) => (await import("/src/features/voice/voice-client.ts")).voice.setMuted(value),
     value,
   );
 async function waitVoice(page) {
   await waitFor(
     page,
     async () => {
-      const s = (await import("/src/store.ts")).useGame.getState();
+      const s = (await import("/src/features/game/model/game-store.ts")).useGame.getState();
       if (s.voiceStatus === "error") throw Error(s.voiceError);
       return s.voiceStatus === "live";
     },
@@ -88,7 +88,7 @@ async function audible(page, expected, label) {
     await waitFor(
       page,
       async () => {
-        const d = await (await import("/src/voice.ts")).voice.getDiagnostics();
+        const d = await (await import("/src/features/voice/voice-client.ts")).voice.getDiagnostics();
         return (
           d.receivedLevel > 0.003 &&
           !d.playbackPaused &&
@@ -121,7 +121,7 @@ async function approachAlongRing(page, target) {
     const angle = start + (delta * i) / steps;
     await page.evaluate(
       async (target) => {
-        const { motion } = await import("/src/network.ts");
+        const { motion } = await import("/src/features/game/network/game-client.ts");
         const until = Date.now() + 4000;
         try {
           while (Date.now() < until) {
@@ -159,8 +159,8 @@ try {
     );
     await page.goto(`${base}/__voice_test__`);
     await page.evaluate(async () => {
-      const { initializeNetwork } = await import("/src/network.ts");
-      const { voice } = await import("/src/voice.ts");
+      const { initializeNetwork } = await import("/src/features/game/network/game-client.ts");
+      const { voice } = await import("/src/features/voice/voice-client.ts");
       initializeNetwork();
       document
         .getElementById("enable")
@@ -172,7 +172,7 @@ try {
     const code = i ? (await state(pages[0])).room.code : "";
     await page.evaluate(
       async ({ i, code }) => {
-        const { connect } = await import("/src/network.ts");
+        const { connect } = await import("/src/features/game/network/game-client.ts");
         connect({
           type: i ? "join" : "create",
           name: `Voice ${i}`,
@@ -186,10 +186,10 @@ try {
     );
     await waitFor(
       page,
-      async () => !!(await import("/src/store.ts")).useGame.getState().room,
+      async () => !!(await import("/src/features/game/model/game-store.ts")).useGame.getState().room,
     );
     await page.evaluate(async () => {
-      (await import("/src/voice.ts")).voice.configure([]);
+      (await import("/src/features/voice/voice-client.ts")).voice.configure([]);
     });
   }
   console.log("Five independent clients joined");
@@ -199,7 +199,7 @@ try {
   );
   const callee = firstIds[0] < firstIds[1] ? pages[1] : pages[0];
   await callee.evaluate(async () => {
-    const { voice } = await import("/src/voice.ts");
+    const { voice } = await import("/src/features/voice/voice-client.ts");
     const sync = voice.sync.bind(voice);
     let latest = [];
     voice.sync = (values) => {
@@ -218,7 +218,7 @@ try {
   });
   // A blackholed STUN server must not delay host-candidate signaling.
   await pages[0].evaluate(async () => {
-    (await import("/src/voice.ts")).voice.configure([
+    (await import("/src/features/voice/voice-client.ts")).voice.configure([
       { urls: "stun:192.0.2.1:3478" },
     ]);
   });
@@ -258,14 +258,14 @@ try {
   await waitFor(
     pages[1],
     async () =>
-      (await import("/src/store.ts")).useGame.getState().playbackBlocked,
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().playbackBlocked,
   );
   await pages[1].evaluate(() => window.restorePlayback());
   await pages[1].getByText("Enable voice", { exact: true }).click();
   await waitFor(
     pages[1],
     async () =>
-      !(await import("/src/store.ts")).useGame.getState().playbackBlocked,
+      !(await import("/src/features/game/model/game-store.ts")).useGame.getState().playbackBlocked,
   );
   console.log("PASS: A user gesture recovers blocked audio playback");
   await audible(pages[0], true, "Lobby audio reaches a muted listener");
@@ -283,13 +283,13 @@ try {
     "PASS: Peer signaling survives a delayed initial policy snapshot",
   );
   await pages[1].evaluate(async () =>
-    (await import("/src/network.ts")).send({
+    (await import("/src/features/game/network/game-client.ts")).send({
       type: "chat",
       text: "Voice and text together",
     }),
   );
   await waitFor(pages[0], async () =>
-    (await import("/src/store.ts")).useGame
+    (await import("/src/features/game/model/game-store.ts")).useGame
       .getState()
       .chat.some((message) => message.text === "Voice and text together"),
   );
@@ -300,26 +300,26 @@ try {
     "Released first-time PTT never opens the microphone",
   );
   await pages[0].evaluate(async () =>
-    (await import("/src/voice.ts")).voice.ptt(true),
+    (await import("/src/features/voice/voice-client.ts")).voice.ptt(true),
   );
   await audible(pages[1], true, "Held PTT transmits audio");
   await pages[0].evaluate(async () =>
-    (await import("/src/voice.ts")).voice.ptt(false),
+    (await import("/src/features/voice/voice-client.ts")).voice.ptt(false),
   );
   await audible(pages[1], false, "PTT release stops audio");
   await muted(pages[0], false);
   await audible(pages[1], true, "Unmute restores audio");
   await pages[1].evaluate(async () =>
-    (await import("/src/voice.ts")).voice.setDeafened(true),
+    (await import("/src/features/voice/voice-client.ts")).voice.setDeafened(true),
   );
   await audible(pages[1], false, "Deafen suppresses received audio");
   await pages[1].evaluate(async () =>
-    (await import("/src/voice.ts")).voice.setDeafened(false),
+    (await import("/src/features/voice/voice-client.ts")).voice.setDeafened(false),
   );
   await audible(pages[1], true, "Undeafen restores audio");
   const generation = (await diagnostics(pages[0])).generation;
   await pages[0].evaluate(async (generation) => {
-    const { voice } = await import("/src/voice.ts");
+    const { voice } = await import("/src/features/voice/voice-client.ts");
     const peer = (await voice.getDiagnostics()).peers[0];
     await voice.signal({
       from: peer.id,
@@ -331,7 +331,7 @@ try {
   }, generation);
   assert.equal((await diagnostics(pages[0])).generation, generation);
   await pages[0].evaluate(async () =>
-    (await import("/src/voice.ts")).voice.reconnect(),
+    (await import("/src/features/voice/voice-client.ts")).voice.reconnect(),
   );
   await waitVoice(pages[0]);
   assert((await diagnostics(pages[0])).generation > generation);
@@ -355,7 +355,7 @@ try {
   await waitFor(
     pages[4],
     async () =>
-      (await import("/src/store.ts")).useGame.getState().voiceStatus ===
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().voiceStatus ===
       "error",
   );
   assert.equal((await diagnostics(pages[4])).microphoneEnabled, false);
@@ -367,7 +367,7 @@ try {
   console.log("PASS: Microphone permission denial recovers on explicit retry");
   for (const page of pages) await action(page, "ready");
   await waitFor(pages[0], async () =>
-    (await import("/src/store.ts")).useGame
+    (await import("/src/features/game/model/game-store.ts")).useGame
       .getState()
       .room.players.every((p) => p.ready),
   );
@@ -375,7 +375,7 @@ try {
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/store.ts")).useGame.getState().room.phase ===
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
       "playing",
     null,
     { timeout: 10000 },
@@ -401,14 +401,14 @@ try {
     await waitFor(
       killer.page,
       async () =>
-        (await import("/src/store.ts")).useGame.getState().room.killCooldown ===
+        (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.killCooldown ===
         0,
       null,
       { timeout: 15000 },
     );
     await action(killer.page, "kill", victim.me.id);
     await waitFor(victim.page, async () => {
-      const s = (await import("/src/store.ts")).useGame.getState();
+      const s = (await import("/src/features/game/model/game-store.ts")).useGame.getState();
       return !s.room.players.find((p) => p.id === s.id).alive;
     });
   }
@@ -435,14 +435,14 @@ try {
   await waitFor(
     killer.page,
     async () =>
-      (await import("/src/store.ts")).useGame.getState().room
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room
         .meetingCooldown === 0,
   );
   await action(killer.page, "meeting");
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/store.ts")).useGame.getState().room.phase ===
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
       "discussion",
   );
   await audible(
@@ -453,7 +453,7 @@ try {
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/store.ts")).useGame.getState().room.phase ===
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
       "voting",
     null,
     { timeout: 15000 },
@@ -463,12 +463,12 @@ try {
   await waitFor(
     pages[0],
     async () =>
-      (await import("/src/store.ts")).useGame.getState().room.phase ===
+      (await import("/src/features/game/model/game-store.ts")).useGame.getState().room.phase ===
       "gameover",
   );
   await audible(crew[2].page, true, "Game over reopens all-player audio");
   for (const page of pages)
-    await page.evaluate(async () => (await import("/src/network.ts")).leave());
+    await page.evaluate(async () => (await import("/src/features/game/network/game-client.ts")).leave());
   assert.equal((await diagnostics(pages[0])).microphoneEnabled, false);
   assert.equal((await diagnostics(pages[0])).contextState, "closed");
   assert.deepEqual(errors, []);

@@ -54,7 +54,7 @@ try {
   await page.screenshot({ path: "artifacts/menu-desktop.png" });
   console.log("Menu rendered");
   await page.evaluate(async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import("/src/features/game/model/game-store.ts");
     useGame.setState({ quality: "low" });
   });
   await page
@@ -67,7 +67,7 @@ try {
   await page.getByText("The usual suspects.").waitFor();
   const getRoom = (p) =>
     p.evaluate(async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room;
     });
   assert(
@@ -89,7 +89,7 @@ try {
     });
     await p.goto(base);
     await p.evaluate(async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       useGame.setState({ quality: "low" });
     });
     await p.getByRole("button", { name: "Join with code" }).click();
@@ -121,7 +121,7 @@ try {
     await waitFor(
       p,
       async () => {
-        const { useGame } = await import("/src/store.ts");
+        const { useGame } = await import("/src/features/game/model/game-store.ts");
         return useGame.getState().voiceStatus === "live";
       },
       null,
@@ -129,7 +129,7 @@ try {
     );
   await page.waitForTimeout(2500);
   await waitFor(pages[1], async () => {
-    const { voice } = await import("/src/voice.ts");
+    const { voice } = await import("/src/features/voice/voice-client.ts");
     const d = await voice.getDiagnostics();
     return (
       d.inbound.some((row) => row.bytes > 1000) &&
@@ -138,7 +138,7 @@ try {
     );
   });
   const audioStats = await pages[1].evaluate(async () => {
-    const { voice } = await import("/src/voice.ts");
+    const { voice } = await import("/src/features/voice/voice-client.ts");
     return voice.getDiagnostics();
   });
   console.log("WebRTC received audio:", audioStats);
@@ -156,7 +156,7 @@ try {
   await waitFor(
     page,
     async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room?.phase === "playing";
     },
     null,
@@ -164,21 +164,21 @@ try {
   );
   await page.screenshot({ path: "artifacts/game-desktop.png" });
   const before = await page.evaluate(async () => {
-    const { motion } = await import("/src/network.ts");
+    const { motion } = await import("/src/features/game/network/game-client.ts");
     return motion.x;
   });
   await page.keyboard.down("KeyD");
   await page.waitForTimeout(400);
   await page.keyboard.up("KeyD");
   const after = await page.evaluate(async () => {
-    const { motion } = await import("/src/network.ts");
+    const { motion } = await import("/src/features/game/network/game-client.ts");
     return motion.x;
   });
   assert(after > before + 0.3, "Movement must be synchronized");
   const infos = await Promise.all(
     pages.map((p) =>
       p.evaluate(async () => {
-        const { useGame } = await import("/src/store.ts");
+        const { useGame } = await import("/src/features/game/model/game-store.ts");
         const s = useGame.getState();
         return { id: s.id, me: s.room.players.find((p) => p.id === s.id) };
       }),
@@ -190,18 +190,18 @@ try {
   const crew = pages[crewIndex];
   // Reach the central beacon via ordinary movement inputs, then exercise meeting/vote/rematch.
   await crew.evaluate(async () => {
-    const { motion } = await import("/src/network.ts");
+    const { motion } = await import("/src/features/game/network/game-client.ts");
     motion.keys.clear();
   });
   await page.waitForTimeout(16000);
   await crew.evaluate(async () => {
-    const { act } = await import("/src/network.ts");
+    const { act } = await import("/src/features/game/network/game-client.ts");
     act("meeting");
   });
   await waitFor(
     page,
     async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room?.phase === "discussion";
     },
     null,
@@ -211,7 +211,7 @@ try {
   await waitFor(
     page,
     async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       return useGame.getState().room?.phase === "voting";
     },
     null,
@@ -220,25 +220,25 @@ try {
   const killer = infos.find((i) => i.me.role === "killer");
   for (const p of pages)
     await p.evaluate(async (id) => {
-      const { act } = await import("/src/network.ts");
+      const { act } = await import("/src/features/game/network/game-client.ts");
       act("vote", id);
     }, killer.id);
   await waitFor(page, async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import("/src/features/game/model/game-store.ts");
     return useGame.getState().room?.phase === "gameover";
   });
   await page.screenshot({ path: "artifacts/results-desktop.png" });
   await page.getByRole("button", { name: "One more expedition?" }).click();
   await page.getByText("The usual suspects.").waitFor();
   const oldId = await pages[1].evaluate(async () => {
-    const { useGame } = await import("/src/store.ts");
+    const { useGame } = await import("/src/features/game/model/game-store.ts");
     return useGame.getState().id;
   });
   await pages[1].reload();
   await pages[1].getByText("The usual suspects.").waitFor();
   assert.equal(
     await pages[1].evaluate(async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       return useGame.getState().id;
     }),
     oldId,

@@ -23,7 +23,7 @@ try {
     console.error(error.message);
   });
   // Exercise the real HUD/chat without spending GPU time rendering the station.
-  await page.route("**/src/Scene.tsx*", (route) =>
+  await page.route("**/src/features/scene/components/Scene.tsx*", (route) =>
     route.fulfill({
       contentType: "application/javascript",
       body: "export function Pip() { return null; } export default function Scene() { return null; }",
@@ -32,14 +32,14 @@ try {
   await page.goto(base);
   await page.getByText("Good friends.").waitFor();
   await page.evaluate(async () => {
-    (await import("/src/network.ts")).connect({
+    (await import("/src/features/game/network/game-client.ts")).connect({
       type: "create",
       name: "Mobile chat tester",
     });
   });
   await waitFor(
     page,
-    async () => !!(await import("/src/store.ts")).useGame.getState().room,
+    async () => !!(await import("/src/features/game/model/game-store.ts")).useGame.getState().room,
   );
   await page.getByRole("button", { name: "Toggle chat" }).click();
   const input = page.getByRole("textbox", { name: "Chat message" });

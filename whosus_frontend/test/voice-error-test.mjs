@@ -18,8 +18,8 @@ try {
   );
   await page.clock.install();
   await page.evaluate(async () => {
-    const { VoiceChat } = await import("/src/voice.ts");
-    const { useGame } = await import("/src/store.ts");
+    const { VoiceChat } = await import("/src/features/voice/voice-client.ts");
+    const { useGame } = await import("/src/features/game/model/game-store.ts");
     const audio = new AudioContext();
     const oscillator = audio.createOscillator();
     const destination = audio.createMediaStreamDestination();
@@ -93,7 +93,7 @@ try {
   assert.equal(
     await page.evaluate(
       async () =>
-        (await import("/src/store.ts")).useGame.getState().voiceStatus,
+        (await import("/src/features/game/model/game-store.ts")).useGame.getState().voiceStatus,
     ),
     "error",
   );

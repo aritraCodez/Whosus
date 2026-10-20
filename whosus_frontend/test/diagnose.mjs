@@ -27,7 +27,7 @@ try {
     await p.goto(process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173");
     await p.waitForTimeout(2000);
     await p.evaluate(async () => {
-      const { useGame } = await import("/src/store.ts");
+      const { useGame } = await import("/src/features/game/model/game-store.ts");
       useGame.setState({ quality: "low" });
     });
     if (i === 0) {
@@ -37,7 +37,7 @@ try {
       await p.getByRole("button", { name: "Create room", exact: true }).click();
     } else {
       const code = await pages[0].evaluate(async () => {
-        const { useGame } = await import("/src/store.ts");
+        const { useGame } = await import("/src/features/game/model/game-store.ts");
         return useGame.getState().room.code;
       });
       await p.getByRole("button", { name: "Join with code" }).click();
@@ -49,8 +49,8 @@ try {
     console.log(
       "SCENE",
       await p.evaluate(async () => {
-        const { sceneDiagnostics } = await import("/src/Scene.tsx");
-        const { motion } = await import("/src/network.ts");
+        const { sceneDiagnostics } = await import("/src/features/scene/components/Scene.tsx");
+        const { motion } = await import("/src/features/game/network/game-client.ts");
         return {
           scene: sceneDiagnostics(),
           motion: { x: motion.x, z: motion.z },
@@ -65,8 +65,8 @@ try {
     console.log(
       "VOICE",
       await p.evaluate(async () => {
-        const { voice } = await import("/src/voice.ts");
-        const { useGame } = await import("/src/store.ts");
+        const { voice } = await import("/src/features/voice/voice-client.ts");
+        const { useGame } = await import("/src/features/game/model/game-store.ts");
         const s = useGame.getState();
         return {
           state: {
