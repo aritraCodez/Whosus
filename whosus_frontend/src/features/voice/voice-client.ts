@@ -48,7 +48,7 @@ export class VoiceChat {
     return this.detach;
   }
 
-  enable(openMic = true): Promise<boolean> {
+  enable(openMic = false): Promise<boolean> {
     this.unlock();
     if (this.enabling) return this.enabling;
     const state = useGame.getState();
@@ -92,6 +92,10 @@ export class VoiceChat {
           stream.getTracks().forEach((track) => track.stop());
           return false;
         }
+        // Keep capture silent until the requested mute/PTT state is applied.
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = false;
+        });
         this.stream = stream;
         this.watch("local", stream);
         stream.getAudioTracks()[0].onended = () => {
@@ -397,7 +401,11 @@ export class VoiceChat {
   }
 
   mute() {
-    if (useGame.getState().voiceStatus === "error") void this.enable(true);
+    if (useGame.getState().deafened) {
+      this.setDeafened(false);
+      this.setMuted(false);
+    } else if (useGame.getState().voiceStatus === "error")
+      void this.enable(true);
     else this.setMuted(!useGame.getState().muted);
   }
   setMuted(muted: boolean) {
@@ -424,6 +432,11 @@ export class VoiceChat {
     else this.apply();
   }
   deafen() {
+    if (["off", "error"].includes(useGame.getState().voiceStatus)) {
+      this.setDeafened(false);
+      void this.enable(false);
+      return;
+    }
     this.setDeafened(!useGame.getState().deafened);
   }
   setDeafened(deafened: boolean) {

@@ -6,13 +6,18 @@ import { waitFor } from "./wait.mjs";
 const base = baseURL;
 await mkdir("artifacts", { recursive: true });
 const browser = await launchBrowser({
-  args: ["--enable-unsafe-swiftshader"],
+  args: [
+    "--enable-unsafe-swiftshader",
+    "--use-fake-ui-for-media-stream",
+    "--use-fake-device-for-media-stream",
+  ],
 });
 try {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true,
+    permissions: ["microphone", "local-network-access"],
   });
   const page = await context.newPage();
   const errors = [];
@@ -42,9 +47,78 @@ try {
         await import("/src/features/game/model/game-store.ts")
       ).useGame.getState().room,
   );
+  await page
+    .getByRole("button", {
+      name: "Join voice and listen (mic stays muted)",
+      exact: true,
+    })
+    .tap();
+  await page.getByText("Listening · mic off", { exact: true }).waitFor();
+  const microphoneEnabled = () =>
+    page.evaluate(
+      async () =>
+        (
+          await (
+            await import("/src/features/voice/voice-client.ts")
+          ).voice.getDiagnostics()
+        ).microphoneEnabled,
+    );
+  assert.equal(await microphoneEnabled(), false);
+  await page
+    .getByRole("button", { name: "Unmute microphone", exact: true })
+    .tap();
+  await page.getByText("Listening · mic on", { exact: true }).waitFor();
+  assert.equal(await microphoneEnabled(), true);
+  await page
+    .getByRole("button", { name: "Mute microphone", exact: true })
+    .tap();
+  assert.equal(await microphoneEnabled(), false);
+  const talk = page.getByRole("button", { name: "Hold to talk", exact: true });
+  const talkBox = await talk.boundingBox();
+  await page.mouse.move(
+    talkBox.x + talkBox.width / 2,
+    talkBox.y + talkBox.height / 2,
+  );
+  await page.mouse.down();
+  assert.equal(await microphoneEnabled(), true);
+  await talk.dispatchEvent("pointercancel");
+  assert.equal(
+    await microphoneEnabled(),
+    false,
+    "A cancelled hold must stop microphone transmission",
+  );
+  await page.mouse.up();
+  assert.equal(
+    await talk.evaluate((el) => getComputedStyle(el).userSelect),
+    "none",
+    "Holding a control must not select its label",
+  );
+  assert.equal(
+    await talk.evaluate((el) =>
+      el.dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+      ),
+    ),
+    false,
+    "Game controls must suppress the long-press context menu",
+  );
   await page.getByRole("button", { name: "Toggle chat" }).click();
   const input = page.getByRole("textbox", { name: "Chat message" });
   await input.waitFor();
+  assert.equal(
+    await input.evaluate((el) => getComputedStyle(el).userSelect),
+    "text",
+    "Chat text must stay editable and selectable",
+  );
+  assert.equal(
+    await input.evaluate((el) =>
+      el.dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+      ),
+    ),
+    true,
+    "Chat input must keep its editing menu",
+  );
   assert.equal(
     await input.evaluate((el) => document.activeElement === el),
     false,
@@ -110,7 +184,7 @@ try {
   await page.screenshot({ path: "artifacts/mobile-chat-landscape.png" });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: touch chat, 16px input, no focus zoom, overlay keyboard clearance, text delivery, no page panning, portrait and landscape layouts",
+    "PASS: muted headphones join, mic toggle, cancelled hold, long-press menu suppression, editable chat, 16px input, overlay keyboard clearance, portrait and landscape layouts",
   );
 } finally {
   await browser.close();

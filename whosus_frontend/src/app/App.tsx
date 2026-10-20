@@ -21,6 +21,14 @@ export default function App() {
   return (
     <div
       className={`app ${s.room ? "in-game" : "at-menu"} ${s.room?.phase === "lobby" ? "in-lobby" : ""}`}
+      onContextMenu={(event) => {
+        if (
+          s.room &&
+          event.target instanceof Element &&
+          !event.target.closest("input, textarea, [contenteditable='true']")
+        )
+          event.preventDefault();
+      }}
     >
       <div className="scene-wrap">
         <SceneBoundary>

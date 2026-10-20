@@ -115,7 +115,9 @@ try {
   await pages[1].getByText("A very good alibi.").waitFor();
   for (const p of pages.slice(0, 2)) {
     await p.getByLabel("Close chat").click();
-    await p.getByLabel("Toggle microphone").click();
+    await p
+      .getByRole("button", { name: "Unmute microphone", exact: true })
+      .click();
   }
   for (const p of pages.slice(0, 2))
     await waitFor(

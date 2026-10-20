@@ -167,7 +167,7 @@ try {
     await page.route("**/__voice_test__", (route) =>
       route.fulfill({
         contentType: "text/html",
-        body: '<!doctype html><title>Voice integration test</title><button id="enable">Enable voice</button><button id="talk">Hold to talk</button>',
+        body: '<!doctype html><title>Voice integration test</title><button id="enable">Enable voice</button><button id="listen">Listen</button><button id="talk">Hold to talk</button>',
       }),
     );
     await page.goto(`${base}/__voice_test__`);
@@ -178,7 +178,10 @@ try {
       initializeNetwork();
       document
         .getElementById("enable")
-        .addEventListener("click", () => void voice.enable());
+        .addEventListener("click", () => void voice.enable(true));
+      document
+        .getElementById("listen")
+        .addEventListener("click", () => voice.deafen());
       const talk = document.getElementById("talk");
       talk.addEventListener("pointerdown", () => voice.ptt(true));
       talk.addEventListener("pointerup", () => voice.ptt(false));
@@ -329,6 +332,18 @@ try {
     (await import("/src/features/voice/voice-client.ts")).voice.ptt(false),
   );
   await audible(pages[1], false, "PTT release stops audio");
+  // Joining through headphones receives speech without opening the local mic.
+  await pages[2].getByText("Listen", { exact: true }).click();
+  await waitVoice(pages[2]);
+  assert.equal((await state(pages[2])).muted, true);
+  assert.equal((await diagnostics(pages[2])).microphoneEnabled, false);
+  await audible(pages[2], true, "Headphones join receives audio with mic off");
+  await audible(pages[1], false, "Headphones join does not transmit audio");
+  await pages[2].getByText("Listen", { exact: true }).click();
+  await audible(pages[2], false, "Headphones toggle stops listening");
+  await pages[2].getByText("Listen", { exact: true }).click();
+  await audible(pages[2], true, "Headphones toggle resumes listening");
+  assert.equal((await diagnostics(pages[2])).microphoneEnabled, false);
   await muted(pages[0], false);
   await audible(pages[1], true, "Unmute restores audio");
   await pages[1].evaluate(async () =>

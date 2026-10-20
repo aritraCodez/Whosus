@@ -1,3 +1,18 @@
+/* Holding game controls must not select text or open a mobile callout. */
+.in-game,
+.in-game * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.in-game input,
+.in-game textarea,
+.in-game [contenteditable="true"],
+.in-game [contenteditable="true"] * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
 .player-custom:focus-within {
   border-color: var(--yellow);
   box-shadow: 0 0 0 3px #f5c56816;
