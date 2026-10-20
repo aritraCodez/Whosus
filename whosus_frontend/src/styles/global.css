@@ -154,7 +154,7 @@ input::placeholder {
   top: 9%;
   bottom: 7%;
   right: -8%;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
 }
 .at-menu:after {
   content: "";
