@@ -188,6 +188,7 @@ export function leave() {
     practiceOpen: false,
     wardrobe: false,
     settings: false,
+    missionSettings: false,
   });
 }
 export function initializeNetwork() {

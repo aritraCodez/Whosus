@@ -21,6 +21,7 @@ type State = {
   playbackBlocked: boolean;
   map: boolean;
   settings: boolean;
+  missionSettings: boolean;
   wardrobe: boolean;
   chatOpen: boolean;
   quality: "high" | "low";
@@ -46,6 +47,7 @@ export const useGame = create<State>((set) => ({
   playbackBlocked: false,
   map: false,
   settings: false,
+  missionSettings: false,
   wardrobe: false,
   chatOpen: false,
   quality:
