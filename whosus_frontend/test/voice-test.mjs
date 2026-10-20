@@ -4,7 +4,7 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import { waitFor } from "./wait.mjs";
 
-// Exercise the real client, socket, microphone and media server without 3D/GPU load.
+// Exercise real browser-to-browser WebRTC, microphone and signaling without 3D/GPU load.
 const base = process.env.WHOSUS_TEST_URL || "http://127.0.0.1:5173";
 await mkdir("artifacts", { recursive: true });
 const samples = 48000 * 3;
@@ -188,8 +188,34 @@ try {
       page,
       async () => !!(await import("/src/store.ts")).useGame.getState().room,
     );
+    await page.evaluate(async () => {
+      (await import("/src/voice.ts")).voice.configure([]);
+    });
   }
   console.log("Five independent clients joined");
+  // Signals on the caller's socket can arrive before a callee's first peer list.
+  const firstIds = await Promise.all(
+    pages.slice(0, 2).map(async (page) => (await state(page)).id),
+  );
+  const callee = firstIds[0] < firstIds[1] ? pages[1] : pages[0];
+  await callee.evaluate(async () => {
+    const { voice } = await import("/src/voice.ts");
+    const sync = voice.sync.bind(voice);
+    let latest = [];
+    voice.sync = (values) => {
+      latest = values;
+    };
+    const signal = voice.signal.bind(voice);
+    voice.signal = (message) => {
+      window.receivedEarlySignal =
+        window.receivedEarlySignal || !voice.allowed.has(message.from);
+      return signal(message);
+    };
+    setTimeout(() => {
+      voice.sync = sync;
+      sync(latest);
+    }, 2500);
+  });
   // A blackholed STUN server must not delay host-candidate signaling.
   await pages[0].evaluate(async () => {
     (await import("/src/voice.ts")).voice.configure([
@@ -211,9 +237,9 @@ try {
   await waitVoice(pages[0]);
   assert(
     Date.now() - started < 8000,
-    "Host ICE must connect without waiting for the unreachable STUN server",
+    "Enabling the microphone must not wait for an unreachable STUN server",
   );
-  console.log("PASS: Host ICE connects without waiting for unreachable STUN");
+  console.log("PASS: Microphone is ready while waiting for other players");
   assert.equal((await state(pages[0])).muted, true);
   assert.equal((await diagnostics(pages[0])).microphoneEnabled, false);
   await pages[1].evaluate(() => {
@@ -243,6 +269,19 @@ try {
   );
   console.log("PASS: A user gesture recovers blocked audio playback");
   await audible(pages[0], true, "Lobby audio reaches a muted listener");
+  const mesh = await diagnostics(pages[0]);
+  assert.equal(mesh.transport, "webrtc");
+  assert.equal(mesh.topology, "peer-to-peer");
+  assert(mesh.peers.some((peer) => peer.connectionState === "connected"));
+  assert.equal(
+    mesh.peers[0].id,
+    (await state(pages[1])).id,
+    "Audio must come from another browser's peer connection",
+  );
+  assert.equal(await callee.evaluate(() => window.receivedEarlySignal), true);
+  console.log(
+    "PASS: Peer signaling survives a delayed initial policy snapshot",
+  );
   await pages[1].evaluate(async () =>
     (await import("/src/network.ts")).send({
       type: "chat",
@@ -281,7 +320,13 @@ try {
   const generation = (await diagnostics(pages[0])).generation;
   await pages[0].evaluate(async (generation) => {
     const { voice } = await import("/src/voice.ts");
-    await voice.answer("invalid stale answer", generation - 1);
+    const peer = (await voice.getDiagnostics()).peers[0];
+    await voice.signal({
+      from: peer.id,
+      kind: "answer",
+      sdp: "invalid stale answer",
+      generation: peer.generation - 1,
+    });
     voice.fail("stale failure", generation - 1);
   }, generation);
   assert.equal((await diagnostics(pages[0])).generation, generation);
@@ -428,7 +473,7 @@ try {
   assert.equal((await diagnostics(pages[0])).contextState, "closed");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: browser microphone, trickled ICE, two-way audio, PTT race, mute/deafen, stale signals, reconnect, proximity, live ghost isolation, meetings, post-game audio and cleanup",
+    "PASS: peer-to-peer WebRTC, two-way audio, PTT race, mute/deafen, stale signals, reconnect, proximity, ghost channels, meetings, post-game audio and cleanup",
   );
 } catch (error) {
   for (const page of pages) {

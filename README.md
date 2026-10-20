@@ -37,12 +37,11 @@ whosus/
 |   |   |   |-- api.py                Health and public-room endpoints
 |   |   |   `-- websocket.py          WebSocket game and voice signaling
 |   |   |-- game.py                   Authoritative rules and communication policy
-|   |   `-- voice.py                  WebRTC transport and authorized audio mixes
+|   |   `-- voice.py                  Peer signaling policy and proximity gains
 |   |-- tests/
 |   |   |-- test_game.py              Rules, input validation, channel permissions
 |   |   |-- test_network.py           WebSocket clients and session recovery
-|   |   `-- test_webrtc.py            Real media transport and audio revocation
-|   |   `-- test_voice_signaling.py   Candidate queues, generation checks, origins
+|   |   `-- test_voice_signaling.py   Peer signaling, room/channel checks, origins
 |   |-- .env.example                  Backend configuration template
 |   |-- .gitignore
 |   |-- Dockerfile
@@ -164,19 +163,18 @@ flowchart LR
         Rooms[In-memory rooms and sessions]
         Rules[20 Hz authoritative simulation]
         Policy[Role, distance and channel permissions]
-        Media[aiortc authorized audio mixer]
         API --> Rooms
         Rooms --> Rules
         Rules --> Policy
-        Policy --> Media
-        API --> Media
+        API --> Policy
     end
     ICE[Configured STUN servers]
     Net <-->|HTTP and WebSocket messages| Proxy
     Proxy <--> API
-    Voice <-->|Encrypted WebRTC audio| Media
+    Other[Other player's browser]
+    Voice <-->|Encrypted peer-to-peer WebRTC audio| Other
     Voice -. ICE discovery .-> ICE
-    Media -. ICE discovery .-> ICE
+    Other -. ICE discovery .-> ICE
 ```
 
 The server trusts session identity established on the WebSocket, rather than a player ID supplied with each action. It assigns roles, validates actions, advances time, and creates a separate snapshot for each player. Clients submit movement inputs, task steps, action requests, votes, and chat messages; they cannot authoritatively set positions, roles, cooldowns, or outcomes.
@@ -189,7 +187,7 @@ The server trusts session identity established on the WebSocket, rather than a p
 | Remote movement | `src/Scene.tsx` smooths received player positions during rendering |
 | Role secrecy | Per-recipient snapshots disclose the player's own role, killer teammates when applicable, and all roles after game over |
 | Task validation | Station range, issued challenge nonce, expected sequence, and minimum step timing |
-| Communication validation | Server-side text recipients and per-recipient audio gain |
+| Communication validation | Server-side text recipients and voice signaling eligibility; browsers apply server-provided audio gains |
 | Transport limits | Pydantic validation, bounded message sizes, request rate limits, and bounded outbound queues |
 | Reconnection | A token in browser `sessionStorage` resumes a retained session; old media transport is closed and renegotiated |
 
@@ -219,38 +217,36 @@ Emergency meetings require the living caller to be near the Commons beacon, have
 
 ```mermaid
 sequenceDiagram
-    participant B as Browser
+    participant B as Player A browser
     participant W as Authenticated WebSocket
     participant R as Room authority
-    participant M as Python media router
+    participant P as Player B browser
     B->>W: Create, join or resume room
     W->>R: Bind authenticated player session
     W-->>B: Identity, token and ICE configuration
     Note over B: User enables microphone
     B->>B: Capture audio and begin ICE discovery
-    B->>W: Audio-only SDP offer and generation
-    W->>M: Negotiate transport for bound player
+    R-->>B: Eligible peers and directional audio gains
+    B->>W: Audio-only SDP offer, target and call generation
+    W->>P: Forward offer with authenticated sender identity
     loop As browser ICE candidates become available
         B->>W: Candidate and transport generation
-        W->>M: Queue until offer is ready, then apply in order
+        W->>P: Forward candidate to the eligible peer
     end
-    M-->>W: SDP answer with gathered candidates
+    P-->>W: SDP answer and call generation
     W-->>B: SDP answer and matching generation
-    B->>M: Encrypted microphone audio
-    loop Each recipient audio frame, every 20 ms
-        M->>R: Check current communication eligibility and gain
-        R-->>M: Allow with attenuation, or exclude source
-        M-->>B: Encoded authorized mix
-    end
+    B<<->>P: Encrypted WebRTC microphone audio directly between browsers
+    R-->>B: Updated peers/gains after movement or phase changes
+    Note over B,P: Gate outgoing audio, adjust incoming volume, close ineligible peers
 ```
 
-Each participating browser has one WebRTC connection to the server. aiortc decodes incoming Opus; PyAV resamples it to 48 kHz mono. For each recipient, the router mixes up to 960 samples per 20 ms frame, applies current permissions and distance attenuation, clips the result, and encodes the outgoing audio. Audio is transient and is not recorded.
+Voice uses browser-to-browser WebRTC in both local development and deployment, following the Neon-Rush approach. Each participating browser maintains one audio peer connection per eligible player. FastAPI forwards audio-only offers, answers and ICE candidates over the existing authenticated `/ws` connection; it does not receive, mix, record or relay microphone audio. STUN servers come from the backend's `STUN_URL` environment value and are sent to browsers on joining. There is no voice transport switch, separate audio WebSocket endpoint, or TURN configuration.
 
-The policy checks membership, connection state, living/ghost state, match phase, microphone mute, recipient deafen, duct state, and distance before audio leaves the server. Changing browser volume is not the authorization mechanism. Previously transmitted audio may remain briefly in browser playout buffers after a phase transition; new output frames use the updated policy.
+The server authorizes signaling only between voice-enabled players in the same room and living/ghost channel. Snapshots carry each peer's incoming gain and outgoing eligibility, calculated from the existing phase, proximity, mute, deafen and duct rules. The browser gates each outgoing track, adjusts incoming playback, and closes peer connections that leave its channel. These media rules rely on cooperating browser clients: peer-to-peer audio is not a trusted server-side media boundary against modified clients. Previously delivered audio may remain briefly in browser playout buffers after a phase transition.
 
-The browser sends its SDP immediately and trickles ICE candidates over the authenticated WebSocket instead of waiting for ICE discovery to finish. The server queues up to 64 candidates while preparing the answer, validates their audio channel, and applies only candidates for that session's current transport generation. The server answer includes its gathered candidates.
+Stable player-ID ordering chooses one caller per pair, avoiding simultaneous offers. Browsers signal their SDP immediately and trickle ICE without waiting for discovery to finish. The receiving browser queues at most 64 early candidates for the matching call generation. Stale signals are discarded, and a failed connection has a 25-second budget across automatic retries before exposing an error and manual retry.
 
-Client generation guards reject stale signaling results, and reconnection creates a fresh transport. Microphone permission requests are serialized; a released push-to-talk button cannot open the microphone when permission arrives later. Track mute supports push-to-talk without renegotiation. Blur releases push-to-talk, and blocked autoplay exposes a playback-unlock button. Speaking indicators are derived from server-observed audio energy and filtered for the recipient.
+Microphone permission requests are serialized; releasing push-to-talk while permission is pending keeps the microphone muted. Track mute supports push-to-talk without renegotiation. Blur releases push-to-talk, and blocked autoplay exposes a playback-unlock button. Speaking indicators use client-reported microphone activity filtered by the server's current channel and gain rules; they are not server-observed media evidence.
 
 ## Communication permissions
 
@@ -276,11 +272,10 @@ cd whosus_backend
 .venv/Scripts/python.exe -m pytest -q
 ```
 
-The current suite contains **31 cases**. A successful run exits with code zero and reports `31 passed`. The test groups can also be run independently:
+A successful run exits with code zero. The test groups can also be run independently:
 
 ```powershell
 .venv/Scripts/python.exe -m pytest tests/test_game.py tests/test_network.py -q
-.venv/Scripts/python.exe -m pytest tests/test_webrtc.py -q
 .venv/Scripts/python.exe -m pytest tests/test_voice_signaling.py -q
 ```
 
@@ -288,10 +283,9 @@ The current suite contains **31 cases**. A successful run exits with code zero a
 | --- | --- |
 | `test_game.py` | Start conditions, private roles, movement bounds, collision, task proofs, kill validation, sabotage, reports, ducts, votes, ghost tasks and channel rules |
 | `test_network.py` | Four connected clients, room discovery, lobby chat, private role snapshots, reconnect tokens and invalid requests |
-| `test_webrtc.py` | Real ICE/DTLS/Opus transport; speech delivery, proximity suppression, deafen, meetings, post-game audio and ghost-audio revocation on an existing connection |
-| `test_voice_signaling.py` | Queued trickle ICE, rejection of stale generations and oversized/targeted candidate payloads, and origin-list parsing |
+| `test_voice_signaling.py` | Browser-to-browser SDP/ICE forwarding, authenticated sender identity, room/channel eligibility, proximity/deafen gains and bounded audio-only messages |
 
-The media test disables external STUN within the test and uses synthetic audio on local peer connections. It verifies the backend media path; it does not verify browser permissions, Android audio hardware, or internet NAT traversal.
+Backend tests verify signaling and channel policy. The browser voice suite verifies actual ICE/DTLS/Opus audio between independent browsers; physical devices and internet NAT traversal require separate checks.
 
 ### 2. Type-check and build the frontend
 
@@ -322,8 +316,10 @@ In another terminal at the repository root:
 cd whosus_frontend
 npx.cmd playwright install chromium
 npm.cmd run test:voice
+npm.cmd run test:voice-errors
 npm.cmd run test:browser
 npm.cmd run test:scene
+npm.cmd run test:mobile-chat
 ```
 
 If you already have a suitable Chromium executable, select it explicitly before the test:
@@ -334,6 +330,10 @@ npm.cmd run test:browser
 ```
 
 `test:voice` runs the real networking/voice modules in five independent browser contexts without loading the 3D scene. It verifies connection despite an unreachable STUN server, delayed microphone permission with early PTT release, blocked-playback recovery, simultaneous text/audio, mute/deafen, media reconnect, stale-signal rejection, microphone-denial retry, proximity speech, ghost-to-ghost audio, exclusion of ghosts from established living connections, meetings, post-game audio and cleanup. It generates `artifacts/voice-tone.wav` and measures decoded audio RMS plus packet counts; it does not rely on a connection indicator or an optional browser RTP-energy field.
+
+`test:voice` always uses peer-to-peer WebRTC. `test:mobile-chat` checks the real chat HUD on a touch viewport: 16px input text, no forced keyboard on opening chat, viewport scale, overlay-keyboard clearance, message delivery, page scrolling, and portrait/landscape bounds. It stubs the 3D scene and emulates the keyboard viewport; validate physical-device keyboards separately.
+
+`test:voice-errors` uses synthetic microphone input, controlled peer failures and a browser clock to verify immediate setup errors and the shared 25-second retry deadline. It checks that failed ICE cannot create endless replacement connections.
 
 `test:browser` exercises the rendered UI and attempts room joining, text delivery, real incoming audio, movement, meetings, voting, crew victory, rematch, session recovery, and mobile layouts. It saves screenshots and `test-tone.wav` in `whosus_frontend/artifacts/`.
 
@@ -377,6 +377,8 @@ Backend configuration is read from environment variables. `ALLOWED_ORIGINS` is r
 | Variable | Purpose |
 | --- | --- |
 | `ALLOWED_ORIGINS` | Comma-separated exact browser origins, without trailing slashes; checked during the WebSocket handshake |
+| `STUN_URL` | Comma- or semicolon-separated STUN URLs supplied by your environment; no hardcoded fallback. An unset or empty value disables external STUN. |
+| `WHOSUS_DEV_BACKEND` | Optional Vite proxy target for isolated local testing; also set `VITE_BACKEND_ORIGIN` if overriding a frontend `.env` backend URL |
 | `WHOSUS_BROWSER` | Optional Chromium path consumed by frontend files in `test/` |
 | `WHOSUS_TEST_URL` | Optional frontend origin for both browser test commands; defaults to `http://127.0.0.1:5173` |
 | `VITE_BACKEND_ORIGIN` | Frontend build-time setting: the browser-reachable backend HTTP(S) origin, with no path or trailing slash; also selects the WebSocket host |
@@ -388,11 +390,11 @@ Hosts can change public/private visibility, capacity, killers, movement speed (0
 
 The departure-door console offers practice versions of all tasks. Walk within range and press **E** or click the console. During a match, highlighted consoles are assigned tasks; nearby consoles show their name and completion status. Run `npm.cmd run test:room` for the room controls and practice-task browser checks, and `npm.cmd run test:movement` for held-key and speed/prediction checks.
 
-The backend uses fixed Google and Cloudflare STUN servers for WebRTC discovery. STUN URLs are not configurable through environment variables.
+For WebRTC discovery, keep `STUN_URL=stun:stun.l.google.com:19302;stun:stun.cloudflare.com:3478` in the backend environment as shown in `whosus_backend/.env.example`. The backend sends those values to browsers when they join. Remove any old `VOICE_TRANSPORT` setting; voice always uses browser-to-browser WebRTC.
 
 ## Docker and deployment
 
-Both application directories contain a Dockerfile and can be built independently. **There is currently no Compose file in this repository.** The frontend image builds the React app and serves it with Nginx; the backend image runs FastAPI and the media router. Deploying only the frontend does not deploy the backend.
+Both application directories contain a Dockerfile and can be built independently. **There is currently no Compose file in this repository.** The frontend image builds the React app and serves it with Nginx; the backend image runs FastAPI and voice signaling. Deploying only the frontend does not deploy the backend.
 
 ### Frontend build configuration and backend URL
 
@@ -449,13 +451,13 @@ Both Dockerfiles honor the runtime `PORT`. Render supplies its HTTP port and HTT
 
 You can also use a Render internal backend hostname when the service plan supports receiving private traffic. Use the actual address from **Connect > Internal**, keep services in the same workspace and region, and use its real port. Free web services cannot receive private-network requests, so a public backend URL is the applicable option for that case. See [Render private networking](https://render.com/docs/private-network).
 
-**Voice is a separate deployment check.** Render's documented public ingress forwards HTTP/WebSockets to one service port. From that constraint, direct incoming UDP WebRTC traffic should not be assumed reachable through the web-service URL. The Nginx reverse proxy carries signaling, not audio. The current backend configures STUN discovery only; restrictive networks may require a relay or media infrastructure with appropriate network access, which is not configured here. Validate actual two-way audio and ghost isolation after deployment. An HTTP health check or a successful Docker deploy does not prove the media path works.
+**Voice on Render:** redeploy both services together and keep `STUN_URL` in the backend environment. Both local and deployed voice use WebRTC directly between browsers. Render handles only game traffic and voice signaling over `/ws`; it does not need to accept incoming audio/UDP. Serve the frontend over HTTPS for microphone access. Like Neon-Rush's STUN-only configuration, direct audio depends on the players' networks permitting peer connectivity; STUN cannot guarantee a route through every NAT/firewall. Validate two-way audio and channel transitions on real devices after deployment. See [Render WebSockets](https://render.com/docs/websocket).
 
 The existing browser rendering/audio verification gaps still apply after deployment. No Render deployment was performed as part of these configuration changes.
 
 Use native Python and Vite commands for ordinary Windows development. For a static frontend deployment, build with `VITE_BACKEND_ORIGIN` set to the browser-reachable backend URL and allow the static site's origin in the backend configuration. `npm.cmd run preview` does not proxy API or WebSocket requests.
 
-The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input queues, and media connections reside in that process. Scaling requires room affinity plus coordinated room discovery and media capacity; adding Redis alone does not distribute active WebRTC transports. There is no persistent account store or PostgreSQL integration. Backend restarts lose matches, and concurrent-room capacity requires load testing. Budget mixer CPU for a separate outgoing audio stream for each connected recipient.
+The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input queues, and voice presence reside in that process. Scaling requires room affinity and coordinated room discovery. There is no persistent account store or PostgreSQL integration. Backend restarts lose matches, and concurrent-room capacity requires load testing. Browser voice bandwidth and peer-connection counts increase with room size; validate the 12-player limit on target devices.
 
 ## Troubleshooting
 
@@ -472,7 +474,7 @@ The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input que
 | Microphone access is unavailable on Android | Use HTTPS with a trusted certificate. Plain HTTP to a LAN IP is insufficient for microphone access. |
 | Voice is connected but inaudible | Check mute, deafen, channel eligibility, distance, playback unlocking, capture device and received audio energy. Connection state alone does not prove audio delivery. |
 | ICE gathering times out locally | Check outbound STUN access to the configured public STUN servers. Internet tests need reachable ICE services. |
-| Ghost audio is audible to a living player | Treat it as a failed permission check; capture the phase and transport evidence and run `test_webrtc.py` before further release validation. |
+| Ghost audio is audible to a living player | Capture the phase/peer evidence and run `test:voice` and `test_voice_signaling.py`; browser media filtering assumes cooperating clients. |
 | Browser test cannot find Chromium | Install Playwright Chromium or set `WHOSUS_BROWSER` to an existing executable. |
 | Browser scene is blank or too slow | Check WebGL/hardware acceleration and console errors, try low graphics, and retain evidence; unresolved rendering failures remain a release gap. |
 

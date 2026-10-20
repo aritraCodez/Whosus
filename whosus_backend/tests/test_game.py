@@ -1,6 +1,5 @@
 import math
 import time
-import numpy as np
 import pytest
 from app.game import Room,GameError,DT,STATIONS,move,walkable
 from app.voice import VoiceRouter
@@ -190,9 +189,9 @@ def test_chat_permissions_and_rate_limit():
 def test_no_ghost_audio_to_living_in_any_active_phase(phase):
     r=game();imp,crew=parties(r);a,b=crew[:2];a.alive=False;a.muted=b.muted=False;r.phase=phase
     assert r.voice_gain(a.id,b.id)==r.voice_gain(b.id,a.id)==0
-    router=VoiceRouter();router.frames[a.id]=(1,time.monotonic(),np.full(960,18000,dtype=np.float32),18000)
-    assert not np.any(router.mix(r,b.id,{}))
-    b.alive=False;assert np.max(router.mix(r,b.id,{}))==18000
+    router=VoiceRouter();router.state(a.id,True,True);router.state(b.id,True,False)
+    assert not router.can_signal(r,a.id,b.id)
+    b.alive=False;assert router.can_signal(r,a.id,b.id)
 
 def test_audio_distance_deafen_disconnect_and_live_revocation():
     r=game();a,b=list(r.players.values())[:2];a.muted=b.muted=False;a.x=0;a.z=2;b.x=0;b.z=3
@@ -202,10 +201,10 @@ def test_audio_distance_deafen_disconnect_and_live_revocation():
     r.phase='discussion';assert r.voice_gain(a.id,b.id)==1
     b.deafened=True;assert r.voice_gain(a.id,b.id)==0;b.deafened=False
     a.connected=False;assert r.voice_gain(a.id,b.id)==0;a.connected=True
-    router=VoiceRouter();router.frames[a.id]=(1,time.monotonic(),np.full(960,10000,dtype=np.float32),10000)
-    assert np.any(router.mix(r,b.id,{}))
+    router=VoiceRouter();router.state(a.id,True,True);router.state(b.id,True,False)
+    assert next(peer for peer in router.peers(r,b.id) if peer['id']==a.id)['gain']==1
     a.alive=False
-    assert not np.any(router.mix(r,b.id,{})) # same already-established transport, permission revoked
+    assert a.id not in [peer['id'] for peer in router.peers(r,b.id)]
 
 def test_disconnect_grace_then_forfeit():
     r=game();imp,crew=parties(r);imp.connected=False;imp.disconnected_at=r.now

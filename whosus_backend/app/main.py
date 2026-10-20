@@ -43,6 +43,7 @@ async def simulation():
                         'type': 'snapshot',
                         'room': room.snapshot(session['pid']),
                         'speaking': voice.speaking(room, session['pid']),
+                        'voicePeers': voice.peers(room, session['pid']),
                     })
         next_tick += DT
         if next_tick < now - DT:

@@ -168,14 +168,14 @@ export function connect(message?: Record<string, unknown>) {
       }
       lastPhase = r.phase;
       useGame.setState({ room: r, speaking: m.speaking });
+      voice.sync(m.voicePeers ?? []);
     }
     if (m.type === "chat") {
       const s = useGame.getState();
       useGame.setState({ chat: [...s.chat.slice(-99), m.message] });
       if (!s.chatOpen) sound();
     }
-    if (m.type === "voice_answer") void voice.answer(m.sdp, m.generation);
-    if (m.type === "voice_error") voice.fail(m.message, m.generation);
+    if (m.type === "voice_signal") void voice.signal(m);
     if (m.type === "error") useGame.setState({ error: m.message });
     if (m.type === "kicked") {
       leave();
