@@ -83,7 +83,7 @@ try {
           await import(
             performance
               .getEntriesByType("resource")
-              .find((entry) => new URL(entry.name).pathname === "/src/store.ts")
+              .find((entry) => new URL(entry.name).pathname === "/src/features/game/model/game-store.ts")
               .name
           )
         ).useGame.getState().room,
@@ -111,7 +111,7 @@ try {
   await page.keyboard.down("KeyS");
   try {
     await waitFor(page, async () => {
-      const url = performance.getEntriesByType("resource").find(entry => new URL(entry.name).pathname === "/src/store.ts").name;
+      const url = performance.getEntriesByType("resource").find(entry => new URL(entry.name).pathname === "/src/features/game/model/game-store.ts").name;
       const state = (await import(url)).useGame.getState();
       return state.room.players.find(p => p.id === state.id).z >= 1.8;
     });
@@ -135,7 +135,7 @@ try {
     const url = performance
       .getEntriesByType("resource")
       .find(
-        (entry) => new URL(entry.name).pathname === "/src/interactions.ts",
+        (entry) => new URL(entry.name).pathname === "/src/features/game/actions/interactions.ts",
       ).name;
     (await import(url)).openWardrobe();
   });
@@ -209,7 +209,7 @@ try {
       await import(
         performance
           .getEntriesByType("resource")
-          .find((entry) => new URL(entry.name).pathname === "/src/network.ts")
+          .find((entry) => new URL(entry.name).pathname === "/src/features/game/network/game-client.ts")
           .name
       )
     ).leave(),

@@ -21,7 +21,7 @@ try {
     window.sceneModuleUrl = (name) =>
       performance
         .getEntriesByType("resource")
-        .find((entry) => new URL(entry.name).pathname === `/src/${name}.ts`)
+        .find((entry) => new URL(entry.name).pathname === ({"store":"/src/features/game/model/game-store.ts","types":"/src/features/game/model/types.ts","world":"/src/features/game/model/world.ts","network":"/src/features/game/network/game-client.ts","voice":"/src/features/voice/voice-client.ts","appearance":"/src/features/appearance/model/appearance-store.ts","interactions":"/src/features/game/actions/interactions.ts","devPlayers":"/src/features/lobby/model/test-players.ts","audio":"/src/features/game/audio/sounds.ts","backend":"/src/config/backend.ts"})[name])
         .name;
   });
   await page.getByLabel("Edit explorer name", { exact: true }).click();
@@ -86,7 +86,7 @@ try {
   );
   // Three independent protocol clients keep this test focused on one renderer.
   await page.evaluate(async () => {
-    const { backendWebSocketUrl } = await import("/src/backend.ts");
+    const { backendWebSocketUrl } = await import("/src/config/backend.ts");
     const { useGame } = await import(window.sceneModuleUrl("store"));
     const code = useGame.getState().room.code;
     window.sceneTestPeers = await Promise.all(

@@ -11,6 +11,8 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "esModuleInterop": true
+    ,"baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
   },
   "include": ["src", "vite.config.ts"]
 }
