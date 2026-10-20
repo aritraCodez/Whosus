@@ -177,7 +177,7 @@ flowchart LR
         API[FastAPI HTTP and WebSocket endpoints]
         Rooms[In-memory rooms and sessions]
         Rules[20 Hz authoritative simulation]
-        Policy[Role, distance and channel permissions]
+        Policy[Role, phase and channel permissions]
         API --> Rooms
         Rooms --> Rules
         Rules --> Policy
@@ -257,7 +257,7 @@ sequenceDiagram
 
 Voice uses browser-to-browser WebRTC in both local development and deployment, following the Neon-Rush approach. Each participating browser maintains one audio peer connection per eligible player. FastAPI forwards audio-only offers, answers and ICE candidates over the existing authenticated `/ws` connection; it does not receive, mix, record or relay microphone audio. STUN servers come from the backend's `STUN_URL` environment value and are sent to browsers on joining. There is no voice transport switch, separate audio WebSocket endpoint, or TURN configuration.
 
-The server authorizes signaling only between voice-enabled players in the same room and living/ghost channel. Snapshots carry each peer's incoming gain and outgoing eligibility, calculated from the existing phase, proximity, mute, deafen and duct rules. The browser gates each outgoing track, adjusts incoming playback, and closes peer connections that leave its channel. These media rules rely on cooperating browser clients: peer-to-peer audio is not a trusted server-side media boundary against modified clients. Previously delivered audio may remain briefly in browser playout buffers after a phase transition.
+The server authorizes signaling only between voice-enabled players in the same room and living/ghost channel. Snapshots carry each peer's incoming gain and outgoing eligibility, calculated from the phase, mute, deafen and duct rules; distance does not affect voice volume. The browser gates each outgoing track, adjusts incoming playback, and closes peer connections that leave its channel. These media rules rely on cooperating browser clients: peer-to-peer audio is not a trusted server-side media boundary against modified clients. Previously delivered audio may remain briefly in browser playout buffers after a phase transition.
 
 Stable player-ID ordering chooses one caller per pair, avoiding simultaneous offers. Browsers signal their SDP immediately and trickle ICE without waiting for discovery to finish. The receiving browser queues at most 64 early candidates for the matching call generation. Stale signals are discarded, and a failed connection has a 25-second budget across automatic retries before exposing an error and manual retry.
 
@@ -268,7 +268,7 @@ Microphone permission requests are serialized; releasing push-to-talk while perm
 | State | Voice | Text |
 | --- | --- | --- |
 | Lobby | Everyone in the room | Everyone in the room |
-| Exploration, living players | Living players within 9 map units; full gain near the speaker, fading to silence with distance | Living text chat is unavailable |
+| Exploration, living players | All living players across the station at full gain, regardless of distance | Living text chat is unavailable |
 | Discussion, voting and results | All living players, independent of location | Living players share meeting chat |
 | Ghosts during an active match | Ghosts hear ghosts; living and ghost channels are isolated in both directions | Ghosts text ghosts |
 | Living player in a duct or role reveal | Living voice is suppressed | Living text remains unavailable |
@@ -302,7 +302,7 @@ A successful run exits with code zero. The test groups can also be run independe
 | --- | --- |
 | `unit/test_game.py` | Start conditions, private roles, movement bounds, collision, task proofs, kill validation, sabotage, reports, ducts, votes, ghost tasks and channel rules |
 | `integration/test_network.py` | Four connected clients, room discovery, lobby chat, private role snapshots, reconnect tokens and invalid requests |
-| `integration/test_voice_signaling.py` | Browser-to-browser SDP/ICE forwarding, authenticated sender identity, room/channel eligibility, proximity/deafen gains and bounded audio-only messages |
+| `integration/test_voice_signaling.py` | Browser-to-browser SDP/ICE forwarding, authenticated sender identity, room/channel eligibility, station-wide voice/deafen gains and bounded audio-only messages |
 
 See the [backend architecture guide](whosus_backend/README.md) for the migration map, runtime ownership, security limits, development dependencies and verification record.
 
@@ -358,7 +358,7 @@ $env:WHOSUS_BROWSER = 'C:/path/to/chrome.exe'
 npm.cmd run test:browser
 ```
 
-`test:voice` runs the real networking/voice modules in five independent browser contexts without loading the 3D scene. It verifies connection despite an unreachable STUN server, delayed microphone permission with early PTT release, blocked-playback recovery, simultaneous text/audio, mute/deafen, media reconnect, stale-signal rejection, microphone-denial retry, proximity speech, ghost-to-ghost audio, exclusion of ghosts from established living connections, meetings, post-game audio and cleanup. It generates `artifacts/voice-tone.wav` and measures decoded audio RMS plus packet counts; it does not rely on a connection indicator or an optional browser RTP-energy field.
+`test:voice` runs the real networking/voice modules in five independent browser contexts without loading the 3D scene. It verifies connection despite an unreachable STUN server, delayed microphone permission with early PTT release, blocked-playback recovery, simultaneous text/audio, mute/deafen, media reconnect, stale-signal rejection, microphone-denial retry, two-way speech across station rooms, ghost-to-ghost audio, exclusion of ghosts from established living connections, meetings, post-game audio and cleanup. It generates `artifacts/voice-tone.wav` and measures decoded audio RMS plus packet counts; it does not rely on a connection indicator or an optional browser RTP-energy field.
 
 `test:voice` always uses peer-to-peer WebRTC. `test:mobile-chat` checks the real chat HUD on a touch viewport: 16px input text, no forced keyboard on opening chat, viewport scale, overlay-keyboard clearance, message delivery, page scrolling, and portrait/landscape bounds. It stubs the 3D scene and emulates the keyboard viewport; validate physical-device keyboards separately.
 
@@ -385,7 +385,7 @@ Use four independent contexts named A, B, C and D. Start with headphones on sepa
 | Mute, PTT, deafen | Mute A, hold and release V, then deafen B. Repeat with the touch talk control. | Muted audio stops; PTT transmits only while held; deafen suppresses received audio. |
 | Role reveal and movement | Ready everyone, launch, and move each explorer through room entrances and against obstacles. | Each client sees its permitted role; movement remains synchronized and obeys collision. |
 | Tasks | As crew, approach a console and follow its sequence; also try a wrong symbol and move away. | Valid steps advance; invalid steps do not; moving out of range expires the challenge. |
-| Proximity voice | Move two living players together, then more than 9 map units apart. | Speech fades with distance and becomes inaudible outside the range. |
+| Crew voice | Move two living players together, then into different station rooms more than 9 map units apart. | Speech remains audible at full volume in both directions. |
 | Elimination and reporting | As killer, wait for the cooldown, eliminate nearby crew, then report from another living player. | A body is created, a nearby report opens discussion, and dead players cannot vote. |
 | Ghost isolation | In a four-player match, eliminate one crew member, then have that ghost and living players speak and text. | Ghost audio/text never reaches living players; living audio/text never reaches the ghost. |
 | Ghost-to-ghost audio | Use at least five players and one killer; eliminate two crew members without reaching parity. | The two ghosts hear and text one another while living players remain isolated. |
@@ -501,7 +501,7 @@ The backend runs with **one uvicorn worker**. Rooms, reconnect tokens, input que
 | Deployed frontend loads, but API/room requests fail | Rebuild with `VITE_BACKEND_ORIGIN` set to the browser-reachable backend origin, and allow the frontend origin in backend `ALLOWED_ORIGINS`. |
 | Several windows become the same player | Use independent browser contexts instead of duplicated tabs; reconnect tokens are stored in `sessionStorage`. |
 | Microphone access is unavailable on Android | Use HTTPS with a trusted certificate. Plain HTTP to a LAN IP is insufficient for microphone access. |
-| Voice is connected but inaudible | Check mute, deafen, channel eligibility, distance, playback unlocking, capture device and received audio energy. Connection state alone does not prove audio delivery. |
+| Voice is connected but inaudible | Check mute, deafen, channel eligibility, playback unlocking, capture device and received audio energy. Connection state alone does not prove audio delivery. |
 | ICE gathering times out locally | Check outbound STUN access to the configured public STUN servers. Internet tests need reachable ICE services. |
 | Ghost audio is audible to a living player | Capture the phase/peer evidence and run `test:voice` and `test_voice_signaling.py`; browser media filtering assumes cooperating clients. |
 | Browser test cannot find Chromium | Install Playwright Chromium or set `WHOSUS_BROWSER` to an existing executable. |

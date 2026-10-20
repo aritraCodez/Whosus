@@ -103,7 +103,9 @@ def test_voice_topology_and_gains_follow_ghost_phase_distance_and_deafen_rules()
     assert router.peers(room, b.id)[0]["gain"] == 1
     a.alive = b.alive = True
     a.x, a.z, b.x, b.z = 0, 0, 13, 0
-    assert router.peers(room, b.id)[0]["gain"] == 0
+    assert router.peers(room, b.id) == [{"id": a.id, "gain": 1, "sendGain": 1}]
+    assert router.peers(room, a.id) == [{"id": b.id, "gain": 1, "sendGain": 1}]
+    assert a.id in router.speaking(room, b.id)
     room.phase = "discussion"
     assert router.peers(room, b.id)[0]["gain"] == 1
     b.deafened = True

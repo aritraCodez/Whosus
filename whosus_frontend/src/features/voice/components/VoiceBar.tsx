@@ -19,7 +19,7 @@ export function VoiceBar() {
         <strong>
           {s.room?.phase === "playing"
             ? s.room.players.find((p) => p.id === s.id)?.alive
-              ? "PROXIMITY"
+              ? "CREW CHANNEL"
               : "GHOST CHANNEL"
             : "CREW CHANNEL"}
         </strong>

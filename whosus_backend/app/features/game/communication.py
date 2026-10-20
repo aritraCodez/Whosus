@@ -5,7 +5,6 @@ import time
 from typing import TYPE_CHECKING
 
 from .types import ChatRecord
-from .world import distance
 
 if TYPE_CHECKING:
     from .service import Room
@@ -23,8 +22,7 @@ def voice_gain(room: Room, source: str, recipient: str) -> float:
         return 1.0
     if room.phase == "reveal" or a.vent >= 0 or b.vent >= 0:
         return 0.0
-    d = distance(a, b)
-    return max(0.0, min(1.0, (9 - d) / 6)) ** 2
+    return 1.0
 
 
 def can_chat(room: Room, source: str, recipient: str) -> bool:

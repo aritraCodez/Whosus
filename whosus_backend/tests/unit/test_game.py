@@ -343,9 +343,20 @@ def test_audio_distance_deafen_disconnect_and_live_revocation():
     b.z = 3
     assert r.voice_gain(a.id, b.id) == 1
     b.x = 7
-    assert 0 < r.voice_gain(a.id, b.id) < 1
+    assert r.voice_gain(a.id, b.id) == r.voice_gain(b.id, a.id) == 1
     b.x = 12
+    assert r.voice_gain(a.id, b.id) == r.voice_gain(b.id, a.id) == 1
+    a.x, a.z, b.x, b.z = -13, -13, 13, 13
+    assert r.voice_gain(a.id, b.id) == r.voice_gain(b.id, a.id) == 1
+    a.muted = True
     assert r.voice_gain(a.id, b.id) == 0
+    assert r.voice_gain(b.id, a.id) == 1
+    a.muted = False
+    a.vent = 0
+    assert r.voice_gain(a.id, b.id) == r.voice_gain(b.id, a.id) == 0
+    a.vent = -1
+    r.phase = "reveal"
+    assert r.voice_gain(a.id, b.id) == r.voice_gain(b.id, a.id) == 0
     r.phase = "discussion"
     assert r.voice_gain(a.id, b.id) == 1
     b.deafened = True

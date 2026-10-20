@@ -120,6 +120,29 @@ async function audible(page, expected, label) {
   }
   console.log("PASS:", label);
 }
+async function walkTo(page, target) {
+  await page.evaluate(async (target) => {
+    const { motion } =
+      await import("/src/features/game/network/game-client.ts");
+    const until = Date.now() + 6000;
+    try {
+      while (Date.now() < until) {
+        const dx = target.x - motion.x,
+          dz = target.z - motion.z,
+          distance = Math.hypot(dx, dz);
+        if (distance < 0.15) return;
+        // Movement input is screen-relative; the waypoint is in world space.
+        const basisLength = Math.hypot(18, 13);
+        motion.dx = (18 * dx - 13 * dz) / (basisLength * distance);
+        motion.dz = (13 * dx + 18 * dz) / (basisLength * distance);
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      throw Error("Timed out walking to voice test position");
+    } finally {
+      motion.dx = motion.dz = 0;
+    }
+  }, target);
+}
 async function approachAlongRing(page, target) {
   const s = await state(page),
     me = s.room.players.find((p) => p.id === s.id);
@@ -129,28 +152,7 @@ async function approachAlongRing(page, target) {
   const steps = Math.max(1, Math.ceil(Math.abs(delta) / 0.2));
   for (let i = 1; i <= steps; i++) {
     const angle = start + (delta * i) / steps;
-    await page.evaluate(
-      async (target) => {
-        const { motion } =
-          await import("/src/features/game/network/game-client.ts");
-        const until = Date.now() + 4000;
-        try {
-          while (Date.now() < until) {
-            const dx = target.x - motion.x,
-              dz = target.z - motion.z,
-              distance = Math.hypot(dx, dz);
-            if (distance < 0.15) return;
-            motion.dx = dx / distance;
-            motion.dz = dz / distance;
-            await new Promise((resolve) => setTimeout(resolve, 25));
-          }
-          throw Error("Timed out moving into elimination range");
-        } finally {
-          motion.dx = motion.dz = 0;
-        }
-      },
-      { x: Math.cos(angle) * 2, z: Math.sin(angle) * 2 },
-    );
+    await walkTo(page, { x: Math.cos(angle) * 2, z: Math.sin(angle) * 2 });
   }
   await page.waitForTimeout(200);
 }
@@ -433,10 +435,34 @@ try {
   const crew = info.filter((item) => item.me.role === "crew");
   for (const page of pages) await muted(page, true);
   await muted(crew[0].page, false);
+  await audible(crew[2].page, true, "Nearby living crew receive speech");
+  await approachAlongRing(crew[2].page, { x: 2, z: 0 });
+  await walkTo(crew[2].page, { x: 13, z: 0 });
+  await waitFor(crew[2].page, async () => {
+    const s = (
+      await import("/src/features/game/model/game-store.ts")
+    ).useGame.getState();
+    return s.room.players.find((p) => p.id === s.id).x > 12;
+  });
   await audible(
     crew[2].page,
     true,
-    "Nearby living crew receive proximity speech",
+    "Speech continues in another station room beyond 9 units",
+  );
+  await muted(crew[0].page, true);
+  await muted(crew[2].page, false);
+  await audible(
+    crew[0].page,
+    true,
+    "Distant crew voice works in both directions",
+  );
+  await muted(crew[2].page, true);
+  await muted(crew[0].page, false);
+  await walkTo(crew[2].page, { x: 2, z: 0 });
+  await audible(
+    crew[2].page,
+    true,
+    "Speech continues when returning to nearby crew",
   );
   const establishedGeneration = (await diagnostics(crew[2].page)).generation;
   async function eliminate(victim) {
@@ -525,7 +551,7 @@ try {
   assert.equal((await diagnostics(pages[0])).contextState, "closed");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: peer-to-peer WebRTC, two-way audio, PTT race, mute/deafen, stale signals, reconnect, proximity, ghost channels, meetings, post-game audio and cleanup",
+    "PASS: peer-to-peer WebRTC, two-way audio, PTT race, mute/deafen, stale signals, reconnect, station-wide voice, ghost channels, meetings, post-game audio and cleanup",
   );
 } catch (error) {
   for (const page of pages) {
