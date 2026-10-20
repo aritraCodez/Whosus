@@ -78,13 +78,7 @@ try {
           tracks: voice.stream
             ?.getTracks()
             .map((t) => ({ enabled: t.enabled, state: t.readyState })),
-          stats: voice.pc
-            ? [...(await voice.pc.getStats()).values()].filter((v) =>
-                ["inbound-rtp", "outbound-rtp", "media-source"].includes(
-                  v.type,
-                ),
-              )
-            : null,
+          stats: await voice.getDiagnostics(),
         };
       }),
     );

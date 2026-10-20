@@ -858,15 +858,36 @@ function VoiceBar() {
 function ChatPanel() {
   const s = useGame(),
     [text, setText] = useState("");
-  const end = useRef<HTMLDivElement>(null);
+  const messages = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLElement>(null);
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [s.chat.length]);
+    const list = messages.current;
+    list?.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+  }, [s.chat.length, s.chatOpen]);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const element = panel.current;
+    if (!s.chatOpen || !viewport || !element) return;
+    const resize = () => {
+      element.style.setProperty("--chat-viewport-height", `${viewport.height}px`);
+      element.style.setProperty(
+        "--chat-keyboard-offset",
+        `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`,
+      );
+    };
+    resize();
+    viewport.addEventListener("resize", resize);
+    viewport.addEventListener("scroll", resize);
+    return () => {
+      viewport.removeEventListener("resize", resize);
+      viewport.removeEventListener("scroll", resize);
+    };
+  }, [s.chatOpen]);
   if (!s.chatOpen) return null;
   const me = s.room?.players.find((p) => p.id === s.id);
   const allowed = true;
   return (
-    <aside className="chat-panel">
+    <aside className="chat-panel" ref={panel}>
       <header>
         <strong>
           <MessageCircle size={15} /> {me?.alive ? "Crew chat" : "Ghost chat"}
@@ -879,7 +900,7 @@ function ChatPanel() {
           <X size={17} />
         </button>
       </header>
-      <div className="chat-messages">
+      <div className="chat-messages" ref={messages}>
         {s.chat.length ? (
           s.chat.map((m) => (
             <div key={m.id}>
@@ -906,7 +927,6 @@ function ChatPanel() {
             </p>
           </div>
         )}
-        <div ref={end} />
       </div>
       <form
         onSubmit={(e) => {
@@ -918,7 +938,8 @@ function ChatPanel() {
         }}
       >
         <input
-          autoFocus
+          autoFocus={!window.matchMedia("(pointer: coarse)").matches}
+          enterKeyHint="send"
           maxLength={280}
           aria-label="Chat message"
           disabled={!allowed}

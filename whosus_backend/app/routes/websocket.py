@@ -12,7 +12,6 @@ from ..connection import Connection
 from ..game import GameError, Room
 from ..models import Message
 from ..config import ORIGINS, rooms, sessions, voice
-from ..voice import ice_config
 
 log = logging.getLogger('whosus')
 router = APIRouter()
@@ -27,32 +26,8 @@ async def socket(ws: WebSocket):
     conn = Connection(ws)
     writer = asyncio.create_task(conn.writer())
     session = None
-    media_task = None
-    last_offer = -100.
     bucket = 100.
     last = time.monotonic()
-
-    async def negotiate(s, message):
-        try:
-            answer = await voice.offer(s['room'], s['pid'], message.sdp, message.generation)
-            if s['conn'] is not conn or s.get('voice_generation') != message.generation:
-                return
-            while s['voice_pending']:
-                candidate = s['voice_pending'].pop(0)
-                await voice.add_ice(s['pid'], message.generation, candidate)
-            s['voice_ready'] = True
-            conn.send({'type': 'voice_answer', 'sdp': answer, 'generation': message.generation})
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            log.exception('Voice negotiation failed')
-            if s['conn'] is conn and s.get('voice_generation') == message.generation:
-                await voice.close(s['pid'])
-                conn.send({
-                    'type': 'voice_error',
-                    'generation': message.generation,
-                    'message': 'Voice connection failed. Retry microphone and check network configuration.',
-                })
 
     try:
         while True:
@@ -117,9 +92,6 @@ async def socket(ws: WebSocket):
                         session = {'room': room, 'pid': p.id, 'token': token, 'conn': None}
                         sessions[token] = session
                     session['conn'] = conn
-                    session['voice_generation'] = None
-                    session['voice_pending'] = []
-                    session['voice_ready'] = False
                     p = session['room'].players[session['pid']]
                     p.connected = True
                     p.muted = True
@@ -129,7 +101,7 @@ async def socket(ws: WebSocket):
                         'type': 'joined',
                         'id': p.id,
                         'token': session['token'],
-                        'iceServers': ice_config(voice.stun_urls),
+                        'iceServers': voice.ice_servers,
                     })
                     continue
                 if not session or session['conn'] is not conn:
@@ -162,61 +134,29 @@ async def socket(ws: WebSocket):
                 elif m.type == 'voice_state':
                     p.muted = m.muted
                     p.deafened = m.deafened
-                elif m.type == 'voice_offer':
-                    if now - last_offer < 3:
-                        conn.send({
-                            'type': 'voice_error',
-                            'generation': m.generation,
-                            'message': 'Voice is still connecting. Wait a few seconds and retry.',
-                        })
+                    voice.state(pid, m.enabled, m.talking and not m.muted)
+                elif m.type == 'voice_signal':
+                    if not voice.can_signal(room, pid, m.to):
                         continue
-                    if 'm=video' in m.sdp or m.sdp.count('m=audio') != 1 or 'm=application' in m.sdp:
-                        conn.send({
-                            'type': 'voice_error',
-                            'generation': m.generation,
-                            'message': 'Only one audio channel is supported.',
-                        })
+                    target = next((s for s in sessions.values()
+                                   if s['room'] is room and s['pid'] == m.to
+                                   and s['conn'] and not s['conn'].closed), None)
+                    if not target:
                         continue
-                    if media_task and not media_task.done():
-                        media_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await media_task
-                    session['voice_generation'] = m.generation
-                    session['voice_pending'] = []
-                    session['voice_ready'] = False
-                    last_offer = now
-                    media_task = asyncio.create_task(negotiate(session, m))
-                elif m.type == 'voice_ice':
-                    if m.generation != session.get('voice_generation'):
-                        continue
-                    candidate = m.candidate.model_dump() if m.candidate else None
-                    if (
-                        candidate and candidate['candidate']
-                        and candidate['sdpMid'] is None
-                        and candidate['sdpMLineIndex'] is None
-                    ):
-                        raise GameError('ICE candidate is missing its audio channel.')
-                    if session['voice_ready']:
-                        try:
-                            await voice.add_ice(pid, m.generation, candidate)
-                        except ValueError:
-                            raise GameError('Invalid ICE candidate.')
-                    elif len(session['voice_pending']) < 64:
-                        session['voice_pending'].append(candidate)
-                    else:
-                        raise GameError('Too many pending ICE candidates.')
-                elif m.type == 'voice_stop':
-                    if m.generation != session.get('voice_generation'):
-                        continue
-                    session['voice_generation'] = None
-                    session['voice_pending'] = []
-                    session['voice_ready'] = False
-                    p.muted = True
-                    if media_task and not media_task.done():
-                        media_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await media_task
-                    await voice.close(pid)
+                    signal = {'type': 'voice_signal', 'from': pid, 'kind': m.kind, 'generation': m.generation}
+                    if m.kind in ('offer', 'answer'):
+                        if 'm=video' in m.sdp or m.sdp.count('m=audio') != 1 or 'm=application' in m.sdp:
+                            raise GameError('Only one audio channel is supported.')
+                        signal['sdp'] = m.sdp
+                    elif m.kind == 'ice':
+                        candidate = m.candidate.model_dump() if m.candidate else None
+                        if candidate and candidate['candidate']:
+                            if not candidate['candidate'].startswith('candidate:'):
+                                raise GameError('Invalid ICE candidate.')
+                            if candidate['sdpMid'] is None and candidate['sdpMLineIndex'] is None:
+                                raise GameError('ICE candidate is missing its audio channel.')
+                        signal['candidate'] = candidate
+                    target['conn'].send(signal)
                 elif m.type == 'leave':
                     p.connected = False
                     p.disconnected_at = now - 91
@@ -239,10 +179,6 @@ async def socket(ws: WebSocket):
     except (WebSocketDisconnect, asyncio.TimeoutError, RuntimeError):
         pass
     finally:
-        if media_task and not media_task.done():
-            media_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await media_task
         if session and session['conn'] is conn:
             session['conn'] = None
             p = session['room'].players.get(session['pid'])

@@ -11,7 +11,9 @@
     "test:scene": "node test/scene-test.mjs",
     "test:movement": "node test/movement-test.mjs",
     "test:room": "node test/room-test.mjs",
-    "test:voice": "node test/voice-test.mjs"
+    "test:voice": "node test/voice-test.mjs",
+    "test:voice-errors": "node test/voice-error-test.mjs",
+    "test:mobile-chat": "node test/mobile-chat-test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",

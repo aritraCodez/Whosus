@@ -2,6 +2,23 @@
   border-color: var(--yellow);
   box-shadow: 0 0 0 3px #f5c56816;
 }
+/* Keep chat within the visible area while a mobile keyboard is open. */
+.chat-panel { max-height: calc(var(--chat-viewport-height, 100dvh) - 24px); }
+.chat-panel header, .chat-panel form { flex-shrink: 0; }
+.chat-messages { min-height: 0; overscroll-behavior: contain; }
+@media (pointer: coarse), (max-width: 700px) {
+  .chat-panel {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(100px, calc(var(--chat-keyboard-offset, 0px) + 12px));
+    width: auto;
+    min-height: 0;
+    max-height: calc(var(--chat-viewport-height, 100dvh) - max(12px, calc(100px - var(--chat-keyboard-offset, 0px))) - 12px);
+  }
+  /* Mobile browsers zoom small text fields on focus. Preserve pinch zoom. */
+  .chat-panel input { font-size: 16px; min-height: 44px; }
+}
 /* Waiting-room controls and console interactions. */
 .host-rules label, .lobby-privacy { display: grid; gap: 7px; }
 .host-rules select, .lobby-privacy select { width: 100%; min-width: 0; }

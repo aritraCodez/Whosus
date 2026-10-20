@@ -15,8 +15,8 @@ class IceCandidate(BaseModel):
 class Message(BaseModel):
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
     type: Literal[
-        'create', 'join', 'resume', 'input', 'action', 'chat', 'voice_offer',
-        'voice_ice', 'voice_stop', 'voice_state', 'leave', 'ping',
+        'create', 'join', 'resume', 'input', 'action', 'chat', 'voice_signal',
+        'voice_state', 'leave', 'ping',
     ]
     name: str = Field(default='Explorer', min_length=1, max_length=18)
     code: str = Field(default='', max_length=6)
@@ -45,7 +45,11 @@ class Message(BaseModel):
     value: bool | int | float | str | None = Field(default=None, union_mode='smart')
     text: str = Field(default='', max_length=280)
     sdp: str = Field(default='', max_length=16000)
-    generation: int = Field(default=0, ge=0, le=2**31)
+    generation: int = Field(default=0, ge=0, le=2**53-1)
+    to: str = Field(default='', max_length=64)
+    kind: Literal['offer', 'answer', 'ice', 'reset'] = 'ice'
     candidate: IceCandidate | None = None
     muted: bool = True
     deafened: bool = False
+    enabled: bool = False
+    talking: bool = False
