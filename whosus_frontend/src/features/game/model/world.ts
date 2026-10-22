@@ -242,6 +242,9 @@ export function nearestLobbySeat(x: number, z: number, occupied: number[]) {
     )
     .sort((a, b) => a.distance - b.distance)[0]?.index;
 }
+export const PLAYER_RADIUS = 0.55;
+export const PLAYER_SPACING = PLAYER_RADIUS * 2;
+// Task-console model bounds plus room for the character's body and arms.
 export function walkable(x: number, z: number, lobby = false) {
   if (lobby)
     return (
@@ -251,7 +254,10 @@ export function walkable(x: number, z: number, lobby = false) {
       z <= 4.7 &&
       !LOBBY_OBSTACLES.some(
         ([a, b, c, d]) =>
-          x > a - 0.3 && x < b + 0.3 && z > c - 0.3 && z < d + 0.3,
+          x > a - PLAYER_RADIUS &&
+          x < b + PLAYER_RADIUS &&
+          z > c - PLAYER_RADIUS &&
+          z < d + PLAYER_RADIUS,
       )
     );
   return (
@@ -260,9 +266,17 @@ export function walkable(x: number, z: number, lobby = false) {
     z >= -13.7 &&
     z <= 13.7 &&
     FLOORS.some(([a, b, c, d]) => x >= a && x <= b && z >= c && z <= d) &&
+    !STATIONS.some(
+      (station) =>
+        Math.abs(x - station.x) < 0.56 + PLAYER_RADIUS &&
+        Math.abs(z - station.z) < 0.41 + PLAYER_RADIUS,
+    ) &&
     !OBSTACLES.some(
       ([a, b, c, d]) =>
-        x > a - 0.3 && x < b + 0.3 && z > c - 0.3 && z < d + 0.3,
+        x > a - PLAYER_RADIUS &&
+        x < b + PLAYER_RADIUS &&
+        z > c - PLAYER_RADIUS &&
+        z < d + PLAYER_RADIUS,
     )
   );
 }
@@ -274,13 +288,23 @@ export function move(
   ghost = false,
   lobby = false,
   step = 1,
+  blockers: readonly { x: number; z: number }[] = [],
 ) {
   const n = Math.max(1, Math.hypot(dx, dz));
   const nx = x + (dx / n) * 0.21 * step,
     nz = z + (dz / n) * 0.21 * step;
   if (ghost)
     return [Math.max(-14, Math.min(14, nx)), Math.max(-14, Math.min(14, nz))];
-  if (walkable(nx, z, lobby)) x = nx;
-  if (walkable(x, nz, lobby)) z = nz;
+  const allowed = (a: number, b: number) =>
+    walkable(a, b, lobby) &&
+    blockers.every((other) => {
+      const distance = Math.hypot(a - other.x, b - other.z);
+      return (
+        distance >= PLAYER_SPACING ||
+        distance > Math.hypot(x - other.x, z - other.z) + 0.000001
+      );
+    });
+  if (allowed(nx, z)) x = nx;
+  if (allowed(x, nz)) z = nz;
   return [x, z];
 }

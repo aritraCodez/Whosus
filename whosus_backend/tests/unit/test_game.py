@@ -59,6 +59,9 @@ def test_server_movement_is_bounded_per_tick_and_no_teleports():
     p = list(r.players.values())[0]
     p.x = 0
     p.z = 2
+    # Keep the speed test independent of collisions with the starting crew.
+    for i, other in enumerate(list(r.players.values())[1:]):
+        other.x, other.z = -12 + i * 1.5, 0
     for seq in range(1, 101):
         r.enqueue(p, seq, 1, 1, r.round)
     r.tick(r.now + DT)
@@ -292,7 +295,8 @@ def test_vents_require_killer_and_range():
     assert (imp.x, imp.z) == (0, -11)
     r.action(imp.id, "vent")
     assert imp.vent == -1
-    assert (imp.x, imp.z) == (0, -11)
+    assert walkable(imp.x, imp.z)
+    assert math.hypot(imp.x, imp.z + 11) <= 1.7
     assert imp.id in [p["id"] for p in r.snapshot(crew[0].id)["players"]]
 
 

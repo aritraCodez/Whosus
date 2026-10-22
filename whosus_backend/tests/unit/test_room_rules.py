@@ -121,7 +121,13 @@ def test_speed_and_meeting_rules_are_used_by_simulation(speed):
 
 
 def test_every_task_has_an_accessible_console_location():
-    assert all(walkable(t["x"], t["z"]) for t in STATIONS)
+    from app.features.game.navigation import find_path
+
+    for task in STATIONS:
+        assert not walkable(task["x"], task["z"])
+        path = find_path((2, 0), (task["x"], task["z"]))
+        assert path and walkable(*path[-1])
+        assert (path[-1][0] - task["x"]) ** 2 + (path[-1][1] - task["z"]) ** 2 <= 2.5**2
     assert any(t["room"] == "Security" for t in STATIONS)
 
 

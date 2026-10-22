@@ -117,6 +117,9 @@ export function connect(message?: Record<string, unknown>) {
               !me.alive,
               r.phase === "lobby",
               r.movementSpeed ?? 1,
+              r.players.filter(
+                (other) => other.id !== me.id && other.alive && other.connected,
+              ),
             );
         motion.x = x;
         motion.z = z;
@@ -226,6 +229,9 @@ export function initializeNetwork() {
       me ? !me.alive : false,
       r.phase === "lobby",
       r.movementSpeed ?? 1,
+      r.players.filter(
+        (other) => other.id !== s.id && other.alive && other.connected,
+      ),
     );
   };
   // Browsers can defer interval timers while native keyboard repeat is active.

@@ -244,12 +244,33 @@ def distance(a: Position, b: Position) -> float:
     return math.hypot(a.x - b.x, a.z - b.z)
 
 
-def walkable(x: float, z: float) -> bool:
+PLAYER_RADIUS = 0.55
+PLAYER_SPACING = PLAYER_RADIUS * 2
+
+
+def walkable(x: float, z: float, lobby: bool = False) -> bool:
+    if lobby:
+        return (
+            -5.7 <= x <= 5.7
+            and -4.7 <= z <= 4.7
+            and not any(
+                a - PLAYER_RADIUS < x < b + PLAYER_RADIUS
+                and c - PLAYER_RADIUS < z < d + PLAYER_RADIUS
+                for a, b, c, d in LOBBY_OBSTACLES
+            )
+        )
     return (
         -13.7 <= x <= 13.7
         and -13.7 <= z <= 13.7
         and any(a <= x <= b and c <= z <= d for a, b, c, d in FLOORS)
-        and not any(a - 0.3 < x < b + 0.3 and c - 0.3 < z < d + 0.3 for a, b, c, d in OBSTACLES)
+        and not any(
+            a - PLAYER_RADIUS < x < b + PLAYER_RADIUS and c - PLAYER_RADIUS < z < d + PLAYER_RADIUS
+            for a, b, c, d in OBSTACLES
+        )
+        and not any(
+            abs(x - s["x"]) < 0.56 + PLAYER_RADIUS and abs(z - s["z"]) < 0.41 + PLAYER_RADIUS
+            for s in STATIONS
+        )
     )
 
 
@@ -261,6 +282,7 @@ def move(
     ghost: bool = False,
     lobby: bool = False,
     speed: float = 1,
+    blockers: tuple[tuple[float, float], ...] = (),
 ) -> tuple[float, float]:
     norm = max(1, math.hypot(dx, dz))
     nx, nz = x + dx / norm * SPEED * DT * speed, z + dz / norm * SPEED * DT * speed
@@ -268,19 +290,38 @@ def move(
         return max(-14, min(14, nx)), max(-14, min(14, nz))
 
     def allowed(a: float, b: float) -> bool:
-        if lobby:
-            return (
-                -5.7 <= a <= 5.7
-                and -4.7 <= b <= 4.7
-                and not any(
-                    left - 0.3 < a < r + 0.3 and t - 0.3 < b < d + 0.3
-                    for left, r, t, d in LOBBY_OBSTACLES
-                )
-            )
-        return walkable(a, b)
+        for other_x, other_z in blockers:
+            separation = math.hypot(a - other_x, b - other_z)
+            if (
+                separation < PLAYER_SPACING
+                and separation <= math.hypot(x - other_x, z - other_z) + 0.000001
+            ):
+                return False
+        return walkable(a, b, lobby)
 
     if allowed(nx, z):
         x = nx
     if allowed(x, nz):
         z = nz
     return x, z
+
+
+def open_position(
+    x: float, z: float, lobby: bool = False, blockers: tuple[tuple[float, float], ...] = ()
+) -> tuple[float, float]:
+    """Find a free standing position for spawns, chairs, and duct exits."""
+
+    def clear(a: float, b: float) -> bool:
+        return walkable(a, b, lobby) and all(
+            math.hypot(a - px, b - pz) >= PLAYER_SPACING for px, pz in blockers
+        )
+
+    if clear(x, z):
+        return x, z
+    for ring in range(1, 41):
+        for angle in range(32):
+            a = x + math.cos(angle * math.tau / 32) * ring * 0.2
+            b = z + math.sin(angle * math.tau / 32) * ring * 0.2
+            if clear(a, b):
+                return a, b
+    raise ValueError("No free standing position")

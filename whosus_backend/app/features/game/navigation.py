@@ -4,7 +4,7 @@ import heapq
 import math
 from functools import lru_cache
 
-from .world import LOBBY_OBSTACLES, walkable
+from .world import PLAYER_SPACING, walkable
 
 Point = tuple[float, float]
 Cell = tuple[int, int]
@@ -20,13 +20,9 @@ def cells(lobby: bool) -> frozenset[Cell]:
                 walkable(x + dx, z + dz)
                 for dx, dz in ((0, 0), (-0.06, 0), (0.06, 0), (0, -0.06), (0, 0.06))
             )
-        return (
-            -5.5 <= x <= 5.5
-            and -4.5 <= z <= 4.5
-            and not any(
-                a - 0.36 < x < b + 0.36 and c - 0.36 < z < d + 0.36
-                for a, b, c, d in LOBBY_OBSTACLES
-            )
+        return all(
+            walkable(x + dx, z + dz, True)
+            for dx, dz in ((0, 0), (-0.06, 0), (0.06, 0), (0, -0.06), (0, 0.06))
         )
 
     return frozenset(
@@ -34,9 +30,9 @@ def cells(lobby: bool) -> frozenset[Cell]:
     )
 
 
-def nearest(point: Point, lobby: bool) -> Cell:
+def nearest(point: Point, lobby: bool, available: frozenset[Cell] | None = None) -> Cell:
     x, z = round(point[0] * 2), round(point[1] * 2)
-    available = cells(lobby)
+    available = cells(lobby) if available is None else available
     if (x, z) in available:
         return x, z
     return min(
@@ -45,8 +41,10 @@ def nearest(point: Point, lobby: bool) -> Cell:
 
 
 @lru_cache(maxsize=256)
-def route(start: Cell, goal: Cell, lobby: bool) -> tuple[Point, ...]:
-    available = cells(lobby)
+def route(
+    start: Cell, goal: Cell, lobby: bool, blocked: tuple[Cell, ...] = ()
+) -> tuple[Point, ...]:
+    available = cells(lobby).difference(blocked)
     frontier: list[tuple[int, Cell]] = [(0, start)]
     parents: dict[Cell, Cell] = {}
     costs = {start: 0}
@@ -70,5 +68,20 @@ def route(start: Cell, goal: Cell, lobby: bool) -> tuple[Point, ...]:
     return ()
 
 
-def find_path(start: Point, goal: Point, lobby: bool = False) -> list[Point]:
-    return list(route(nearest(start, lobby), nearest(goal, lobby), lobby))
+def find_path(
+    start: Point, goal: Point, lobby: bool = False, blockers: tuple[Point, ...] = ()
+) -> list[Point]:
+    blocked = tuple(
+        cell
+        for cell in cells(lobby)
+        if any(
+            math.hypot(cell[0] / 2 - x, cell[1] / 2 - z) < PLAYER_SPACING + 0.06
+            for x, z in blockers
+        )
+    )
+    available = cells(lobby).difference(blocked)
+    if not available:
+        return []
+    return list(
+        route(nearest(start, lobby, available), nearest(goal, lobby, available), lobby, blocked)
+    )

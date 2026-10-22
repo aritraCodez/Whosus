@@ -15,7 +15,7 @@ from .exceptions import GameError
 from .lobby import handle_lobby_action
 from .snapshot import build_snapshot
 from .types import ActionValue, Body, ChatRecord, EliminationRecord, Snapshot, VisualTask
-from .world import ARRIVAL_SEAT_TIME, COLORS, LOBBY_SEATS, STATIONS, move
+from .world import ARRIVAL_SEAT_TIME, COLORS, LOBBY_SEATS, STATIONS, move, open_position
 
 
 class Room:
@@ -112,7 +112,16 @@ class Room:
         if p.seat < 0:
             return
         x, z = LOBBY_SEATS[p.seat]
-        p.x, p.z = math.copysign(4.85, x), z
+        p.x, p.z = open_position(
+            math.copysign(4.85, x),
+            z,
+            True,
+            tuple(
+                (q.x, q.z)
+                for q in self.players.values()
+                if q.id != p.id and q.alive and q.connected
+            ),
+        )
         p.seat = -1
         p.seated_until = 0
         p.inputs.clear()
@@ -136,6 +145,7 @@ class Room:
         self.active_visuals.clear()
         self.sabotage_until = 0
         self.sabotage_at = self.now + 20
+        placed: list[tuple[float, float]] = []
         for i, p in enumerate(active):
             p.role = "killer" if p.id in traitors else "crew"
             p.alive = True
@@ -149,8 +159,10 @@ class Room:
             p.tasks = [s["id"] for s in STATIONS]
             p.kill_at = self.now + self.kill_cooldown
             p.inputs.clear()
-            p.x = math.cos(i * math.tau / len(active)) * 2
-            p.z = math.sin(i * math.tau / len(active)) * 2
+            p.x = math.cos(i * math.tau / len(active)) * 2.3
+            p.z = math.sin(i * math.tau / len(active)) * 2.3
+            p.x, p.z = open_position(p.x, p.z, blockers=tuple(placed))
+            placed.append((p.x, p.z))
         self.phase = "reveal"
         self.deadline = self.now + 5
 
@@ -197,9 +209,24 @@ class Room:
                 and p.inputs
             ):
                 p.ack, dx, dz = p.inputs.popleft()
+                previous_position = p.x, p.z
                 p.x, p.z = move(
-                    p.x, p.z, dx, dz, not p.alive, self.phase == "lobby", self.movement_speed
+                    p.x,
+                    p.z,
+                    dx,
+                    dz,
+                    not p.alive,
+                    self.phase == "lobby",
+                    self.movement_speed,
+                    tuple(
+                        (other.x, other.z)
+                        for other in self.players.values()
+                        if other.id != p.id and other.alive and other.connected and other.vent < 0
+                    ),
                 )
+                if p.bot and (p.x, p.z) == previous_position and (dx or dz):
+                    self.bots[p.id].path.clear()
+                    self.bots[p.id].plan_at = self.now
             else:
                 p.inputs.clear()
             if p.challenge and math.hypot(p.x - p.challenge["x"], p.z - p.challenge["z"]) > 2.5:
