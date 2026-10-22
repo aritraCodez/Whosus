@@ -4,11 +4,13 @@ export function HoldButton({
   onClick,
   disabled,
   className,
+  title,
 }: {
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
   className: string;
+  title?: string;
 }) {
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const action = useRef(onClick);
@@ -33,6 +35,7 @@ export function HoldButton({
   return (
     <button
       className={className}
+      title={title}
       disabled={disabled}
       onPointerDown={(e) => {
         e.preventDefault();

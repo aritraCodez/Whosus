@@ -1,3 +1,4 @@
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { BotIcon } from "@/features/appearance/components/BotIcon";
 import { useGame } from "@/features/game/model/game-store";
 import { act } from "@/features/game/network/game-client";
@@ -38,36 +39,38 @@ export function Meeting() {
           </span>
         </div>
         <p>{r.result}</p>
-        <div className="vote-grid">
-          {r.players.map((p) => (
-            <button
-              key={p.id}
-              className={`vote-card ${!p.alive ? "dead" : ""} ${p.voted ? "voted" : ""} ${selectedVote === p.id ? "selected" : ""}`}
-              disabled={
-                r.phase !== "voting" || !me?.alive || me.voted || !p.alive
-              }
-              aria-pressed={selectedVote === p.id}
-              onClick={() => setSelectedVote(p.id)}
-            >
-              <BotIcon color={p.color} />
-              <strong>{p.name}</strong>
-              <small>
-                {!p.alive
-                  ? "Among the clouds"
-                  : p.voted
-                    ? "Vote locked in"
-                    : r.phase === "voting"
-                      ? selectedVote === p.id
-                        ? "Selected — confirm below"
-                        : "Select explorer"
-                      : "Listening…"}
-              </small>
-              {r.phase === "results" && <b>{r.tally[p.id] || 0} votes</b>}
-            </button>
-          ))}
-        </div>
+        <ScrollArea label="Players" className="meeting-players">
+          <div className="vote-grid">
+            {r.players.map((p) => (
+              <button
+                key={p.id}
+                className={`vote-card ${!p.alive ? "dead" : ""} ${p.voted ? "voted" : ""} ${selectedVote === p.id ? "selected" : ""}`}
+                disabled={
+                  r.phase !== "voting" || !me?.alive || me.voted || !p.alive
+                }
+                aria-pressed={selectedVote === p.id}
+                onClick={() => setSelectedVote(p.id)}
+              >
+                <BotIcon color={p.color} />
+                <strong>{p.name}</strong>
+                <small>
+                  {!p.alive
+                    ? "Among the clouds"
+                    : p.voted
+                      ? "Vote locked in"
+                      : r.phase === "voting"
+                        ? selectedVote === p.id
+                          ? "Selected — confirm below"
+                          : "Select explorer"
+                        : "Listening…"}
+                </small>
+                {r.phase === "results" && <b>{r.tally[p.id] || 0} votes</b>}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
         <div className="meeting-bottom">
-          <span>
+          <span role="status">
             {!me?.alive
               ? "Your ghost channel stays private."
               : r.phase === "discussion"

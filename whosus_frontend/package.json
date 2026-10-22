@@ -24,7 +24,9 @@
     "test:voice": "node test/voice-test.mjs",
     "test:voice-errors": "node test/voice-error-test.mjs",
     "test:mobile-chat": "node test/mobile-chat-test.mjs",
-    "test:mobile-menu": "node test/mobile-menu-test.mjs"
+    "test:mobile-menu": "node test/mobile-menu-test.mjs",
+    "test:dialogs": "node test/dialog-layout-test.mjs",
+    "test:create-room": "node test/create-room-test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",
