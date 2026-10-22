@@ -16,7 +16,7 @@ export function useGameControls() {
     const down = (e: KeyboardEvent) => {
       if (
         (e.target as HTMLElement).closest(
-          "input,textarea,select,dialog,.task-list",
+          "input,textarea,select,dialog,.task-list,.meeting-overlay",
         )
       )
         return;

@@ -1,4 +1,5 @@
 import { GameSelect } from "@/components/ui/GameSelect";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Modal } from "@/components/ui/Modal";
 import { useAppearance } from "@/features/appearance/model/appearance-store";
 import { connect } from "@/features/game/network/game-client";
@@ -7,8 +8,8 @@ import {
   type PublicRoomSummary,
 } from "@/features/lobby/api/rooms";
 import { NumberRule } from "@/features/lobby/components/RoomRules";
-import { ArrowRight, Leaf, Radio } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Leaf, Radio } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 export function RoomForm({
   mode,
   name,
@@ -24,6 +25,8 @@ export function RoomForm({
   hat: string;
   close: () => void;
 }) {
+  const [step, setStep] = useState(0);
+  const nameInput = useRef<HTMLInputElement>(null);
   const [code, setCode] = useState(""),
     [capacity, setCapacity] = useState(8),
     [publicRoom, setPublic] = useState(false),
@@ -37,6 +40,9 @@ export function RoomForm({
   const [list, setList] = useState<PublicRoomSummary[]>([]),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (error && step === 0) nameInput.current?.focus();
+  }, [error, step]);
   async function refresh() {
     setLoading(true);
     try {
@@ -73,6 +79,7 @@ export function RoomForm({
     <label>
       YOUR EXPLORER
       <input
+        ref={nameInput}
         aria-label="Explorer name"
         autoComplete="nickname"
         maxLength={18}
@@ -94,21 +101,24 @@ export function RoomForm({
             ? "You’re on the list."
             : "Find your next crew."
       }
+      className={mode === "create" ? "room-create-dialog" : ""}
       close={close}
     >
-      <p className="muted">
-        {mode === "create"
-          ? "A new expedition. A few friends. What could go wrong?"
-          : mode === "join"
+      {mode !== "create" && (
+        <p className="muted">
+          {mode === "join"
             ? "Enter the six-character code your host shared."
             : "Open expeditions waiting for a little company."}
-      </p>
+        </p>
+      )}
       {mode === "create" ? (
         <form
+          className="room-create-form"
           onSubmit={(e) => {
             e.preventDefault();
             const playerName = name.trim();
             if (!playerName) {
+              setStep(0);
               setError("Enter an explorer name before creating a room.");
               return;
             }
@@ -131,102 +141,170 @@ export function RoomForm({
             close();
           }}
         >
-          {nameField}
-          {error && <p className="error-text">{error}</p>}
-          <div className="map-card">
-            <div className="map-symbol">
-              <Leaf />
+          <nav
+            className="mission-sections room-create-steps"
+            aria-label="Room setup steps"
+          >
+            {["Explorer", "Crew", "Meetings"].map((label, index) => (
+              <button
+                type="button"
+                key={label}
+                aria-pressed={step === index}
+                onClick={() => setStep(index)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <ScrollArea key={step} label="Room setup">
+            <div className="room-create-page">
+              {step === 0 && (
+                <>
+                  {nameField}
+                  <div className="map-card">
+                    <div className="map-symbol">
+                      <Leaf />
+                    </div>
+                    <div>
+                      <small>YOUR DESTINATION</small>
+                      <h3>Cloudline Station</h3>
+                      <p>9 rooms · interactive tasks · many alibis</p>
+                    </div>
+                    <span className="tag">ORIGINAL</span>
+                  </div>
+
+                  <label className="toggle-line">
+                    <span>
+                      <strong>Public expedition</strong>
+                      <small>Let other explorers discover your room</small>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={publicRoom}
+                      onChange={(e) => setPublic(e.target.checked)}
+                    />
+                  </label>
+                </>
+              )}
+              {step === 1 && (
+                <>
+                  <h3>Build your crew</h3>
+                  <p className="hint">Set your crew size and pace.</p>
+                  <div className="form-grid">
+                    <GameSelect
+                      label="Crew capacity"
+                      value={capacity}
+                      options={Array.from({ length: 9 }, (_, i) => ({
+                        value: i + 4,
+                        label: `${i + 4} players`,
+                      }))}
+                      onChange={(v) => setCapacity(Number(v))}
+                    />
+                    <GameSelect
+                      label="killers"
+                      value={killers}
+                      options={[1, 2, 3].map((n) => ({
+                        value: n,
+                        label: n === 1 ? "1 killer" : `${n} killers`,
+                      }))}
+                      onChange={(v) => setKillers(Number(v))}
+                    />
+                    <NumberRule
+                      label="Movement speed"
+                      value={speed}
+                      options={[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]}
+                      suffix="×"
+                      onChange={setSpeed}
+                    />
+                    <GameSelect
+                      label="Elimination cooldown"
+                      value={cooldown}
+                      options={[10, 20, 25, 30, 45, 60].map((n) => ({
+                        value: n,
+                        label: `${n} seconds`,
+                      }))}
+                      onChange={(v) => setCooldown(Number(v))}
+                    />
+                  </div>
+                  <p className="hint">
+                    Killers are capped at one per three other players to keep
+                    the match fair.
+                  </p>
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <h3>Make time for an alibi</h3>
+                  <p className="hint">Set discussion and voting limits.</p>
+                  <div className="form-grid">
+                    <GameSelect
+                      label="Discussion time"
+                      value={discussion}
+                      options={[10, 25, 45, 60, 90].map((n) => ({
+                        value: n,
+                        label: `${n} seconds`,
+                      }))}
+                      onChange={(v) => setDiscussion(Number(v))}
+                    />
+                    <NumberRule
+                      label="Voting time"
+                      value={voting}
+                      options={[10, 15, 30, 45, 60, 90, 120]}
+                      suffix=" s"
+                      onChange={setVoting}
+                    />
+                    <NumberRule
+                      label="Emergency meetings per player"
+                      value={meetings}
+                      options={[0, 1, 2, 3]}
+                      onChange={setMeetings}
+                    />
+                    <NumberRule
+                      label="Meeting cooldown"
+                      value={meetingCooldown}
+                      options={[10, 15, 20, 25, 30, 45, 60]}
+                      suffix=" s"
+                      onChange={setMeetingCooldown}
+                    />
+                  </div>
+                </>
+              )}
             </div>
-            <div>
-              <small>YOUR DESTINATION</small>
-              <h3>Cloudline Station</h3>
-              <p>9 rooms · interactive tasks · many alibis</p>
+          </ScrollArea>
+          {error && (
+            <p className="error-text" role="alert">
+              {error}
+            </p>
+          )}
+          <footer className="room-create-footer">
+            <div className="room-create-summary">
+              {publicRoom ? "Public" : "Private"} · {capacity} players ·{" "}
+              {killers} {killers === 1 ? "killer" : "killers"}
             </div>
-            <span className="tag">ORIGINAL</span>
-          </div>
-          <div className="form-grid">
-            <NumberRule
-              label="Movement speed"
-              value={speed}
-              options={[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]}
-              suffix="×"
-              onChange={setSpeed}
-            />
-            <NumberRule
-              label="Voting time"
-              value={voting}
-              options={[10, 15, 30, 45, 60, 90, 120]}
-              suffix=" s"
-              onChange={setVoting}
-            />
-            <NumberRule
-              label="Emergency meetings per player"
-              value={meetings}
-              options={[0, 1, 2, 3]}
-              onChange={setMeetings}
-            />
-            <NumberRule
-              label="Meeting cooldown"
-              value={meetingCooldown}
-              options={[10, 15, 20, 25, 30, 45, 60]}
-              suffix=" s"
-              onChange={setMeetingCooldown}
-            />
-            <GameSelect
-              label="Crew capacity"
-              value={capacity}
-              options={Array.from({ length: 9 }, (_, i) => ({
-                value: i + 4,
-                label: `${i + 4} players`,
-              }))}
-              onChange={(v) => setCapacity(Number(v))}
-            />
-            <GameSelect
-              label="killers"
-              value={killers}
-              options={[1, 2, 3].map((n) => ({
-                value: n,
-                label: n === 1 ? "1 killer" : `${n} killers`,
-              }))}
-              onChange={(v) => setKillers(Number(v))}
-            />
-            <GameSelect
-              label="Elimination cooldown"
-              value={cooldown}
-              options={[10, 20, 25, 30, 45, 60].map((n) => ({
-                value: n,
-                label: `${n} seconds`,
-              }))}
-              onChange={(v) => setCooldown(Number(v))}
-            />
-            <GameSelect
-              label="Discussion time"
-              value={discussion}
-              options={[10, 25, 45, 60, 90].map((n) => ({
-                value: n,
-                label: `${n} seconds`,
-              }))}
-              onChange={(v) => setDiscussion(Number(v))}
-            />
-          </div>
-          <p className="hint">
-            killers are capped at one per three other players to keep the match
-            fair.
-          </p>
-          <label className="toggle-line">
-            <span>
-              <strong>Public expedition</strong>
-              <small>Let other explorers discover your room</small>
-            </span>
-            <input
-              type="checkbox"
-              checked={publicRoom}
-              onChange={(e) => setPublic(e.target.checked)}
-            />
-          </label>
-          <button className="primary full" type="submit">
-            Create room <ArrowRight size={18} />
-          </button>
+            <div className="room-create-actions">
+              <button
+                type="button"
+                className="secondary"
+                disabled={step === 0}
+                onClick={() => setStep(step - 1)}
+                aria-label="Previous setup step"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              {step < 2 && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setStep(step + 1)}
+                >
+                  Next <ArrowRight size={16} />
+                </button>
+              )}
+              <button className="primary" type="submit">
+                Create room <ArrowRight size={18} />
+              </button>
+            </div>
+          </footer>
         </form>
       ) : mode === "join" ? (
         <form

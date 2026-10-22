@@ -59,7 +59,9 @@ try {
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
   await page.locator("dialog").getByLabel("Explorer name").fill("Host Pilot");
+  await page.getByRole("button", { name: "Crew", exact: true }).click();
   await selectOption(page, "Elimination cooldown", "10");
+  await page.getByRole("button", { name: "Meetings", exact: true }).click();
   await selectOption(page, "Discussion time", "10");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();

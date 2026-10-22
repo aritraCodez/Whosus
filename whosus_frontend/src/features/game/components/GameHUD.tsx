@@ -1,3 +1,4 @@
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { BotIcon } from "@/features/appearance/components/BotIcon";
 import { ChatPanel } from "@/features/chat/components/ChatPanel";
 import {
@@ -53,14 +54,13 @@ export function GameHUD() {
       !t.done && !s.fakeDone[t.id] && Math.hypot(t.x - me.x, t.z - me.z) <= 2.5,
   );
   const nearBeacon =
-    me.alive &&
-    Math.hypot(me.x, me.z) < 2.5 &&
-    r.emergency > 0 &&
-    r.meetingCooldown <= 0 &&
-    !r.sabotage;
+    me.alive && Math.hypot(me.x, me.z) < 2.5 && r.emergency > 0 && !r.sabotage;
   const canRepair =
     me.alive && !!r.sabotage && Math.hypot(me.x - 2, me.z + 12) < 2;
-  const canInteract = !!nearTask || !!nearBeacon || canRepair;
+  const canInteract =
+    !!nearTask || (nearBeacon && r.meetingCooldown <= 0) || canRepair;
+  const meetingWait =
+    nearBeacon && !nearTask && !canRepair ? Math.ceil(r.meetingCooldown) : 0;
   const ownAnimation = r.eliminations?.find(
     (e) => e.attacker.id === s.id || e.victim.id === s.id,
   );
@@ -275,6 +275,11 @@ export function GameHUD() {
                 className="action use"
                 onClick={interact}
                 disabled={!canInteract || r.movementLock > 0}
+                title={
+                  meetingWait > 0
+                    ? `Meeting available in ${meetingWait}s`
+                    : undefined
+                }
               >
                 <Sparkles />
                 <span>
@@ -285,6 +290,9 @@ export function GameHUD() {
                       : nearBeacon
                         ? "Meeting"
                         : "Interact"}
+                  {meetingWait > 0 && (
+                    <small className="meeting-cooldown">{meetingWait}s</small>
+                  )}
                 </span>
                 <kbd>E</kbd>
               </HoldButton>
@@ -346,49 +354,61 @@ export function GameHUD() {
       {r.phase === "gameover" && !r.eliminations?.length && (
         <div className="meeting-overlay">
           <section className="end-card">
-            <div className="victory-icon">
-              {r.winner === "crew" ? <Shield size={42} /> : <Skull size={42} />}
-            </div>
-            <span className="eyebrow">EXPEDITION COMPLETE</span>
-            <h2>
-              {r.winner === "crew"
-                ? "Trust wins. This time."
-                : "A very convincing alibi."}
-            </h2>
-            <p>
-              {r.winner === "crew"
-                ? "The crewmates saved Cloudline Station."
-                : "The killers got the better of this crew."}
-            </p>
-            <h3>
-              {(killer ? "killer" : "crew") === r.winner
-                ? "VICTORY"
-                : "BETTER LUCK NEXT EXPEDITION"}
-            </h3>
-            <div className="reveal-crew">
-              {r.players.map((p) => (
-                <div key={p.id}>
-                  <BotIcon small color={p.color} />
-                  <strong>{p.name}</strong>
-                  <small className={p.role === "killer" ? "error-text" : ""}>
-                    {p.role === "killer" ? "killer" : "Crewmate"}
-                  </small>
+            <ScrollArea label="Expedition results">
+              <div className="end-summary">
+                <div className="victory-icon">
+                  {r.winner === "crew" ? (
+                    <Shield size={42} />
+                  ) : (
+                    <Skull size={42} />
+                  )}
                 </div>
-              ))}
-            </div>
-            <p className="hint">
-              All voice channels are open again. Compare your stories.
-            </p>
-            {s.id === r.host ? (
-              <button className="primary full" onClick={() => act("rematch")}>
-                One more expedition? <ArrowRight size={18} />
+                <span className="eyebrow">EXPEDITION COMPLETE</span>
+                <h2>
+                  {r.winner === "crew"
+                    ? "Trust wins. This time."
+                    : "A very convincing alibi."}
+                </h2>
+                <p>
+                  {r.winner === "crew"
+                    ? "The crewmates saved Cloudline Station."
+                    : "The killers got the better of this crew."}
+                </p>
+                <h3>
+                  {(killer ? "killer" : "crew") === r.winner
+                    ? "VICTORY"
+                    : "BETTER LUCK NEXT EXPEDITION"}
+                </h3>
+                <div className="reveal-crew">
+                  {r.players.map((p) => (
+                    <div key={p.id}>
+                      <BotIcon small color={p.color} />
+                      <strong>{p.name}</strong>
+                      <small
+                        className={p.role === "killer" ? "error-text" : ""}
+                      >
+                        {p.role === "killer" ? "killer" : "Crewmate"}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+                <p className="hint">
+                  All voice channels are open again. Compare your stories.
+                </p>
+              </div>
+            </ScrollArea>
+            <footer className="end-actions">
+              {s.id === r.host ? (
+                <button className="primary full" onClick={() => act("rematch")}>
+                  One more expedition? <ArrowRight size={18} />
+                </button>
+              ) : (
+                <p>Waiting for the host to start a rematch.</p>
+              )}
+              <button className="text-button" onClick={leave}>
+                Back to the main menu
               </button>
-            ) : (
-              <p>Waiting for the host to start a rematch.</p>
-            )}
-            <button className="text-button" onClick={leave}>
-              Back to the main menu
-            </button>
+            </footer>
           </section>
         </div>
       )}

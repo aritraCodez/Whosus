@@ -18,8 +18,10 @@ try {
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
   await page.locator("dialog").getByLabel("Explorer name").fill("Rules Host");
+  await page.getByRole("button", { name: "Crew", exact: true }).click();
   await selectOption(page, "Crew capacity", "8");
   await selectOption(page, "Movement speed", "1.5");
+  await page.getByRole("button", { name: "Meetings", exact: true }).click();
   await selectOption(page, "Voting time", "60");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   await page.getByText("The usual suspects.").waitFor();
@@ -90,20 +92,17 @@ try {
   await page
     .getByRole("button", { name: "Room settings", exact: true })
     .click();
-  await page
-    .getByRole("heading", { name: "Station & Mission Settings" })
-    .waitFor();
+  await page.getByRole("heading", { name: "Mission Settings" }).waitFor();
   await selectOption(page, "Kill cooldown", "45");
+  await page.getByRole("button", { name: "Meetings", exact: true }).click();
   await selectOption(page, "Discussion time", "60");
-  await selectOption(page, "Task Progress Bar", "meetings");
-  await page.getByLabel("Visual Tasks", { exact: true }).click();
   await waitFor(page, () => {
     const r = window.gameStore.getState().room;
     return (
       r.rules.killCooldown === 45 &&
       r.rules.discussion === 60 &&
-      r.taskBarMode === "meetings" &&
-      !r.visualTasks
+      r.taskBarMode === "always" &&
+      r.visualTasks
     );
   });
   await page.getByRole("button", { name: "Close", exact: true }).click();
@@ -188,7 +187,7 @@ try {
     window.gameStore.setState({
       room,
       id: room.players.find((p) => p.id !== room.host).id,
-      settings: true,
+      missionSettings: true,
     });
   });
   await page
@@ -200,8 +199,6 @@ try {
     await page.locator('.host-rules [role="combobox"]:enabled').count(),
     0,
   );
-  assert(await page.getByLabel("Visual Tasks", { exact: true }).isDisabled());
-  assert(await page.getByLabel("Task Progress Bar").isDisabled());
   assert.deepEqual(errors, []);
   console.log(
     "PASS: eight-player capacity, unique colors, kick/refill, privacy, host rules, practice tasks, cancellation, mobile controls",

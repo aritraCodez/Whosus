@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 export interface GameSelectOption<T extends string | number = string | number> {
   value: T;
@@ -36,6 +36,47 @@ export function GameSelect<const T extends string | number>({
 
   const selected = options.find((o) => String(o.value) === String(value));
 
+  // The browser's top layer escapes overflow clipping, including modal dialogs.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const list = listRef.current!;
+    const trigger = ref.current!.querySelector("button")!;
+    list.showPopover();
+    const position = () => {
+      const bounds = trigger.getBoundingClientRect();
+      const viewport = window.visualViewport;
+      const top = (viewport?.offsetTop ?? 0) + 8;
+      const bottom =
+        (viewport?.offsetTop ?? 0) + (viewport?.height ?? innerHeight) - 8;
+      const left = (viewport?.offsetLeft ?? 0) + 8;
+      const width = Math.min(
+        bounds.width,
+        (viewport?.width ?? innerWidth) - 16,
+      );
+      const below = Math.max(0, bottom - bounds.bottom - 6);
+      const above = Math.max(0, bounds.top - top - 6);
+      const upwards = below < Math.min(list.scrollHeight, 280) && above > below;
+      list.style.width = `${width}px`;
+      list.style.maxHeight = `${Math.min(280, upwards ? above : below)}px`;
+      list.style.left = `${Math.max(left, Math.min(bounds.left, left + (viewport?.width ?? innerWidth) - 16 - width))}px`;
+      list.style.top = `${upwards ? bounds.top - list.offsetHeight - 6 : bounds.bottom + 6}px`;
+    };
+    position();
+    const observer = new ResizeObserver(position);
+    observer.observe(trigger);
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+    window.visualViewport?.addEventListener("resize", position);
+    window.visualViewport?.addEventListener("scroll", position);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", position);
+      window.removeEventListener("scroll", position, true);
+      window.visualViewport?.removeEventListener("resize", position);
+      window.visualViewport?.removeEventListener("scroll", position);
+    };
+  }, [open]);
+
   // Close on outside click
   useEffect(() => {
     if (!open) return;
@@ -44,8 +85,18 @@ export function GameSelect<const T extends string | number>({
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", handler);
+    document.addEventListener("keydown", escape, true);
+    return () => {
+      document.removeEventListener("pointerdown", handler);
+      document.removeEventListener("keydown", escape, true);
+    };
   }, [open]);
 
   // Keyboard navigation
@@ -107,8 +158,9 @@ export function GameSelect<const T extends string | number>({
           ref={listRef}
           id={`${id}-options`}
           role="listbox"
+          popover="manual"
           className="gs-dropdown"
-          aria-label={label}
+          aria-label={label || ariaLabel}
         >
           {options.map((opt) => {
             const isActive = String(opt.value) === String(value);
