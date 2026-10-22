@@ -1,5 +1,6 @@
 import { useGame } from "@/features/game/model/game-store";
 import { World } from "@/features/scene/components/World";
+import { LabelLayout } from "@/features/scene/components/LabelLayout";
 import { setSceneRendererState } from "@/features/scene/model/scene-diagnostics";
 import { Canvas } from "@react-three/fiber";
 import { memo, Suspense } from "react";
@@ -29,6 +30,7 @@ export default memo(function Scene({
     >
       <Suspense fallback={null}>
         <World menu={menu} color={color} hat={hat} />
+        <LabelLayout />
       </Suspense>
     </Canvas>
   );

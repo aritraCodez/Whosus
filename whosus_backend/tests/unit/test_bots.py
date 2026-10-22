@@ -7,7 +7,7 @@ from app.features.game.bots import Bot
 from app.features.game.exceptions import GameError
 from app.features.game.navigation import find_path
 from app.features.game.service import Room
-from app.features.game.world import DT, SPEED, STATIONS, walkable
+from app.features.game.world import DT, SPEED, STATIONS, open_position, walkable
 from app.features.voice.service import VoiceService
 from app.runtime import Runtime, Session
 from app.services.simulation import tick
@@ -70,7 +70,8 @@ def test_only_lobby_host_can_fill_and_kicking_removes_bot_controller():
 @pytest.mark.parametrize("station", STATIONS, ids=lambda s: s["id"])
 def test_navigation_reaches_each_task_without_crossing_walls(station):
     path = find_path((2, 0), (station["x"], station["z"]))
-    assert path and math.dist(path[-1], (station["x"], station["z"])) < 0.6
+    assert path and math.dist(path[-1], (station["x"], station["z"])) <= 1.9
+    assert not walkable(station["x"], station["z"])
     assert all(walkable(x, z) for x, z in path)
     assert all(math.dist(a, b) == 0.5 for a, b in zip(path, path[1:], strict=False))
 
@@ -112,7 +113,7 @@ def test_bot_task_waits_at_station_and_ghost_continues_tasks():
 
 def test_impostor_bot_pursues_crew_and_obeys_cooldown_range_and_animation():
     room, host, bot = match("killer")
-    bot.x, bot.z = -12, -12
+    bot.x, bot.z = open_position(-12, -12)
     host.x, host.z = 12, 12
     for p in room.players.values():
         if p not in (bot, host):

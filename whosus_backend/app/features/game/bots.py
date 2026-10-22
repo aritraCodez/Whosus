@@ -55,7 +55,16 @@ def walk(room: Room, player: Player, bot: Bot, goal: Point, radius: float = 0.2)
         or (math.dist(bot.destination, goal) > 0.75 and room.now >= bot.plan_at)
         or (not bot.path and room.now >= bot.plan_at)
     ):
-        bot.path = find_path((player.x, player.z), goal, room.phase == "lobby")
+        bot.path = find_path(
+            (player.x, player.z),
+            goal,
+            room.phase == "lobby",
+            tuple(
+                (q.x, q.z)
+                for q in room.players.values()
+                if q.id != player.id and q.alive and q.connected and q.vent < 0
+            ),
+        )
         bot.destination = goal
         bot.plan_at = room.now + 1
     while bot.path and math.hypot(player.x - bot.path[0][0], player.z - bot.path[0][1]) < 0.08:
@@ -78,7 +87,7 @@ def wander(room: Room, player: Player, bot: Bot) -> None:
             station = secrets.choice(STATIONS)
             bot.destination = float(station["x"]), float(station["z"])
         bot.path = find_path((player.x, player.z), bot.destination, room.phase == "lobby")
-    if walk(room, player, bot, bot.destination):
+    if walk(room, player, bot, bot.destination, 0.2 if room.phase == "lobby" else 1.9):
         bot.destination = None
         bot.idle_until = room.now + 1.5
 

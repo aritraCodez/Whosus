@@ -7,10 +7,7 @@ import { move as movePlayer } from "@/features/game/model/world";
 
 import { Avatar } from "@/features/scene/components/Avatar";
 import { EliminationEffect } from "@/features/scene/components/EliminationEffect";
-import {
-  heroCanOccupy,
-  isVisibleToPlayer,
-} from "@/features/scene/model/visibility";
+import { heroCanOccupy } from "@/features/scene/model/visibility";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type * as THREE from "three";
@@ -46,10 +43,6 @@ export function Actors({
   const heroWalking = useRef(false);
   const heroStep = useRef(0);
   const heroDirection = useRef({ x: 0, z: 0 });
-  const me = r?.players.find((p) => p.id === id);
-  const isGhost = me ? !me.alive : false;
-  const lx = motion.renderX,
-    lz = motion.renderZ;
   const events = r?.eliminations || [];
   useFrame((_, dt) => {
     if (!menu) {
@@ -121,35 +114,18 @@ export function Actors({
     }
   });
   const animated = new Set(events.flatMap((e) => [e.attacker.id, e.victim.id]));
-  const visibleEvents = map
-    ? []
-    : events.filter((e) => {
-        if (!r || r.phase !== "playing" || isGhost) return true;
-        if (e.attacker.id === id || e.victim.id === id) return true;
-        return isVisibleToPlayer(
-          e.victim.x,
-          e.victim.z,
-          lx,
-          lz,
-          isGhost,
-          r.phase,
-        );
-      });
+  // Keep actors and their effects mounted across room boundaries.
+  const visibleEvents = map ? [] : events;
   const visibleBodies = map
     ? []
-    : (r?.bodies || []).filter((b) => {
-        if (animated.has(b.id)) return false;
-        if (!r || r.phase !== "playing" || isGhost) return true;
-        return isVisibleToPlayer(b.x, b.z, lx, lz, isGhost, r.phase);
-      });
+    : (r?.bodies || []).filter((body) => !animated.has(body.id));
   const visiblePlayers = menu
     ? showcase
     : (r?.players || []).filter((p) => {
         if (animated.has(p.id)) return false;
         if (p.id === id) return map || (r?.vent ?? -1) < 0;
         if (map) return false;
-        if (!r || r.phase !== "playing" || isGhost) return true;
-        return isVisibleToPlayer(p.x, p.z, lx, lz, isGhost, r.phase);
+        return true;
       });
 
   return (

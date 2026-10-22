@@ -9,7 +9,7 @@ from .exceptions import GameError
 from .snapshot import character_snapshot
 from .types import ActionValue, Challenge
 from .validation import integer
-from .world import STATIONS, VENTS, distance
+from .world import STATIONS, VENTS, distance, open_position
 
 if TYPE_CHECKING:
     from .service import Room
@@ -99,6 +99,15 @@ def handle_match_action(
                 p.vent = (p.vent + 1) % len(VENTS)
                 p.x, p.z = VENTS[p.vent]
             else:
+                p.x, p.z = open_position(
+                    p.x,
+                    p.z,
+                    blockers=tuple(
+                        (q.x, q.z)
+                        for q in room.players.values()
+                        if q.id != p.id and q.alive and q.connected and q.vent < 0
+                    ),
+                )
                 p.vent = -1
         else:
             idx = min(
