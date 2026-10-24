@@ -1,5 +1,6 @@
 import { Modal } from "@/components/ui/Modal";
 import { Pip } from "@/features/appearance/components/Pip";
+import { isPokemon } from "@/features/appearance/model/pokemon-catalog";
 import {
   DEFAULT_APPEARANCE,
   normalizeAppearance,
@@ -74,16 +75,23 @@ const COLOR_NAMES = [
 ];
 const TABS = ["color", ...Object.keys(WARDROBE)] as (CosmeticSlot | "color")[];
 
-function FitPreview({ creature }: { creature: boolean }) {
+function FitPreview({ character }: { character: string }) {
   const { camera, size } = useThree();
   useLayoutEffect(() => {
     if (camera instanceof OrthographicCamera) {
-      camera.zoom = creature
-        ? Math.min(170, size.width / 1.6, size.height / 1.6)
-        : Math.min(100, size.height / 2.6);
+      camera.zoom =
+        character === "mosslight"
+          ? Math.min(170, size.width / 1.6, size.height / 1.6)
+          : isPokemon(character)
+            ? Math.min(
+                145,
+                size.width / (character === "charizard" ? 3.5 : 2.1),
+                size.height / 2.2,
+              )
+            : Math.min(100, size.height / 2.6);
       camera.updateProjectionMatrix();
     }
-  }, [camera, size.height, size.width, creature]);
+  }, [camera, size.height, size.width, character]);
   return null;
 }
 
@@ -146,7 +154,7 @@ export function Wardrobe() {
               dpr={[1, 1.5]}
             >
               <ambientLight intensity={1.8} />
-              <FitPreview creature={look.character === "mosslight"} />
+              <FitPreview character={look.character} />
               <directionalLight position={[3, 5, 4]} intensity={3} />
               <directionalLight
                 position={[-3, 2, -3]}
@@ -166,7 +174,15 @@ export function Wardrobe() {
                   <meshStandardMaterial color="#294b54" />
                 </mesh>
                 <OrbitControls
-                  target={[0, look.character === "mosslight" ? 0.55 : 1.05, 0]}
+                  target={[
+                    0,
+                    look.character === "mosslight"
+                      ? 0.55
+                      : isPokemon(look.character)
+                        ? 0.8
+                        : 1.05,
+                    0,
+                  ]}
                   enablePan={false}
                   enableZoom={false}
                   minPolarAngle={Math.PI / 3}
@@ -193,6 +209,8 @@ export function Wardrobe() {
             </span>
             {look.character === "mosslight" ? (
               <span>Moss & amber</span>
+            ) : isPokemon(look.character) ? (
+              <span>Pokémon collection</span>
             ) : (
               <>
                 <span>
@@ -276,7 +294,14 @@ export function Wardrobe() {
           {look.character === "mosslight" && (
             <p className="hint">
               Mosslight wears its own moss and crystals. Your signature color
-              appears on its pebble plates. Clothing is saved for Pip.
+              appears on its pebble plates. Clothing is saved for Alibi
+              explorer.
+            </p>
+          )}
+          {isPokemon(look.character) && (
+            <p className="hint">
+              Your signature color appears on the ring beneath your character.
+              Clothing is saved for Alibi explorer.
             </p>
           )}
           <div
@@ -323,12 +348,12 @@ export function Wardrobe() {
                   return (
                     <button
                       key={key}
-                      className="wardrobe-item"
+                      className={`wardrobe-item${tab === "character" ? " wardrobe-character" : ""}`}
                       aria-label={label}
                       aria-pressed={selected}
                       disabled={
                         !available ||
-                        (look.character === "mosslight" && tab !== "character")
+                        (look.character !== "pip" && tab !== "character")
                       }
                       onClick={() => change({ [tab]: key })}
                     >
@@ -346,7 +371,16 @@ export function Wardrobe() {
                           } as React.CSSProperties
                         }
                       >
-                        <Icon size={32} strokeWidth={1.5} />
+                        {tab === "character" ? (
+                          <img
+                            className="wardrobe-avatar-image"
+                            src={`/models/portraits/${key}.png`}
+                            alt=""
+                            loading="lazy"
+                          />
+                        ) : (
+                          <Icon size={32} strokeWidth={1.5} />
+                        )}
                         {selected && (
                           <i>
                             <Check size={12} />
@@ -354,7 +388,6 @@ export function Wardrobe() {
                         )}
                       </span>
                       <strong>{label}</strong>
-                      <small>{selected ? "Equipped" : "Try on"}</small>
                     </button>
                   );
                 })}

@@ -8,8 +8,11 @@ export function setSceneRendererState(state: RootState) {
 export function sceneDiagnostics() {
   const s = rendererState?.get();
   let mosslightCharacters = 0;
+  const pokemonCharacters: string[] = [];
   s?.scene.traverse((object) => {
     if (object.name === "MosslightCharacter") mosslightCharacters++;
+    if (object.name.startsWith("PokemonCharacter_"))
+      pokemonCharacters.push(object.name.slice("PokemonCharacter_".length));
   });
   return s
     ? {
@@ -23,6 +26,7 @@ export function sceneDiagnostics() {
           ? "mosslight"
           : "cloudline",
         mosslightCharacters,
+        pokemonCharacters,
       }
     : null;
 }

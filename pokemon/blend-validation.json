@@ -1,0 +1,30 @@
+{
+  "status": "ok",
+  "result": {
+    "project": "D:\\my project\\whosus\\pokemon\\pokemon-roster.blend",
+    "scenes": [
+      "Pokemon | Charizard",
+      "Pokemon | Eevee",
+      "Pokemon | Jigglypuff",
+      "Pokemon | Pikachu",
+      "Pokemon | Piplup",
+      "Pokemon | Rowlet",
+      "Pokemon | Sprigatito",
+      "Pokemon | Squirtle",
+      "Pokemon | Togepi"
+    ],
+    "individuals": [
+      "charizard.blend",
+      "eevee.blend",
+      "jigglypuff.blend",
+      "pikachu.blend",
+      "piplup.blend",
+      "rowlet.blend",
+      "sprigatito.blend",
+      "squirtle.blend",
+      "togepi.blend"
+    ],
+    "editable": true
+  },
+  "stdout": "Info: Saved as \"pokemon-roster.blend\"\n"
+}

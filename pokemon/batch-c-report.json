@@ -1,0 +1,37 @@
+{
+  "status": "ok",
+  "result": {
+    "models": [
+      {
+        "id": "togepi",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\togepi.glb",
+        "triangles": 7798,
+        "bytes": 194628,
+        "scene": "Pokemon | Togepi",
+        "reference": "https://www.pokemon.com/us/pokedex/togepi",
+        "height": 1.4
+      },
+      {
+        "id": "squirtle",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\squirtle.glb",
+        "triangles": 24724,
+        "bytes": 578828,
+        "scene": "Pokemon | Squirtle",
+        "reference": "https://www.pokemon.com/us/pokedex/squirtle",
+        "height": 1.5
+      },
+      {
+        "id": "charizard",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\charizard.glb",
+        "triangles": 30028,
+        "bytes": 660792,
+        "scene": "Pokemon | Charizard",
+        "reference": "https://www.pokemon.com/us/pokedex/charizard",
+        "height": 1.8
+      }
+    ],
+    "project": "D:\\my project\\whosus\\pokemon\\pokemon-roster.blend",
+    "preview_folder": "D:\\my project\\whosus\\pokemon\\previews"
+  },
+  "stdout": "20:05:08 | INFO: Starting glTF 2.0 export\n20:05:08 | INFO: Extracting primitive: togepi_Cream_arm_05_Mesh.001\n20:05:08 | INFO: Primitives created: 1\n20:05:08 | INFO: Extracting primitive: togepi_Cream_arm_09_Mesh.001\n20:05:08 | INFO: Primitives created: 1\n20:05:08 | INFO: Extracting primitive: togepi_Jagged_eggshell_13_Mesh.001\n20:05:08 | INFO: Primitives created: 3\n20:05:08 | INFO: Extracting primitive: togepi_Five_point_crown_head_01_Mesh.001\n20:05:08 | INFO: Primitives created: 5\n20:05:08 | INFO: Extracting primitive: togepi_Cream_foot_06_Mesh.001\n20:05:08 | INFO: Primitives created: 1\n20:05:08 | INFO: Extracting primitive: togepi_Cream_foot_10_Mesh.001\n20:05:08 | INFO: Primitives created: 1\n20:05:08 | INFO: Finished glTF 2.0 export in 0.07855534553527832 s\n\nCompleted togepi\n20:05:12 | INFO: Starting glTF 2.0 export\n20:05:12 | INFO: Extracting primitive: squirtle_Turtle_arm_22_Mesh.001\n20:05:12 | INFO: Primitives created: 1\n20:05:12 | INFO: Extracting primitive: squirtle_Turtle_arm_36_Mesh.001\n20:05:12 | INFO: Primitives created: 1\n20:05:12 | INFO: Extracting primitive: squirtle_Blue_torso_01_Mesh.001\n20:05:12 | INFO: Primitives created: 6\n20:05:12 | INFO: Extracting primitive: squirtle_Turtle_head_16_Mesh.001\n20:05:12 | INFO: Primitives created: 5\n20:05:12 | INFO: Extracting primitive: squirtle_Blue_haunch_26_Mesh.001\n20:05:12 | INFO: Primitives created: 1\n20:05:12 | INFO: Extracting primitive: squirtle_Blue_haunch_40_Mesh.001\n20:05:12 | INFO: Primitives created: 1\n20:05:12 | INFO: Extracting primitive: squirtle_Curled_blue_tail_46_Mesh.001\n20:05:12 | INFO: Primitives created: 1\n20:05:12 | INFO: Finished glTF 2.0 export in 0.10432720184326172 s\n\nCompleted squirtle\n20:05:16 | INFO: Starting glTF 2.0 export\n20:05:16 | INFO: Extracting primitive: charizard_Dragon_arm_16_Mesh.001\n20:05:16 | INFO: Primitives created: 2\n20:05:16 | INFO: Extracting primitive: charizard_Dragon_arm_42_Mesh.001\n20:05:16 | INFO: Primitives created: 2\n20:05:16 | INFO: Extracting primitive: charizard_Dragon_torso_01_Mesh.001\n20:05:16 | INFO: Primitives created: 2\n20:05:16 | INFO: Extracting primitive: charizard_Dragon_head_05_Mesh.001\n20:05:16 | INFO: Primitives created: 7\n20:05:16 | INFO: Extracting primitive: charizard_Powerful_haunch_23_Mesh.001\n20:05:16 | INFO: Primitives created: 2\n20:05:16 | INFO: Extracting primitive: charizard_Powerful_haunch_49_Mesh.001\n20:05:16 | INFO: Primitives created: 2\n20:05:16 | INFO: Extracting primitive: charizard_Long_fire_tail_61_Mesh.001\n20:05:16 | INFO: Primitives created: 3\n20:05:16 | INFO: Extracting primitive: charizard_Teal_wing_membrane_28_Mesh.001\n20:05:16 | INFO: Primitives created: 3\n20:05:16 | INFO: Extracting primitive: charizard_Teal_wing_membrane_54_Mesh.001\n20:05:16 | INFO: Primitives created: 3\n20:05:16 | INFO: Finished glTF 2.0 export in 0.12016868591308594 s\n\nCompleted charizard\nInfo: Saved as \"pokemon-roster.blend\"\n"
+}

@@ -2,28 +2,100 @@
   {
     "id": "eevee",
     "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\eevee.glb",
-    "triangles": 14992,
-    "bytes": 385816,
+    "triangles": 22648,
+    "bytes": 541764,
     "scene": "Pokemon | Eevee",
     "reference": "https://www.pokemon.com/us/pokedex/eevee",
-    "height": 1.6
+    "height": 1.6,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\eevee.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\eevee.png"
   },
   {
     "id": "pikachu",
     "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\pikachu.glb",
-    "triangles": 9548,
-    "bytes": 273424,
+    "triangles": 11480,
+    "bytes": 307092,
     "scene": "Pokemon | Pikachu",
     "reference": "https://www.pokemon.com/us/pokedex/pikachu",
-    "height": 1.6
+    "height": 1.6,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\pikachu.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\pikachu.png"
   },
   {
     "id": "rowlet",
     "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\rowlet.glb",
-    "triangles": 9456,
-    "bytes": 240764,
+    "triangles": 14888,
+    "bytes": 337300,
     "scene": "Pokemon | Rowlet",
     "reference": "https://www.pokemon.com/us/pokedex/rowlet",
-    "height": 1.4
+    "height": 1.4,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\rowlet.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\rowlet.png"
+  },
+  {
+    "id": "sprigatito",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\sprigatito.glb",
+    "triangles": 18520,
+    "bytes": 475548,
+    "scene": "Pokemon | Sprigatito",
+    "reference": "https://www.pokemon.com/us/pokedex/sprigatito",
+    "height": 1.5,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\sprigatito.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\sprigatito.png"
+  },
+  {
+    "id": "piplup",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\piplup.glb",
+    "triangles": 13870,
+    "bytes": 344484,
+    "scene": "Pokemon | Piplup",
+    "reference": "https://www.pokemon.com/us/pokedex/piplup",
+    "height": 1.4,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\piplup.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\piplup.png"
+  },
+  {
+    "id": "jigglypuff",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\jigglypuff.glb",
+    "triangles": 8560,
+    "bytes": 222116,
+    "scene": "Pokemon | Jigglypuff",
+    "reference": "https://www.pokemon.com/us/pokedex/jigglypuff",
+    "height": 1.4,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\jigglypuff.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\jigglypuff.png"
+  },
+  {
+    "id": "togepi",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\togepi.glb",
+    "triangles": 14456,
+    "bytes": 313428,
+    "scene": "Pokemon | Togepi",
+    "reference": "https://www.pokemon.com/us/pokedex/togepi",
+    "height": 1.4,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\togepi.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\togepi.png"
+  },
+  {
+    "id": "squirtle",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\squirtle.glb",
+    "triangles": 24724,
+    "bytes": 578912,
+    "scene": "Pokemon | Squirtle",
+    "reference": "https://www.pokemon.com/us/pokedex/squirtle",
+    "height": 1.5,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\squirtle.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\squirtle.png"
+  },
+  {
+    "id": "charizard",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\charizard.glb",
+    "triangles": 29612,
+    "bytes": 652324,
+    "scene": "Pokemon | Charizard",
+    "reference": "https://www.pokemon.com/us/pokedex/charizard",
+    "height": 1.8,
+    "blend": "D:\\my project\\whosus\\pokemon\\characters\\charizard.blend",
+    "preview": "D:\\my project\\whosus\\pokemon\\previews\\charizard.png"
   }
 ]

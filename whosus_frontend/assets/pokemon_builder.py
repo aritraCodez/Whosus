@@ -134,6 +134,8 @@ class Builder:
             for i in range(sides):faces.append((j*sides+i,j*sides+(i+1)%sides,(j+1)*sides+(i+1)%sides,(j+1)*sides+i))
         faces.append(tuple((len(points)-1)*sides+i for i in range(sides)))
         obj=self.mesh(name,verts,faces,material,parent)
+        smooth=obj.modifiers.new('Rounded organic contour','SUBSURF')
+        smooth.levels=1;smooth.render_levels=1
         if tip_material:
             obj.data.materials.append(palette[tip_material])
             for p in obj.data.polygons:
@@ -147,24 +149,68 @@ class Builder:
         radii=[(width*w,depth*math.sin(math.pi*(t*.9+.05))) for t,w in zip(times,widths)]
         obj=self.spindle(name,points,radii,material,parent,12,tip_material)
         if inner:
-            b=base.lerp(tip,.15)+Vector((0,-depth*.92,0))
-            t=base.lerp(tip,.9)+Vector((0,-depth*.5,0))
-            self.leaf(name+'_inner',b,t,width*.59,depth*.15,inner,parent)
+            # Project a continuous inset onto the smoothed ear, avoiding intersections.
+            bpy.context.view_layer.update()
+            evaluated=obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
+            direction=(tip-base).normalized()
+            across=direction.cross(Vector((0,-1,0))).normalized()
+            front=Vector((0,-1,0))
+            iv=[];iff=[]
+            rows=25;columns=13
+            for row in range(rows):
+                t=.17+row*.72/(rows-1)
+                span=width*.65*math.sin(math.pi*row/(rows-1))**.75+.001
+                for column in range(columns):
+                    side=-1+2*column/(columns-1)
+                    point=base.lerp(tip,t)+across*span*side
+                    local=point-obj.parent.location
+                    hit,where,normal,index=evaluated.ray_cast(local+front, -front)
+                    iv.append(tuple(where+obj.parent.location+front*.012 if hit else point+front*depth))
+            for row in range(rows-1):
+                for column in range(columns-1):
+                    a=row*columns+column;iff.append((a,a+1,a+columns+1,a+columns))
+            self.mesh(name+'_inner',iv,iff,inner,parent)
         return obj
     def poly(self,name,outline,y,thickness,material,parent=None,bevel=0):
+        if sum(outline[i][0]*outline[(i+1)%len(outline)][1]-outline[(i+1)%len(outline)][0]*outline[i][1] for i in range(len(outline)))<0:
+            outline=list(reversed(outline))
         n=len(outline)
         verts=[(x,y-thickness/2,z) for x,z in outline]+[(x,y+thickness/2,z) for x,z in outline]
         faces=[tuple(range(n)),tuple(reversed(range(n,2*n)))]
-        faces += [(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+        faces += [(i,i+n,(i+1)%n+n,(i+1)%n) for i in range(n)]
         obj=self.mesh(name,verts,faces,material,parent,False)
         if bevel:
-            mod=obj.modifiers.new('Soft shape edges','BEVEL');mod.width=bevel;mod.segments=2
+            mod=obj.modifiers.new('Soft shape edges','BEVEL');mod.width=bevel;mod.segments=3
+            mod.harden_normals=True
+            obj.modifiers.new('Weighted corner normals','WEIGHTED_NORMAL')
         return obj
     def eye(self,x,y,z,sx,sz,parent,iris='ink',white=False):
         if white:self.sphere('Eye_white',(x,y,z),(sx*1.22,.042,sz*1.12),'white',parent,20,12)
         self.sphere('Eye_iris',(x,y-.032 if white else y,z),(sx,.038,sz),iris,parent,20,12)
-        if iris!='ink':self.sphere('Eye_pupil',(x,y-.065,z+.005),(sx*.48,.023,sz*.8),'ink',parent,16,10)
+        if iris not in ['ink','teal_iris']:self.sphere('Eye_pupil',(x,y-.065,z+.005),(sx*.48,.023,sz*.8),'ink',parent,16,10)
+        if iris=='teal_iris':self.sphere('Eye_lower_glint',(x+sx*.18,y-.065,z-sz*.55),(sx*.52,.012,sz*.23),'blue',parent,16,10)
         self.sphere('Eye_highlight',(x-sx*.23,y-.09,z+sz*.47),(sx*.27,.014,sz*.27),'white',parent,12,8)
+    def surface_patch(self,name,outline,center,scale,material,parent=None):
+        # Follow the front of an ellipsoid so colored markings read as part of the skin.
+        if sum(outline[i][0]*outline[(i+1)%len(outline)][1]-outline[(i+1)%len(outline)][0]*outline[i][1] for i in range(len(outline)))<0:
+            outline=list(reversed(outline))
+        def point(x,z):
+            q=max(.025,1-((x-center[0])/scale[0])**2-((z-center[2])/scale[2])**2)
+            return (x,center[1]-scale[1]*math.sqrt(q)-.012,z)
+        cx=sum(p[0] for p in outline)/len(outline);cz=sum(p[1] for p in outline)/len(outline)
+        boundary=[]
+        for i,(x,z) in enumerate(outline):
+            nx,nz=outline[(i+1)%len(outline)]
+            boundary.extend([(x+(nx-x)*j/6,z+(nz-z)*j/6) for j in range(6)])
+        verts=[point(cx,cz)];faces=[];count=len(boundary);rings=12
+        for ring in range(1,rings+1):
+            t=ring/rings
+            verts.extend([point(cx+(x-cx)*t,cz+(z-cz)*t) for x,z in boundary])
+        faces.extend([(0,1+i,1+(i+1)%count) for i in range(count)])
+        for ring in range(rings-1):
+            start=1+ring*count
+            faces.extend([(start+i,start+count+i,start+count+(i+1)%count,start+(i+1)%count) for i in range(count)])
+        return self.mesh(name,verts,faces,material,parent)
     def smile(self,y,z,width,parent,material='ink'):
         self.tube('Friendly_mouth',[(-width,y,z+.015),(0,y-.012,z-.025),(width,y,z+.015)],.012,material,parent)
     def toe_feet(self,x,y,z,material,parent):

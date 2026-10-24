@@ -1,0 +1,28 @@
+{
+  "status": "ok",
+  "result": {
+    "project": "D:\\my project\\whosus\\pokemon\\pokemon-roster.blend",
+    "scenes": [
+      "Pokemon | Eevee",
+      "Pokemon | Pikachu",
+      "Pokemon | Rowlet",
+      "Pokemon | Sprigatito",
+      "Pokemon | Piplup",
+      "Pokemon | Jigglypuff",
+      "Pokemon | Togepi",
+      "Pokemon | Squirtle",
+      "Pokemon | Charizard"
+    ],
+    "individual_blends": [
+      "D:\\my project\\whosus\\pokemon\\characters\\eevee.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\pikachu.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\rowlet.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\sprigatito.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\piplup.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\jigglypuff.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\togepi.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\squirtle.blend",
+      "D:\\my project\\whosus\\pokemon\\characters\\charizard.blend"
+    ]
+  }
+}

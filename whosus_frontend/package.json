@@ -15,6 +15,7 @@
     "test:session": "node test/session-test.mjs",
     "test:wardrobe": "node test/wardrobe-test.mjs",
     "test:mosslight": "node test/mosslight-test.mjs",
+    "test:pokemon": "node test/pokemon-test.mjs",
     "test:seating": "node test/seating-test.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "test:browser": "node test/browser-test.mjs",

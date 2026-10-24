@@ -44,7 +44,7 @@ def export_game(b):
     bpy.ops.object.select_all(action='DESELECT')
     for obj in coll.objects:obj.select_set(True)
     path=ASSETS/(b.name+'.glb')
-    bpy.ops.export_scene.gltf(filepath=str(path),export_format='GLB',use_selection=True,
+    bpy.ops.export_scene.gltf(filepath=str(path),export_format='GLB',use_selection=True,use_active_scene=True,
         export_animations=False,export_extras=True,export_yup=True,export_apply=True)
     triangles=0
     for obj in coll.objects:
@@ -75,7 +75,7 @@ def studio(b):
     data=bpy.data.cameras.new(b.name+'_PreviewCamera');camera=bpy.data.objects.new(data.name,data)
     scene.collection.objects.link(camera);camera.location=(2.9,-6.2,3.1)
     camera.rotation_euler=(Vector((0,.05,.80))-camera.location).to_track_quat('-Z','Y').to_euler()
-    data.type='ORTHO';data.ortho_scale=2.65 if b.name!='charizard' else 3.05
+    data.type='ORTHO';data.ortho_scale=2.65 if b.name!='charizard' else 3.5
     scene.camera=camera
     scene.render.engine='CYCLES';scene.cycles.samples=64;scene.cycles.use_denoising=True
     prefs=bpy.context.preferences.addons['cycles'].preferences;prefs.compute_device_type='OPTIX';prefs.refresh_devices()
@@ -83,13 +83,18 @@ def studio(b):
     scene.cycles.device='GPU'
     scene.render.resolution_x=900;scene.render.resolution_y=900;scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';scene.render.image_settings.color_mode='RGBA'
-    scene.view_settings.view_transform='AgX'
+    scene.view_settings.view_transform='Standard'
+    scene.view_settings.look='None'
+    scene.view_settings.exposure=-.7
     scene.render.filepath=str(OUT/'previews'/(b.name+'.png'))
     bpy.ops.render.render(write_still=True)
 
 reports=[]
 for name in NAMES:
-    if 'Pokemon | '+name.title() in bpy.data.scenes:raise RuntimeError('Existing '+name+' scene is preserved; choose unbuilt species.')
+    previous=bpy.data.scenes.get('Pokemon | '+name.title())
+    if previous:
+        if not globals().get('REFINE_MODELS',False):raise RuntimeError('Existing '+name+' scene is preserved; enable REFINE_MODELS for a new revision.')
+        previous.name='Draft | '+name.title()
     b=globals()['build_'+name]()
     bpy.context.view_layer.update()
     reports.append(export_game(b))
