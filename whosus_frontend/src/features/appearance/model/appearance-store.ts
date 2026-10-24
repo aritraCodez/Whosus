@@ -1,12 +1,14 @@
 import { COLORS } from "@/features/game/model/types";
+import { POKEMON } from "@/features/appearance/model/pokemon-catalog";
 import { create } from "zustand";
 
 export const WARDROBE = {
   character: {
     label: "Characters",
     items: [
-      ["pip", "Pip explorer"],
+      ["pip", "Alibi explorer"],
       ["mosslight", "Mosslight creature"],
+      ...POKEMON,
     ],
   },
   hat: {

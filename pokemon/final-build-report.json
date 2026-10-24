@@ -1,0 +1,91 @@
+{
+  "status": "ok",
+  "result": {
+    "models": [
+      {
+        "id": "eevee",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\eevee.glb",
+        "triangles": 22648,
+        "bytes": 541764,
+        "scene": "Pokemon | Eevee",
+        "reference": "https://www.pokemon.com/us/pokedex/eevee",
+        "height": 1.6
+      },
+      {
+        "id": "pikachu",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\pikachu.glb",
+        "triangles": 11480,
+        "bytes": 307092,
+        "scene": "Pokemon | Pikachu",
+        "reference": "https://www.pokemon.com/us/pokedex/pikachu",
+        "height": 1.6
+      },
+      {
+        "id": "rowlet",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\rowlet.glb",
+        "triangles": 14888,
+        "bytes": 337300,
+        "scene": "Pokemon | Rowlet",
+        "reference": "https://www.pokemon.com/us/pokedex/rowlet",
+        "height": 1.4
+      },
+      {
+        "id": "sprigatito",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\sprigatito.glb",
+        "triangles": 18520,
+        "bytes": 475548,
+        "scene": "Pokemon | Sprigatito",
+        "reference": "https://www.pokemon.com/us/pokedex/sprigatito",
+        "height": 1.5
+      },
+      {
+        "id": "piplup",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\piplup.glb",
+        "triangles": 13870,
+        "bytes": 344484,
+        "scene": "Pokemon | Piplup",
+        "reference": "https://www.pokemon.com/us/pokedex/piplup",
+        "height": 1.4
+      },
+      {
+        "id": "jigglypuff",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\jigglypuff.glb",
+        "triangles": 8560,
+        "bytes": 222116,
+        "scene": "Pokemon | Jigglypuff",
+        "reference": "https://www.pokemon.com/us/pokedex/jigglypuff",
+        "height": 1.4
+      },
+      {
+        "id": "togepi",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\togepi.glb",
+        "triangles": 14456,
+        "bytes": 313428,
+        "scene": "Pokemon | Togepi",
+        "reference": "https://www.pokemon.com/us/pokedex/togepi",
+        "height": 1.4
+      },
+      {
+        "id": "squirtle",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\squirtle.glb",
+        "triangles": 24724,
+        "bytes": 578912,
+        "scene": "Pokemon | Squirtle",
+        "reference": "https://www.pokemon.com/us/pokedex/squirtle",
+        "height": 1.5
+      },
+      {
+        "id": "charizard",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\charizard.glb",
+        "triangles": 29612,
+        "bytes": 652324,
+        "scene": "Pokemon | Charizard",
+        "reference": "https://www.pokemon.com/us/pokedex/charizard",
+        "height": 1.8
+      }
+    ],
+    "project": "D:\\my project\\whosus\\pokemon\\pokemon-roster.blend",
+    "preview_folder": "D:\\my project\\whosus\\pokemon\\previews"
+  },
+  "stdout": "20:14:53 | INFO: Starting glTF 2.0 export\n20:14:53 | INFO: Extracting primitive: eevee_Torso_01.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Ear_03.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Ear_09.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Head_02.001_Mesh.001\n20:14:53 | INFO: Primitives created: 5\n20:14:53 | INFO: Extracting primitive: eevee_Leg_36.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Leg_32.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Leg_44.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Leg_40.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Extracting primitive: eevee_Bushy_tail_48.001_Mesh.001\n20:14:53 | INFO: Primitives created: 2\n20:14:53 | INFO: Finished glTF 2.0 export in 0.09293222427368164 s\n\nCompleted eevee\n20:14:58 | INFO: Starting glTF 2.0 export\n20:14:58 | INFO: Extracting primitive: pikachu_Arm_07.001_Mesh.001\n20:14:58 | INFO: Primitives created: 1\n20:14:58 | INFO: Extracting primitive: pikachu_Arm_16.001_Mesh.001\n20:14:58 | INFO: Primitives created: 1\n20:14:58 | INFO: Extracting primitive: pikachu_Torso_01.001_Mesh.001\n20:14:58 | INFO: Primitives created: 2\n20:14:58 | INFO: Extracting primitive: pikachu_Long_black_tipped_ear_03.001_Mesh.001\n20:14:58 | INFO: Primitives created: 2\n20:14:58 | INFO: Extracting primitive: pikachu_Long_black_tipped_ear_12.001_Mesh.001\n20:14:58 | INFO: Primitives created: 2\n20:14:58 | INFO: Extracting primitive: pikachu_Head_02.001_Mesh.001\n20:14:58 | INFO: Primitives created: 5\n20:14:58 | INFO: Extracting primitive: pikachu_Foot_11.001_Mesh.001\n20:14:58 | INFO: Primitives created: 1\n20:14:58 | INFO: Extracting primitive: pikachu_Foot_20.001_Mesh.001\n20:14:58 | INFO: Primitives created: 1\n20:14:58 | INFO: Extracting primitive: pikachu_Lightning_tail_23.001_Mesh.001\n20:14:58 | INFO: Primitives created: 2\n20:14:58 | INFO: Finished glTF 2.0 export in 0.0693516731262207 s\n\nCompleted pikachu\n20:15:03 | INFO: Starting glTF 2.0 export\n20:15:03 | INFO: Extracting primitive: rowlet_Round_owl_body_01.001_Mesh.001\n20:15:03 | INFO: Primitives created: 6\n20:15:03 | INFO: Extracting primitive: rowlet_Foot_pad_10.001_Mesh.001\n20:15:03 | INFO: Primitives created: 1\n20:15:03 | INFO: Extracting primitive: rowlet_Foot_pad_21.001_Mesh.001\n20:15:03 | INFO: Primitives created: 1\n20:15:03 | INFO: Extracting primitive: rowlet_Leaf_tail_27.001_Mesh.001\n20:15:03 | INFO: Primitives created: 1\n20:15:03 | INFO: Extracting primitive: rowlet_Drooping_wing_06.001_Mesh.001\n20:15:03 | INFO: Primitives created: 2\n20:15:03 | INFO: Extracting primitive: rowlet_Drooping_wing_17.001_Mesh.001\n20:15:03 | INFO: Primitives created: 2\n20:15:03 | INFO: Finished glTF 2.0 export in 0.07290792465209961 s\n\nCompleted rowlet\n20:15:08 | INFO: Starting glTF 2.0 export\n20:15:08 | INFO: Extracting primitive: sprigatito_Cat_torso_01.002_Mesh.001\n20:15:08 | INFO: Primitives created: 2\n20:15:08 | INFO: Extracting primitive: sprigatito_Large_cat_ear_03.002_Mesh.001\n20:15:08 | INFO: Primitives created: 2\n20:15:08 | INFO: Extracting primitive: sprigatito_Large_cat_ear_08.002_Mesh.001\n20:15:08 | INFO: Primitives created: 2\n20:15:09 | INFO: Extracting primitive: sprigatito_Head_02.002_Mesh.001\n20:15:09 | INFO: Primitives created: 7\n20:15:09 | INFO: Extracting primitive: sprigatito_Slender_leg_32.002_Mesh.001\n20:15:09 | INFO: Primitives created: 1\n20:15:09 | INFO: Extracting primitive: sprigatito_Slender_leg_30.002_Mesh.001\n20:15:09 | INFO: Primitives created: 1\n20:15:09 | INFO: Extracting primitive: sprigatito_Slender_leg_36.002_Mesh.001\n20:15:09 | INFO: Primitives created: 1\n20:15:09 | INFO: Extracting primitive: sprigatito_Slender_leg_34.002_Mesh.001\n20:15:09 | INFO: Primitives created: 1\n20:15:09 | INFO: Extracting primitive: sprigatito_Fluffy_cat_tail_38.002_Mesh.001\n20:15:09 | INFO: Primitives created: 2\n20:15:09 | INFO: Finished glTF 2.0 export in 0.09934520721435547 s\n\nCompleted sprigatito\n20:15:14 | INFO: Starting glTF 2.0 export\n20:15:14 | INFO: Extracting primitive: piplup_Pale_blue_body_01.002_Mesh.001\n20:15:14 | INFO: Primitives created: 3\n20:15:14 | INFO: Extracting primitive: piplup_Blue_head_02.002_Mesh.001\n20:15:14 | INFO: Primitives created: 6\n20:15:14 | INFO: Extracting primitive: piplup_Foot_18.002_Mesh.001\n20:15:14 | INFO: Primitives created: 2\n20:15:14 | INFO: Extracting primitive: piplup_Foot_24.002_Mesh.001\n20:15:14 | INFO: Primitives created: 2\n20:15:14 | INFO: Extracting primitive: piplup_Tail_feather_l_28.002_Mesh.001\n20:15:14 | INFO: Primitives created: 1\n20:15:14 | INFO: Extracting primitive: piplup_Penguin_flipper_16.002_Mesh.001\n20:15:14 | INFO: Primitives created: 1\n20:15:14 | INFO: Extracting primitive: piplup_Penguin_flipper_22.002_Mesh.001\n20:15:14 | INFO: Primitives created: 1\n20:15:14 | INFO: Finished glTF 2.0 export in 0.07245802879333496 s\n\nCompleted piplup\n20:15:19 | INFO: Starting glTF 2.0 export\n20:15:19 | INFO: Extracting primitive: jigglypuff_Little_arm_08.002_Mesh.001\n20:15:19 | INFO: Primitives created: 1\n20:15:19 | INFO: Extracting primitive: jigglypuff_Little_arm_16.002_Mesh.001\n20:15:19 | INFO: Primitives created: 1\n20:15:19 | INFO: Extracting primitive: jigglypuff_Pointed_ear_02.002_Mesh.001\n20:15:19 | INFO: Primitives created: 2\n20:15:19 | INFO: Extracting primitive: jigglypuff_Pointed_ear_10.002_Mesh.001\n20:15:19 | INFO: Primitives created: 2\n20:15:19 | INFO: Extracting primitive: jigglypuff_Round_pink_body_01.002_Mesh.001\n20:15:19 | INFO: Primitives created: 5\n20:15:19 | INFO: Extracting primitive: jigglypuff_Pink_foot_09.002_Mesh.001\n20:15:19 | INFO: Primitives created: 1\n20:15:19 | INFO: Extracting primitive: jigglypuff_Pink_foot_17.002_Mesh.001\n20:15:19 | INFO: Primitives created: 1\n20:15:19 | INFO: Finished glTF 2.0 export in 0.05562996864318848 s\n\nCompleted jigglypuff\n20:15:24 | INFO: Starting glTF 2.0 export\n20:15:24 | INFO: Extracting primitive: togepi_Cream_arm_09.002_Mesh.001\n20:15:24 | INFO: Primitives created: 1\n20:15:24 | INFO: Extracting primitive: togepi_Cream_arm_13.001_Mesh.001\n20:15:24 | INFO: Primitives created: 1\n20:15:24 | INFO: Extracting primitive: togepi_Jagged_eggshell_17.001_Mesh.001\n20:15:24 | INFO: Primitives created: 3\n20:15:24 | INFO: Extracting primitive: togepi_Rounded_star_head_01.001_Mesh.001\n20:15:24 | INFO: Primitives created: 5\n20:15:24 | INFO: Extracting primitive: togepi_Cream_foot_10.002_Mesh.001\n20:15:24 | INFO: Primitives created: 1\n20:15:24 | INFO: Extracting primitive: togepi_Cream_foot_14.001_Mesh.001\n20:15:24 | INFO: Primitives created: 1\n20:15:24 | INFO: Finished glTF 2.0 export in 0.06746315956115723 s\n\nCompleted togepi\n20:15:29 | INFO: Starting glTF 2.0 export\n20:15:29 | INFO: Extracting primitive: squirtle_Turtle_arm_22.002_Mesh.001\n20:15:29 | INFO: Primitives created: 1\n20:15:29 | INFO: Extracting primitive: squirtle_Turtle_arm_36.002_Mesh.001\n20:15:29 | INFO: Primitives created: 1\n20:15:29 | INFO: Extracting primitive: squirtle_Blue_torso_01.002_Mesh.001\n20:15:29 | INFO: Primitives created: 6\n20:15:29 | INFO: Extracting primitive: squirtle_Turtle_head_16.002_Mesh.001\n20:15:29 | INFO: Primitives created: 5\n20:15:29 | INFO: Extracting primitive: squirtle_Blue_haunch_26.002_Mesh.001\n20:15:29 | INFO: Primitives created: 1\n20:15:29 | INFO: Extracting primitive: squirtle_Blue_haunch_40.002_Mesh.001\n20:15:29 | INFO: Primitives created: 1\n20:15:29 | INFO: Extracting primitive: squirtle_Curled_blue_tail_46.002_Mesh.001\n20:15:29 | INFO: Primitives created: 1\n20:15:29 | INFO: Finished glTF 2.0 export in 0.10308098793029785 s\n\nCompleted squirtle\n20:15:35 | INFO: Starting glTF 2.0 export\n20:15:35 | INFO: Extracting primitive: charizard_Dragon_arm_16.002_Mesh.001\n20:15:35 | INFO: Primitives created: 2\n20:15:35 | INFO: Extracting primitive: charizard_Dragon_arm_42.002_Mesh.001\n20:15:35 | INFO: Primitives created: 2\n20:15:35 | INFO: Extracting primitive: charizard_Dragon_torso_01.002_Mesh.001\n20:15:35 | INFO: Primitives created: 2\n20:15:35 | INFO: Extracting primitive: charizard_Dragon_head_05.002_Mesh.001\n20:15:35 | INFO: Primitives created: 7\n20:15:35 | INFO: Extracting primitive: charizard_Powerful_haunch_23.002_Mesh.001\n20:15:35 | INFO: Primitives created: 2\n20:15:35 | INFO: Extracting primitive: charizard_Powerful_haunch_49.002_Mesh.001\n20:15:35 | INFO: Primitives created: 2\n20:15:35 | INFO: Extracting primitive: charizard_Long_fire_tail_61.002_Mesh.001\n20:15:35 | INFO: Primitives created: 3\n20:15:35 | INFO: Extracting primitive: charizard_Teal_wing_membrane_28.002_Mesh.001\n20:15:35 | INFO: Primitives created: 3\n20:15:35 | INFO: Extracting primitive: charizard_Teal_wing_membrane_54.002_Mesh.001\n20:15:35 | INFO: Primitives created: 3\n20:15:35 | INFO: Finished glTF 2.0 export in 0.1297762393951416 s\n\nCompleted charizard\nInfo: Saved as \"pokemon-roster.blend\"\n"
+}

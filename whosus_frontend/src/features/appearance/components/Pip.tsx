@@ -10,8 +10,12 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Mosslight } from "@/features/appearance/components/Mosslight";
+import { Pokemon } from "@/features/appearance/components/Pokemon";
+import { isPokemon } from "@/features/appearance/model/pokemon-catalog";
 export function Pip(props: React.ComponentProps<typeof PipExplorer>) {
-  return props.character === "mosslight" ? (
+  return isPokemon(props.character) ? (
+    <Pokemon {...props} character={props.character} />
+  ) : props.character === "mosslight" ? (
     <Mosslight {...props} />
   ) : (
     <PipExplorer {...props} />

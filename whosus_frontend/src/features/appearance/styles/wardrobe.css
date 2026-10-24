@@ -207,6 +207,34 @@ dialog.wide:has(.wardrobe) {
   display: grid;
   place-items: center;
 }
+.wardrobe-item.wardrobe-character {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 104px minmax(28px, auto);
+  align-content: start;
+  justify-items: center;
+  gap: 8px;
+  min-height: 166px;
+  padding: 12px 8px;
+  overflow: hidden;
+}
+.wardrobe-character .wardrobe-item-art {
+  width: 100%;
+  height: 104px;
+  min-width: 0;
+}
+.wardrobe-character > strong {
+  margin: 0;
+  line-height: 1.3;
+  text-align: center;
+}
+.wardrobe-avatar-image {
+  display: block;
+  width: 100%;
+  height: 104px;
+  min-height: 0;
+  object-fit: contain;
+}
 .wardrobe-swatch {
   width: 35px;
   height: 35px;

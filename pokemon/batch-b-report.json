@@ -1,0 +1,37 @@
+{
+  "status": "ok",
+  "result": {
+    "models": [
+      {
+        "id": "sprigatito",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\sprigatito.glb",
+        "triangles": 17650,
+        "bytes": 440320,
+        "scene": "Pokemon | Sprigatito",
+        "reference": "https://www.pokemon.com/us/pokedex/sprigatito",
+        "height": 1.5
+      },
+      {
+        "id": "piplup",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\piplup.glb",
+        "triangles": 13185,
+        "bytes": 328888,
+        "scene": "Pokemon | Piplup",
+        "reference": "https://www.pokemon.com/us/pokedex/piplup",
+        "height": 1.4
+      },
+      {
+        "id": "jigglypuff",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\jigglypuff.glb",
+        "triangles": 9120,
+        "bytes": 215624,
+        "scene": "Pokemon | Jigglypuff",
+        "reference": "https://www.pokemon.com/us/pokedex/jigglypuff",
+        "height": 1.4
+      }
+    ],
+    "project": "D:\\my project\\whosus\\pokemon\\pokemon-roster.blend",
+    "preview_folder": "D:\\my project\\whosus\\pokemon\\previews"
+  },
+  "stdout": "INFO Draco is available, use library at D:\\blender\\5.2\\scripts\\addons_core\\io_scene_gltf2\\bf_intern_draco_bridge.dll\nINFO MeshOptimizer is available, use library at D:\\blender\\5.2\\scripts\\addons_core\\io_scene_gltf2\\bf_intern_meshopt_bridge.dll\n20:01:50 | INFO: Starting glTF 2.0 export\n20:01:50 | INFO: Extracting primitive: sprigatito_Cat_torso_01_Mesh.001\n20:01:50 | INFO: Primitives created: 2\n20:01:50 | INFO: Extracting primitive: sprigatito_Large_cat_ear_03_Mesh.001\n20:01:50 | INFO: Primitives created: 2\n20:01:50 | INFO: Extracting primitive: sprigatito_Large_cat_ear_08_Mesh.001\n20:01:50 | INFO: Primitives created: 2\n20:01:50 | INFO: Extracting primitive: sprigatito_Head_02_Mesh.001\n20:01:50 | INFO: Primitives created: 7\n20:01:50 | INFO: Extracting primitive: sprigatito_Slender_leg_32_Mesh.001\n20:01:50 | INFO: Primitives created: 1\n20:01:50 | INFO: Extracting primitive: sprigatito_Slender_leg_30_Mesh.001\n20:01:50 | INFO: Primitives created: 1\n20:01:50 | INFO: Extracting primitive: sprigatito_Slender_leg_36_Mesh.001\n20:01:50 | INFO: Primitives created: 1\n20:01:50 | INFO: Extracting primitive: sprigatito_Slender_leg_34_Mesh.001\n20:01:50 | INFO: Primitives created: 1\n20:01:50 | INFO: Extracting primitive: sprigatito_Fluffy_cat_tail_38_Mesh.001\n20:01:50 | INFO: Primitives created: 2\n20:01:50 | INFO: Finished glTF 2.0 export in 0.13071036338806152 s\n\nCompleted sprigatito\n20:01:55 | INFO: Starting glTF 2.0 export\n20:01:55 | INFO: Extracting primitive: piplup_Pale_blue_body_01_Mesh.001\n20:01:55 | INFO: Primitives created: 3\n20:01:55 | INFO: Extracting primitive: piplup_Blue_head_02_Mesh.001\n20:01:55 | INFO: Primitives created: 6\n20:01:55 | INFO: Extracting primitive: piplup_Foot_18_Mesh.001\n20:01:55 | INFO: Primitives created: 2\n20:01:55 | INFO: Extracting primitive: piplup_Foot_24_Mesh.001\n20:01:55 | INFO: Primitives created: 2\n20:01:55 | INFO: Extracting primitive: piplup_Tail_feather_l_28_Mesh.001\n20:01:55 | INFO: Primitives created: 1\n20:01:55 | INFO: Extracting primitive: piplup_Penguin_flipper_16_Mesh.001\n20:01:55 | INFO: Primitives created: 1\n20:01:55 | INFO: Extracting primitive: piplup_Penguin_flipper_22_Mesh.001\n20:01:55 | INFO: Primitives created: 1\n20:01:56 | INFO: Finished glTF 2.0 export in 0.12144207954406738 s\n\nCompleted piplup\n20:02:00 | INFO: Starting glTF 2.0 export\n20:02:00 | INFO: Extracting primitive: jigglypuff_Little_arm_08_Mesh.001\n20:02:00 | INFO: Primitives created: 1\n20:02:00 | INFO: Extracting primitive: jigglypuff_Little_arm_16_Mesh.001\n20:02:00 | INFO: Primitives created: 1\n20:02:00 | INFO: Extracting primitive: jigglypuff_Pointed_ear_02_Mesh.001\n20:02:00 | INFO: Primitives created: 2\n20:02:00 | INFO: Extracting primitive: jigglypuff_Pointed_ear_10_Mesh.001\n20:02:00 | INFO: Primitives created: 2\n20:02:00 | INFO: Extracting primitive: jigglypuff_Round_pink_body_01_Mesh.001\n20:02:00 | INFO: Primitives created: 5\n20:02:00 | INFO: Extracting primitive: jigglypuff_Pink_foot_09_Mesh.001\n20:02:00 | INFO: Primitives created: 1\n20:02:00 | INFO: Extracting primitive: jigglypuff_Pink_foot_17_Mesh.001\n20:02:00 | INFO: Primitives created: 1\n20:02:00 | INFO: Finished glTF 2.0 export in 0.06316566467285156 s\n\nCompleted jigglypuff\nInfo: Saved as \"pokemon-roster.blend\"\n"
+}
