@@ -13,8 +13,9 @@ from .communication import add_chat, can_chat, voice_gain
 from .entities import Player
 from .exceptions import GameError
 from .lobby import handle_lobby_action
+from .maps import MAPS, stations_for
 from .snapshot import build_snapshot
-from .types import ActionValue, Body, ChatRecord, EliminationRecord, Snapshot, VisualTask
+from .types import ActionValue, Body, ChatRecord, EliminationRecord, Snapshot, Station, VisualTask
 from .world import ARRIVAL_SEAT_TIME, COLORS, LOBBY_SEATS, STATIONS, move, open_position
 
 
@@ -31,7 +32,10 @@ class Room:
         voting: int = 30,
         emergency_meetings: int = 1,
         meeting_cooldown: int = 20,
+        map_id: str = "cloudline",
     ) -> None:
+        self.require(map_id in MAPS, "Unknown map.")
+        self.map_id = map_id
         self.code, self.public, self.capacity = code, public, capacity
         self.killers, self.kill_cooldown, self.discussion = killers, kill_cooldown, discussion
         self.movement_speed, self.voting = movement_speed, voting
@@ -57,6 +61,10 @@ class Room:
         self.meeting_progress = 0.0
         self.active_visuals: list[VisualTask] = []
 
+    @property
+    def stations(self) -> list[Station]:
+        return stations_for(self.map_id)
+
     def add(
         self,
         name: str,
@@ -66,6 +74,7 @@ class Room:
         visor: str = "none",
         accessory: str = "none",
         boots: str = "original",
+        character: str = "pip",
     ) -> Player:
         if self.phase != "lobby":
             raise GameError("This expedition has already launched.")
@@ -76,7 +85,14 @@ class Room:
         chosen = next((c for c in palette if c not in used), None)
         if chosen is None:
             raise GameError("No explorer colors available.")
-        look = dict(hat=hat, outfit=outfit, visor=visor, accessory=accessory, boots=boots)
+        look = dict(
+            hat=hat,
+            outfit=outfit,
+            visor=visor,
+            accessory=accessory,
+            boots=boots,
+            character=character,
+        )
         self.require(
             all(value in COSMETICS[slot] for slot, value in look.items()), "Unknown wardrobe item."
         )
@@ -89,6 +105,7 @@ class Room:
             visor=visor,
             accessory=accessory,
             boots=boots,
+            character=character,
         )
         occupied = {q.seat for q in self.players.values() if q.seat >= 0}
         preferred = len(self.players) % len(LOBBY_SEATS)

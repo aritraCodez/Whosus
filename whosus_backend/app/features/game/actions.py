@@ -9,7 +9,7 @@ from .exceptions import GameError
 from .snapshot import character_snapshot
 from .types import ActionValue, Challenge
 from .validation import integer
-from .world import STATIONS, VENTS, distance, open_position
+from .world import VENTS, distance, open_position
 
 if TYPE_CHECKING:
     from .service import Room
@@ -69,7 +69,9 @@ def handle_match_action(
         q.inputs.clear()
         q.alive = False
         q.challenge = None
-        room.bodies.append({"id": q.id, "x": q.x, "z": q.z, "color": q.color})
+        room.bodies.append(
+            {"id": q.id, "x": q.x, "z": q.z, "color": q.color, "character": q.character}
+        )
         p.kill_at = room.now + room.kill_cooldown
         room.check_win()
     elif action == "report":
@@ -123,7 +125,7 @@ def handle_match_action(
     elif action == "task_cancel":
         p.challenge = None
     elif action == "task_begin":
-        s = next((s for s in STATIONS if s["id"] == target), None)
+        s = next((s for s in room.stations if s["id"] == target), None)
         if s is None:
             raise GameError("Approach an unfinished task station.")
         room.require(

@@ -17,9 +17,11 @@ Outfit = Literal["none", "flight", "overalls", "dress", "captain", "hoodie", "la
 Visor = Literal["none", "glasses", "shades", "goggles", "monocle"]
 Accessory = Literal["none", "pack", "jetpack", "wings", "cape", "scarf"]
 Boots = Literal["original", "ivory", "mint", "coral", "gold"]
+Character = Literal["pip", "mosslight"]
 COSMETICS = {
     name: get_args(kind)
     for name, kind in {
+        "character": Character,
         "hat": Hat,
         "outfit": Outfit,
         "visor": Visor,

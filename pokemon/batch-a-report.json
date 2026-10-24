@@ -1,0 +1,37 @@
+{
+  "status": "ok",
+  "result": {
+    "models": [
+      {
+        "id": "eevee",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\eevee.glb",
+        "triangles": 14992,
+        "bytes": 385816,
+        "scene": "Pokemon | Eevee",
+        "reference": "https://www.pokemon.com/us/pokedex/eevee",
+        "height": 1.6
+      },
+      {
+        "id": "pikachu",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\pikachu.glb",
+        "triangles": 9548,
+        "bytes": 273424,
+        "scene": "Pokemon | Pikachu",
+        "reference": "https://www.pokemon.com/us/pokedex/pikachu",
+        "height": 1.6
+      },
+      {
+        "id": "rowlet",
+        "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\rowlet.glb",
+        "triangles": 9456,
+        "bytes": 240764,
+        "scene": "Pokemon | Rowlet",
+        "reference": "https://www.pokemon.com/us/pokedex/rowlet",
+        "height": 1.4
+      }
+    ],
+    "project": "D:\\my project\\whosus\\pokemon\\pokemon-roster.blend",
+    "preview_folder": "D:\\my project\\whosus\\pokemon\\previews"
+  },
+  "stdout": "13:45:54 | INFO: Starting glTF 2.0 export\n13:45:54 | INFO: Extracting primitive: eevee_Torso_01_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Ear_03_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Ear_09_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Head_02_Mesh.001\n13:45:54 | INFO: Primitives created: 5\n13:45:54 | INFO: Extracting primitive: eevee_Leg_36_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Leg_32_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Leg_44_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Leg_40_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Extracting primitive: eevee_Bushy_tail_48_Mesh.001\n13:45:54 | INFO: Primitives created: 2\n13:45:54 | INFO: Finished glTF 2.0 export in 0.06721687316894531 s\n\nCompleted eevee\n13:45:58 | INFO: Starting glTF 2.0 export\n13:45:58 | INFO: Extracting primitive: Plane\n13:45:58 | INFO: Primitives created: 1\n13:45:58 | INFO: Extracting primitive: pikachu_Arm_07_Mesh.001\n13:45:58 | INFO: Primitives created: 1\n13:45:58 | INFO: Extracting primitive: pikachu_Arm_16_Mesh.001\n13:45:58 | INFO: Primitives created: 1\n13:45:58 | INFO: Extracting primitive: pikachu_Torso_01_Mesh.001\n13:45:58 | INFO: Primitives created: 2\n13:45:58 | INFO: Extracting primitive: pikachu_Long_black_tipped_ear_03_Mesh.001\n13:45:58 | INFO: Primitives created: 2\n13:45:58 | INFO: Extracting primitive: pikachu_Long_black_tipped_ear_12_Mesh.001\n13:45:58 | INFO: Primitives created: 2\n13:45:58 | INFO: Extracting primitive: pikachu_Head_02_Mesh.001\n13:45:58 | INFO: Primitives created: 5\n13:45:58 | INFO: Extracting primitive: pikachu_Foot_11_Mesh.001\n13:45:58 | INFO: Primitives created: 1\n13:45:58 | INFO: Extracting primitive: pikachu_Foot_20_Mesh.001\n13:45:58 | INFO: Primitives created: 1\n13:45:58 | INFO: Extracting primitive: pikachu_Lightning_tail_23_Mesh.001\n13:45:58 | INFO: Primitives created: 2\n13:45:58 | INFO: Finished glTF 2.0 export in 0.0650181770324707 s\n\nCompleted pikachu\n13:46:02 | INFO: Starting glTF 2.0 export\n13:46:02 | INFO: Extracting primitive: Plane\n13:46:02 | INFO: Primitives created: 1\n13:46:02 | INFO: Extracting primitive: Plane.001\n13:46:02 | INFO: Primitives created: 1\n13:46:02 | INFO: Extracting primitive: rowlet_Round_owl_body_01_Mesh.001\n13:46:02 | INFO: Primitives created: 6\n13:46:02 | INFO: Extracting primitive: rowlet_Foot_pad_10_Mesh.001\n13:46:02 | INFO: Primitives created: 1\n13:46:02 | INFO: Extracting primitive: rowlet_Foot_pad_21_Mesh.001\n13:46:02 | INFO: Primitives created: 1\n13:46:02 | INFO: Extracting primitive: rowlet_Leaf_tail_27_Mesh.001\n13:46:02 | INFO: Primitives created: 1\n13:46:02 | INFO: Extracting primitive: rowlet_Drooping_wing_06_Mesh.001\n13:46:02 | INFO: Primitives created: 2\n13:46:02 | INFO: Extracting primitive: rowlet_Drooping_wing_17_Mesh.001\n13:46:02 | INFO: Primitives created: 2\n13:46:02 | INFO: Finished glTF 2.0 export in 0.07769632339477539 s\n\nCompleted rowlet\nInfo: Saved as \"pokemon-roster.blend\"\n"
+}

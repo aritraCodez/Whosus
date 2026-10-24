@@ -61,6 +61,69 @@ dialog.room-create-dialog[open] {
   margin: 16px 0 0;
 }
 
+.room-create-page .map-preview {
+  display: block;
+  width: 104px;
+  height: 62px;
+  flex: 0 0 auto;
+  border: 1px solid #ffffff12;
+  border-radius: 8px;
+  background: #102a31;
+}
+
+.map-preview-path {
+  fill: none;
+  stroke: #37545a;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.map-preview-room {
+  fill: #314c58;
+  stroke: #81979a;
+  stroke-width: 1.5;
+}
+
+.map-preview-center {
+  fill: #476a70;
+  stroke: #f3c86d;
+}
+
+.map-preview-detail {
+  fill: #9bd3d5;
+}
+
+.map-preview[data-map="mosslight"] .map-preview-path {
+  stroke: #385a42;
+}
+
+.map-preview[data-map="mosslight"] .map-preview-room {
+  fill: #294b3b;
+  stroke: #85ae78;
+}
+
+.map-preview[data-map="mosslight"] .map-preview-center {
+  fill: #46634a;
+  stroke: #e5c675;
+}
+
+.map-preview[data-map="mosslight"] .map-preview-detail {
+  fill: #f0d078;
+}
+
+.map-preview-trail {
+  fill: none;
+  stroke: #c6d87c;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+.map-card-copy {
+  min-width: 0;
+}
+
 .room-create-page > .hint {
   margin: 8px 0 14px;
 }
@@ -81,6 +144,17 @@ dialog.room-create-dialog[open] {
 .room-create-actions {
   display: flex;
   gap: 8px;
+}
+
+@media (max-width: 420px) {
+  .room-create-page .map-preview {
+    width: 82px;
+    height: 54px;
+  }
+
+  .room-create-page .map-card .tag {
+    display: none;
+  }
 }
 
 .room-create-actions > button {

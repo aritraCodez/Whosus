@@ -57,6 +57,7 @@ export function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
       rotation={[0, seat ? (-seat.side * Math.PI) / 2 : 0, 0]}
     >
       <Pip
+        character={p.character}
         outfit={p.outfit}
         visor={p.visor}
         accessory={p.accessory}
@@ -69,7 +70,7 @@ export function Avatar({ p, local = false }: { p: Player; local?: boolean }) {
       />
       {/* Keep nameplates in screen pixels; distanceFactor multiplies orthographic zoom. */}
       <Html
-        position={[0, 2.05, 0]}
+        position={[0, p.character === "mosslight" ? 1.5 : 2.05, 0]}
         center
         pointerEvents="none"
         style={{ pointerEvents: "none" }}

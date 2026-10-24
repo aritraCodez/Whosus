@@ -9,6 +9,7 @@ from app.features.appearance.catalog import COSMETICS
 from .bots import fill_bots
 from .entities import Player
 from .exceptions import GameError
+from .maps import MAPS
 from .types import ActionValue
 from .validation import integer, number
 from .world import COLORS, LOBBY_SEATS, SEAT_RANGE
@@ -65,6 +66,10 @@ def handle_lobby_action(
                     setting >= len(room.players), "Remove players before reducing capacity."
                 )
             setattr(room, attr, setting)
+        elif target == "mapId":
+            room.require(isinstance(value, str) and value in MAPS, "Unknown map.")
+            if isinstance(value, str):
+                room.map_id = value
         elif target == "movementSpeed":
             room.movement_speed = number(value, 0.5, 2, "Speed must be between 0.5 and 2.")
         elif target in ("public", "visualTasks"):

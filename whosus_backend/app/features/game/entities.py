@@ -36,6 +36,7 @@ class Player:
     visor: str = "none"
     accessory: str = "none"
     boots: str = "original"
+    character: str = "pip"
     seat: int = -1
     seated_until: float = 0
     bot: bool = False

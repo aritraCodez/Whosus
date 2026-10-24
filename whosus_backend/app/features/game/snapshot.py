@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from .entities import Player
 from .types import CharacterSnapshot, EliminationSnapshot, PlayerSnapshot, Snapshot
-from .world import STATIONS
 
 if TYPE_CHECKING:
     from .service import Room
@@ -21,6 +20,7 @@ def character_snapshot(player: Player) -> CharacterSnapshot:
         "visor": player.visor,
         "accessory": player.accessory,
         "boots": player.boots,
+        "character": player.character,
         "x": player.x,
         "z": player.z,
     }
@@ -48,6 +48,7 @@ def build_snapshot(room: Room, pid: str) -> Snapshot:
             "visor": p.visor,
             "accessory": p.accessory,
             "boots": p.boots,
+            "character": p.character,
             "x": p.x,
             "z": p.z,
             "alive": p.alive,
@@ -88,6 +89,7 @@ def build_snapshot(room: Room, pid: str) -> Snapshot:
     ]
     return {
         "code": room.code,
+        "mapId": room.map_id,
         "host": room.host,
         "public": room.public,
         "capacity": room.capacity,
@@ -113,7 +115,7 @@ def build_snapshot(room: Room, pid: str) -> Snapshot:
         "meetingCooldown": max(0, room.meeting_at - room.now),
         "emergency": me.emergency,
         "vent": me.vent,
-        "tasks": [{**s, "done": s["id"] in me.done} for s in STATIONS if s["id"] in me.tasks],
+        "tasks": [{**s, "done": s["id"] in me.done} for s in room.stations if s["id"] in me.tasks],
         "challenge": me.challenge,
         "progress": prog,
         "taskBarMode": room.task_bar_mode,

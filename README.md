@@ -139,6 +139,34 @@ On macOS/Linux, use `python3`, `.venv/bin/python`, and `npm` instead of the Wind
 
 ## Play and controls
 
+### Mosslight forest expedition
+
+Choose **Create a room → Map → Mosslight** to play in nine mossy forest clearings
+with amber landmarks, glowing root tunnels, and forest-themed tasks. The host can
+also change maps under **Mission settings → Map** while in the waiting room;
+everyone must ready up again after a change. Cloudline Station remains available.
+Both maps share the authoritative path network, collision bounds, and task mechanics.
+
+Choose **Customize character → Characters → Mosslight creature** before joining,
+or use the wardrobe in the waiting room. Mosslight is an original forest creature
+with four animated feet, moss, amber crystals, and player-colored pebble plates.
+Its character choice persists across reconnects and is visible to the crew,
+including during eliminations and as a ghost. Clothing selections are retained
+for switching back to Pip.
+
+The game assets were created/exported through the local Blender MCP add-on:
+
+- `whosus_frontend/public/models/mosslight.glb`: playable character, 22,580 triangles, 10 meshes.
+- `whosus_frontend/public/models/mosslight-map.glb`: static forest scenery, merged by material for efficient rendering.
+- `whosus_frontend/public/models/mosslight-game.blend`: editable game scene; unhide the terrain collection to inspect the map.
+- `mosslight/mosslight.blend`: original studio artwork and materials.
+- `whosus_frontend/assets/build_mosslight_game.py`: export script; run from the original studio project using `mosslight/blender_bridge.py`.
+
+Run `npm.cmd run test:mosslight` from the frontend with both local servers running
+to check asset loading, wardrobe selection, map creation, movement, forest task
+labels, and reconnects in a rendered browser. `WHOSUS_TEST_URL` selects the frontend
+URL; `WHOSUS_BROWSER` selects a Playwright-compatible Chromium executable.
+
 Create a private or public room, then join it from **at least four independent browser contexts or devices**. Use distinct browser profiles or different browsers; ordinary duplicated tabs may copy the same session token and reconnect as the same player. Everyone must be connected and ready before the host can launch. Enable voice with the microphone button in each participating client.
 
 Crewmates win by completing every assigned task or ejecting all killers. killers win when living killers reach parity with living crew, or when a reactor sabotage expires. Ghosts can continue tasks. A vote tie or a winning skip vote ejects nobody. After game over, the host can return the room to the lobby for a rematch.

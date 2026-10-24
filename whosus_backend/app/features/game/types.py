@@ -32,6 +32,7 @@ class TaskSnapshot(Station):
 
 
 class CharacterSnapshot(TypedDict):
+    character: str
     id: str
     name: str
     color: str
@@ -56,6 +57,7 @@ class PlayerSnapshot(CharacterSnapshot):
 
 
 class Body(TypedDict):
+    character: NotRequired[str]
     id: str
     x: float
     z: float
@@ -107,6 +109,7 @@ class RoomRules(TypedDict):
 
 
 class Snapshot(TypedDict):
+    mapId: str
     code: str
     host: str
     public: bool

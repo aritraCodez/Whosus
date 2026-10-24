@@ -26,7 +26,9 @@ def test_health_discovery_and_openapi_contract(application):
             runtime.rooms[code] = room
         response = client.get("/api/rooms", headers=ORIGIN)
         assert response.status_code == 200
-        assert response.json() == [{"code": "PUBLIC", "players": 1, "capacity": 8, "host": "Host"}]
+        assert response.json() == [
+            {"mapId": "cloudline", "code": "PUBLIC", "players": 1, "capacity": 8, "host": "Host"}
+        ]
         assert response.headers["access-control-allow-origin"] == ORIGIN["origin"]
         denied = client.get("/api/rooms", headers={"origin": "https://other.example"})
         assert "access-control-allow-origin" not in denied.headers

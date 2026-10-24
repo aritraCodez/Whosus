@@ -1,0 +1,73 @@
+{
+  "project": "D:\\my project\\whosus\\mosslight\\mosslight.blend",
+  "preview": "D:\\my project\\whosus\\mosslight\\mosslight_preview.png",
+  "resolution": [
+    1500,
+    1500
+  ],
+  "character_meshes": 78,
+  "base_vertices": 34129,
+  "base_polygons": 31008,
+  "evaluated_triangles": 83888,
+  "uv_mapped_meshes": 78,
+  "feet": [
+    "Foot | L Front",
+    "Foot | L Back",
+    "Foot | R Front",
+    "Foot | R Back"
+  ],
+  "closed_solids": {
+    "Body | Broad river-stone torso": {
+      "non_manifold_edges": 0,
+      "signed_volume": 20.44393
+    },
+    "Foot | L Front": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.52716
+    },
+    "Foot | L Back": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.52716
+    },
+    "Foot | R Front": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.52716
+    },
+    "Foot | R Back": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.52716
+    },
+    "Amber | 01 | Tall lantern": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.30223
+    },
+    "Amber | 02 | West shard": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.11609
+    },
+    "Amber | 03 | East shard": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.14261
+    },
+    "Amber | 04 | Front bud": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.05431
+    },
+    "Amber | 05 | Rear bud": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.0674
+    },
+    "Amber | 06 | Solitary seed": {
+      "non_manifold_edges": 0,
+      "signed_volume": 0.02656
+    }
+  },
+  "camera_frame_bounds": {
+    "left": 0.1989,
+    "right": 0.8004,
+    "bottom": 0.1815,
+    "top": 0.7645
+  },
+  "original_scene_preserved": true,
+  "external_texture_dependencies": []
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "eevee",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\eevee.glb",
+    "triangles": 14992,
+    "bytes": 385816,
+    "scene": "Pokemon | Eevee",
+    "reference": "https://www.pokemon.com/us/pokedex/eevee",
+    "height": 1.6
+  },
+  {
+    "id": "pikachu",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\pikachu.glb",
+    "triangles": 9548,
+    "bytes": 273424,
+    "scene": "Pokemon | Pikachu",
+    "reference": "https://www.pokemon.com/us/pokedex/pikachu",
+    "height": 1.6
+  },
+  {
+    "id": "rowlet",
+    "glb": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\pokemon\\rowlet.glb",
+    "triangles": 9456,
+    "bytes": 240764,
+    "scene": "Pokemon | Rowlet",
+    "reference": "https://www.pokemon.com/us/pokedex/rowlet",
+    "height": 1.4
+  }
+]

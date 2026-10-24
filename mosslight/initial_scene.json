@@ -1,0 +1,48 @@
+{
+  "status": "ok",
+  "result": {
+    "blender_version": "5.2.2 LTS",
+    "filepath": "",
+    "is_dirty": true,
+    "active_scene": "Scene",
+    "scenes": [
+      "Scene"
+    ],
+    "objects": [
+      {
+        "name": "Cube",
+        "type": "MESH",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "Light",
+        "type": "LIGHT",
+        "location": [
+          4.076245307922363,
+          1.0054539442062378,
+          5.903861999511719
+        ]
+      },
+      {
+        "name": "Camera",
+        "type": "CAMERA",
+        "location": [
+          7.358891487121582,
+          -6.925790786743164,
+          4.958309173583984
+        ]
+      }
+    ],
+    "render_engine": "BLENDER_EEVEE",
+    "engines": [
+      "BLENDER_EEVEE"
+    ],
+    "mcp_addons": [
+      "bl_ext.lab_blender_org.mcp"
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "status": "ok",
+  "result": {
+    "character": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\mosslight.glb",
+    "map": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\mosslight-map.glb",
+    "editable": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\mosslight-game.blend",
+    "character_meshes": 10,
+    "map_meshes": 11,
+    "character_triangles": 15206,
+    "feet": [
+      "Mosslight_Foot_L_Back",
+      "Mosslight_Foot_L_Front",
+      "Mosslight_Foot_R_Back",
+      "Mosslight_Foot_R_Front"
+    ]
+  },
+  "stdout": "Warning: No mesh data to join\nWarning: No mesh data to join\nWarning: No mesh data to join\nWarning: No mesh data to join\nINFO Draco is available, use library at D:\\blender\\5.2\\scripts\\addons_core\\io_scene_gltf2\\bf_intern_draco_bridge.dll\nINFO MeshOptimizer is available, use library at D:\\blender\\5.2\\scripts\\addons_core\\io_scene_gltf2\\bf_intern_meshopt_bridge.dll\n13:20:37 | INFO: Starting glTF 2.0 export\n13:20:37 | INFO: Extracting primitive: Mosslight_Body_Mesh\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Crystals_Mesh\n13:20:37 | WARNING: The active Vertex Color will not be exported, as it is not used in the node tree of the material\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Eyes_Mesh\n13:20:37 | WARNING: The active Vertex Color will not be exported, as it is not used in the node tree of the material\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Foot_L_Back_Mesh\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Foot_L_Front_Mesh\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Foot_R_Back_Mesh\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Foot_R_Front_Mesh\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Glow_Mesh\n13:20:37 | WARNING: The active Vertex Color will not be exported, as it is not used in the node tree of the material\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Moss_Mesh\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Extracting primitive: Mosslight_Plating_Mesh\n13:20:37 | WARNING: The active Vertex Color will not be exported, as it is not used in the node tree of the material\n13:20:37 | INFO: Primitives created: 1\n13:20:37 | INFO: Finished glTF 2.0 export in 0.13561320304870605 s\n\n13:20:52 | INFO: Starting glTF 2.0 export\n13:20:52 | INFO: Extracting primitive: Meeting | Amber callstone\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Icosphere.172\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Icosphere.173\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Icosphere.174\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Icosphere.175\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Cube.002\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Cube.003\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Cube.001\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Cube.062\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Cone\n13:20:52 | INFO: Primitives created: 1\n13:20:52 | INFO: Extracting primitive: Icosphere\n13:20:53 | INFO: Primitives created: 1\n13:20:53 | INFO: Finished glTF 2.0 export in 0.11547660827636719 s\n\nInfo: Saved as \"mosslight-game.blend\"\n"
+}

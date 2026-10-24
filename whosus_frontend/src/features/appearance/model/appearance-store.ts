@@ -2,6 +2,13 @@ import { COLORS } from "@/features/game/model/types";
 import { create } from "zustand";
 
 export const WARDROBE = {
+  character: {
+    label: "Characters",
+    items: [
+      ["pip", "Pip explorer"],
+      ["mosslight", "Mosslight creature"],
+    ],
+  },
   hat: {
     label: "Hats",
     items: [
@@ -67,6 +74,7 @@ export type CosmeticSlot = keyof typeof WARDROBE;
 export type Cosmetics = Record<CosmeticSlot, string>;
 export type Appearance = Cosmetics & { color: number };
 export const DEFAULT_APPEARANCE: Appearance = {
+  character: "pip",
   color: 0,
   hat: "sprout",
   outfit: "none",

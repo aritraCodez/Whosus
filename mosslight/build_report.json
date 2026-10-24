@@ -1,0 +1,27 @@
+{
+  "status": "ok",
+  "result": {
+    "saved": "D:\\my project\\whosus\\mosslight\\mosslight.blend",
+    "scene": "Mosslight | Studio",
+    "character_meshes": 78,
+    "base_vertices": 34129,
+    "base_polygons": 31008,
+    "feet": [
+      "Foot | L Front",
+      "Foot | L Back",
+      "Foot | R Front",
+      "Foot | R Back"
+    ],
+    "crystals": [
+      "Amber | 01 | Tall lantern",
+      "Amber | 02 | West shard",
+      "Amber | 03 | East shard",
+      "Amber | 04 | Front bud",
+      "Amber | 05 | Rear bud",
+      "Amber | 06 | Solitary seed"
+    ],
+    "materials": 20,
+    "render_path": "D:\\my project\\whosus\\mosslight\\mosslight_preview.png"
+  },
+  "stdout": "Info: Saved as \"mosslight.blend\"\n"
+}
