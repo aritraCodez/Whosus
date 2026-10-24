@@ -3,13 +3,70 @@ import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Modal } from "@/components/ui/Modal";
 import { useAppearance } from "@/features/appearance/model/appearance-store";
 import { connect } from "@/features/game/network/game-client";
+import { MAPS, mapInfo, type MapId } from "@/features/game/model/maps";
 import {
   fetchPublicRooms,
   type PublicRoomSummary,
 } from "@/features/lobby/api/rooms";
 import { NumberRule } from "@/features/lobby/components/RoomRules";
-import { ArrowLeft, ArrowRight, Leaf, Radio } from "lucide-react";
+import { ArrowLeft, ArrowRight, Radio } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+function MapPreview({ mapId }: { mapId: MapId }) {
+  const columns = [36, 120, 204];
+  const rows = [20, 60, 100];
+  return (
+    <svg
+      className="map-preview"
+      data-map={mapId}
+      viewBox="0 0 240 120"
+      role="img"
+      aria-label={`${mapInfo(mapId).name} top-down map preview`}
+    >
+      <path
+        className="map-preview-path"
+        d="M63 20h30m54 0h30M63 60h30m54 0h30M63 100h30m54 0h30M36 33v14m0 26v14m84-54v14m0 26v14m84-54v14m0 26v14"
+      />
+      {mapId === "mosslight" && (
+        <path
+          className="map-preview-trail"
+          d="M35 20c22 0 18 40 43 40s17 40 42 40 20-40 42-40 18-40 42-40"
+        />
+      )}
+      {rows.flatMap((y, row) =>
+        columns.map((x, column) => {
+          const index = row * 3 + column;
+          return (
+            <g key={index}>
+              <rect
+                className={`map-preview-room${index === 4 ? " map-preview-center" : ""}`}
+                x={x - 27}
+                y={y - 13}
+                width="54"
+                height="26"
+                rx="7"
+              />
+              {mapId === "mosslight" ? (
+                <path
+                  className="map-preview-detail"
+                  d={`M${x} ${y - 5}l5 5-5 5-5-5z`}
+                />
+              ) : (
+                <circle
+                  className="map-preview-detail"
+                  cx={x}
+                  cy={y}
+                  r={index === 4 ? 4 : 2.5}
+                />
+              )}
+            </g>
+          );
+        }),
+      )}
+    </svg>
+  );
+}
+
 export function RoomForm({
   mode,
   name,
@@ -26,6 +83,7 @@ export function RoomForm({
   close: () => void;
 }) {
   const [step, setStep] = useState(0);
+  const [mapId, setMapId] = useState<MapId>("cloudline");
   const nameInput = useRef<HTMLInputElement>(null);
   const [code, setCode] = useState(""),
     [capacity, setCapacity] = useState(8),
@@ -137,6 +195,7 @@ export function RoomForm({
               voting,
               emergency_meetings: meetings,
               meeting_cooldown: meetingCooldown,
+              map_id: mapId,
             });
             close();
           }}
@@ -161,14 +220,21 @@ export function RoomForm({
               {step === 0 && (
                 <>
                   {nameField}
-                  <div className="map-card">
-                    <div className="map-symbol">
-                      <Leaf />
-                    </div>
-                    <div>
+                  <GameSelect
+                    label="Map"
+                    value={mapId}
+                    options={Object.entries(MAPS).map(([value, info]) => ({
+                      value,
+                      label: info.name,
+                    }))}
+                    onChange={(value) => setMapId(value as MapId)}
+                  />
+                  <div className="map-card" aria-live="polite">
+                    <MapPreview mapId={mapId} />
+                    <div className="map-card-copy">
                       <small>YOUR DESTINATION</small>
-                      <h3>Cloudline Station</h3>
-                      <p>9 rooms · interactive tasks · many alibis</p>
+                      <h3>{mapInfo(mapId).name}</h3>
+                      <p>{mapInfo(mapId).description}</p>
                     </div>
                     <span className="tag">ORIGINAL</span>
                   </div>
@@ -352,7 +418,9 @@ export function RoomForm({
               >
                 <span>
                   <strong>{r.host}’s expedition</strong>
-                  <small>{r.code} · Cloudline Station</small>
+                  <small>
+                    {r.code} · {mapInfo(r.mapId).name}
+                  </small>
                 </span>
                 <span>
                   {r.players}/{r.capacity} <ArrowRight size={16} />

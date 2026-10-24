@@ -33,6 +33,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { mapInfo } from "@/features/game/model/maps";
 export function GameHUD() {
   const s = useGame(),
     r = s.room!,
@@ -73,7 +74,9 @@ export function GameHUD() {
         <div className="game-location">
           <span className="live-dot" />
           <strong>
-            {r.phase === "lobby" ? "DEPARTURE BAY" : "CLOUDLINE STATION"}
+            {r.phase === "lobby"
+              ? "DEPARTURE BAY"
+              : mapInfo(r.mapId).name.toUpperCase()}
           </strong>
           <small>
             {r.code} ·{" "}
@@ -151,7 +154,9 @@ export function GameHUD() {
                       ? "Your shift isn’t over."
                       : killer
                         ? "Make yourself believable."
-                        : "Keep the station alive."}
+                        : r.mapId === "mosslight"
+                          ? "Keep the forest glowing."
+                          : "Keep the station alive."}
                   </h3>
                   {!me.alive && (
                     <p className="ghost-note">
@@ -203,7 +208,11 @@ export function GameHUD() {
           {s.map && (
             <div className="map-legend">
               <Map size={17} />
-              <span>STATION OVERVIEW · Task consoles glow in each room</span>
+              <span>
+                {r.mapId === "mosslight"
+                  ? "MOSSLIGHT OVERVIEW · Task stones glow in each clearing"
+                  : "STATION OVERVIEW · Task consoles glow in each room"}
+              </span>
             </div>
           )}
           {r.phase === "playing" && (
@@ -241,7 +250,15 @@ export function GameHUD() {
                   </button>
                   <button className="action" onClick={() => act("vent")}>
                     <DoorOpen />
-                    <span>{r.vent >= 0 ? "Exit duct" : "Service duct"}</span>
+                    <span>
+                      {r.vent >= 0
+                        ? r.mapId === "mosslight"
+                          ? "Leave roots"
+                          : "Exit duct"
+                        : r.mapId === "mosslight"
+                          ? "Root tunnel"
+                          : "Service duct"}
+                    </span>
                     <kbd>Q</kbd>
                   </button>
                   {r.vent >= 0 && (
@@ -371,7 +388,7 @@ export function GameHUD() {
                 </h2>
                 <p>
                   {r.winner === "crew"
-                    ? "The crewmates saved Cloudline Station."
+                    ? `The crewmates saved ${mapInfo(r.mapId).name}.`
                     : "The killers got the better of this crew."}
                 </p>
                 <h3>

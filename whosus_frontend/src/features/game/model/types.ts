@@ -17,6 +17,7 @@ export interface Player {
   visor?: string;
   accessory?: string;
   boots?: string;
+  character?: string;
   seat?: number;
   x: number;
   z: number;
@@ -56,6 +57,7 @@ export interface VisualEffect {
   until: number;
 }
 export interface Snapshot {
+  mapId?: "cloudline" | "mosslight";
   eliminations: Elimination[];
   movementLock: number;
   code: string;
@@ -74,7 +76,13 @@ export interface Snapshot {
   phase: GamePhase;
   round: number;
   players: Player[];
-  bodies: { id: string; x: number; z: number; color: string }[];
+  bodies: {
+    id: string;
+    x: number;
+    z: number;
+    color: string;
+    character?: string;
+  }[];
   remaining: number;
   result: string;
   winner: string;
@@ -107,6 +115,7 @@ export type Elimination = {
     | "visor"
     | "accessory"
     | "boots"
+    | "character"
     | "x"
     | "z"
   >;
@@ -120,6 +129,7 @@ export type Elimination = {
     | "visor"
     | "accessory"
     | "boots"
+    | "character"
     | "x"
     | "z"
   >;

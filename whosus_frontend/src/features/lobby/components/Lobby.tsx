@@ -106,7 +106,10 @@ export function Lobby() {
         </div>
         <div className="room-facts">
           <span>
-            DESTINATION<strong>Cloudline Station</strong>
+            DESTINATION
+            <strong>
+              {r.mapId === "mosslight" ? "Mosslight" : "Cloudline Station"}
+            </strong>
           </span>
           <span>
             CREW

@@ -8,6 +8,7 @@ from .schemas import PublicRoom
 def public_rooms(rooms: Iterable[Room]) -> list[PublicRoom]:
     return [
         PublicRoom(
+            mapId=room.map_id,
             code=room.code,
             players=len(room.players),
             capacity=room.capacity,

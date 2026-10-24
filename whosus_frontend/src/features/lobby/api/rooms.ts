@@ -2,6 +2,7 @@ import { isRecord } from "@/lib/guards";
 import { getJson } from "@/services/api-client";
 
 export interface PublicRoomSummary {
+  mapId?: "cloudline" | "mosslight";
   code: string;
   players: number;
   capacity: number;

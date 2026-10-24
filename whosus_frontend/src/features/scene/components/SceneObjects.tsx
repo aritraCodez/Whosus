@@ -4,7 +4,7 @@ import {
 } from "@/features/game/actions/interactions";
 import { useGame } from "@/features/game/model/game-store";
 import { motion } from "@/features/game/model/motion";
-import { STATIONS } from "@/features/game/model/world";
+import { stationsFor } from "@/features/game/model/maps";
 
 import { Html, useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
@@ -69,7 +69,8 @@ export function Console({
     r = s.room;
   const me = r?.players.find((p) => p.id === s.id);
   const task = r?.tasks.find((t) => t.id === stationId);
-  const definition = STATIONS.find((t) => t.id === stationId);
+  const forest = !practice && r?.mapId === "mosslight";
+  const definition = stationsFor(r?.mapId).find((t) => t.id === stationId);
   const done = !!task?.done || !!(stationId && s.fakeDone[stationId]);
   const success = !!r?.visuals?.some(
     (v) => v.player === s.id && v.task === stationId,
@@ -95,7 +96,32 @@ export function Console({
         activate();
       }}
     >
-      <primitive object={model} />
+      {forest ? (
+        <group>
+          <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+            <boxGeometry args={[1.1, 0.8, 0.8]} />
+            <meshStandardMaterial color="#526d50" roughness={0.9} />
+          </mesh>
+          <mesh position={[0, 0.87, 0]} rotation={[-0.35, 0, 0]}>
+            <boxGeometry args={[0.72, 0.12, 0.53]} />
+            <meshStandardMaterial
+              color="#b7cc8f"
+              emissive="#66894f"
+              emissiveIntensity={0.2}
+            />
+          </mesh>
+          <mesh position={[0, 1.12, -0.13]}>
+            <octahedronGeometry args={[0.18, 0]} />
+            <meshStandardMaterial
+              color={statusColor}
+              emissive={statusColor}
+              emissiveIntensity={0.45}
+            />
+          </mesh>
+        </group>
+      ) : (
+        <primitive object={model} />
+      )}
       <mesh ref={ring} position={[0, 1.42, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.23, 0.025, 8, 24, Math.PI * 1.65]} />
         <meshStandardMaterial
@@ -127,7 +153,9 @@ export function Console({
               {practice
                 ? "Practice station"
                 : repair
-                  ? "Repair reactor"
+                  ? forest
+                    ? "Restore the amber heart"
+                    : "Repair reactor"
                   : definition?.name}
             </strong>
             <small>

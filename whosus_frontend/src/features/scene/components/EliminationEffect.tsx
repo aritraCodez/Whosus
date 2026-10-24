@@ -23,6 +23,7 @@ export function EliminationEffect({
     visor?: string;
     accessory?: string;
     boots?: string;
+    character?: string;
     headTurn?: React.RefObject<number>;
   }>;
 }) {
@@ -149,6 +150,7 @@ export function EliminationEffect({
           visor={event.victim.visor}
           accessory={event.victim.accessory}
           boots={event.victim.boots}
+          character={event.victim.character}
           color={event.victim.color}
           hat={event.victim.hat}
           headTurn={headTurn}

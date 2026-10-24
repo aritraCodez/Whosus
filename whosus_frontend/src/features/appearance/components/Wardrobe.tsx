@@ -38,6 +38,7 @@ import { Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { OrthographicCamera } from "three";
 
 const ICONS: Record<CosmeticSlot | "color", LucideIcon> = {
+  character: Leaf,
   color: Paintbrush,
   hat: Crown,
   outfit: Shirt,
@@ -46,6 +47,8 @@ const ICONS: Record<CosmeticSlot | "color", LucideIcon> = {
   boots: Footprints,
 };
 const ITEM_ICONS: Record<string, LucideIcon> = {
+  mosslight: Leaf,
+  pip: Sparkles,
   none: X,
   sprout: Leaf,
   antenna: Radio,
@@ -71,14 +74,16 @@ const COLOR_NAMES = [
 ];
 const TABS = ["color", ...Object.keys(WARDROBE)] as (CosmeticSlot | "color")[];
 
-function FitPreview() {
+function FitPreview({ creature }: { creature: boolean }) {
   const { camera, size } = useThree();
   useLayoutEffect(() => {
     if (camera instanceof OrthographicCamera) {
-      camera.zoom = Math.min(100, size.height / 2.6);
+      camera.zoom = creature
+        ? Math.min(170, size.width / 1.6, size.height / 1.6)
+        : Math.min(100, size.height / 2.6);
       camera.updateProjectionMatrix();
     }
-  }, [camera, size.height]);
+  }, [camera, size.height, size.width, creature]);
   return null;
 }
 
@@ -141,7 +146,7 @@ export function Wardrobe() {
               dpr={[1, 1.5]}
             >
               <ambientLight intensity={1.8} />
-              <FitPreview />
+              <FitPreview creature={look.character === "mosslight"} />
               <directionalLight position={[3, 5, 4]} intensity={3} />
               <directionalLight
                 position={[-3, 2, -3]}
@@ -161,7 +166,7 @@ export function Wardrobe() {
                   <meshStandardMaterial color="#294b54" />
                 </mesh>
                 <OrbitControls
-                  target={[0, 1.05, 0]}
+                  target={[0, look.character === "mosslight" ? 0.55 : 1.05, 0]}
                   enablePan={false}
                   enableZoom={false}
                   minPolarAngle={Math.PI / 3}
@@ -180,11 +185,28 @@ export function Wardrobe() {
           <p>Drag to look around. Mix it up.</p>
           <div className="wardrobe-look">
             <span>
-              {WARDROBE.outfit.items.find(([key]) => key === look.outfit)?.[1]}
+              {
+                WARDROBE.character.items.find(
+                  ([key]) => key === look.character,
+                )?.[1]
+              }
             </span>
-            <span>
-              {WARDROBE.hat.items.find(([key]) => key === look.hat)?.[1]}
-            </span>
+            {look.character === "mosslight" ? (
+              <span>Moss & amber</span>
+            ) : (
+              <>
+                <span>
+                  {
+                    WARDROBE.outfit.items.find(
+                      ([key]) => key === look.outfit,
+                    )?.[1]
+                  }
+                </span>
+                <span>
+                  {WARDROBE.hat.items.find(([key]) => key === look.hat)?.[1]}
+                </span>
+              </>
+            )}
           </div>
         </section>
         <section className="wardrobe-picker">
@@ -241,7 +263,9 @@ export function Wardrobe() {
               <h3>
                 {tab === "color"
                   ? "Pick your signature color."
-                  : `Find your ${WARDROBE[tab].label.toLowerCase()}.`}
+                  : tab === "character"
+                    ? "Choose your explorer."
+                    : `Find your ${WARDROBE[tab].label.toLowerCase()}.`}
               </h3>
             </div>
             <span>
@@ -249,6 +273,12 @@ export function Wardrobe() {
               options
             </span>
           </div>
+          {look.character === "mosslight" && (
+            <p className="hint">
+              Mosslight wears its own moss and crystals. Your signature color
+              appears on its pebble plates. Clothing is saved for Pip.
+            </p>
+          )}
           <div
             className="wardrobe-options"
             id="wardrobe-options"
@@ -296,7 +326,10 @@ export function Wardrobe() {
                       className="wardrobe-item"
                       aria-label={label}
                       aria-pressed={selected}
-                      disabled={!available}
+                      disabled={
+                        !available ||
+                        (look.character === "mosslight" && tab !== "character")
+                      }
                       onClick={() => change({ [tab]: key })}
                     >
                       <span

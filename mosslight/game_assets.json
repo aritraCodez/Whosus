@@ -1,0 +1,14 @@
+{
+  "character": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\mosslight.glb",
+  "map": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\mosslight-map.glb",
+  "editable": "D:\\my project\\whosus\\whosus_frontend\\public\\models\\mosslight-game.blend",
+  "character_meshes": 10,
+  "map_meshes": 11,
+  "character_triangles": 15206,
+  "feet": [
+    "Mosslight_Foot_L_Back",
+    "Mosslight_Foot_L_Front",
+    "Mosslight_Foot_R_Back",
+    "Mosslight_Foot_R_Front"
+  ]
+}

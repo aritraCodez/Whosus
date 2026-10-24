@@ -143,6 +143,7 @@ export function Actors({
             rotation={[0, i * 0.8 + 0.3, 0]}
           >
             <Pip
+              character={i === 0 ? appearance.character : p.character}
               outfit={i === 0 ? appearance.outfit : p.outfit}
               visor={i === 0 ? appearance.visor : p.visor}
               accessory={i === 0 ? appearance.accessory : p.accessory}
@@ -166,7 +167,12 @@ export function Actors({
           position={[b.x, 0.24, b.z]}
           rotation={[0, 0, Math.PI / 2]}
         >
-          <Pip color={b.color} hat="none" />
+          <Pip
+            color={b.color}
+            character={b.character}
+            hat="none"
+            idleBounce={0}
+          />
         </group>
       ))}
     </>

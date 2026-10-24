@@ -7,6 +7,10 @@ export function setSceneRendererState(state: RootState) {
 
 export function sceneDiagnostics() {
   const s = rendererState?.get();
+  let mosslightCharacters = 0;
+  s?.scene.traverse((object) => {
+    if (object.name === "MosslightCharacter") mosslightCharacters++;
+  });
   return s
     ? {
         camera: s.camera.position.toArray(),
@@ -15,6 +19,10 @@ export function sceneDiagnostics() {
         size: s.size,
         drawCalls: s.gl.info.render.calls,
         objects: s.scene.children.length,
+        map: s.scene.getObjectByName("MosslightMap")
+          ? "mosslight"
+          : "cloudline",
+        mosslightCharacters,
       }
     : null;
 }

@@ -20,6 +20,7 @@ export function usePlayerSession() {
   const roomVisor = roomLook?.visor;
   const roomAccessory = roomLook?.accessory;
   const roomBoots = roomLook?.boots;
+  const roomCharacter = roomLook?.character;
   useEffect(() => {
     if (roomColor !== undefined)
       updateAppearance({
@@ -29,6 +30,7 @@ export function usePlayerSession() {
         visor: roomVisor,
         accessory: roomAccessory,
         boots: roomBoots,
+        character: roomCharacter,
       });
   }, [
     roomColor,
@@ -37,6 +39,7 @@ export function usePlayerSession() {
     roomVisor,
     roomAccessory,
     roomBoots,
+    roomCharacter,
     updateAppearance,
   ]);
   useEffect(() => initializeNetwork(), []);

@@ -61,6 +61,7 @@ class GameService:
                     message.voting,
                     message.emergency_meetings,
                     message.meeting_cooldown,
+                    message.map_id,
                 )
             else:
                 existing = self.runtime.rooms.get(message.code.upper())
@@ -75,6 +76,7 @@ class GameService:
                 message.visor,
                 message.accessory,
                 message.boots,
+                message.character,
             )
             self.runtime.rooms[room.code] = room
             session = Session(room=room, pid=player.id, token=secrets.token_urlsafe(32))

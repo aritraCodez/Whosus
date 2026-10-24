@@ -1,6 +1,7 @@
 import { GameSelect } from "@/components/ui/GameSelect";
 import { useGame } from "@/features/game/model/game-store";
 import { act } from "@/features/game/network/game-client";
+import { MAPS } from "@/features/game/model/maps";
 
 export function NumberRule({
   label,
@@ -69,6 +70,16 @@ export function RoomRules({
       <div className="form-grid">
         {section !== "meetings" && (
           <>
+            <GameSelect
+              label="Map"
+              value={r.mapId ?? "cloudline"}
+              disabled={disabled}
+              options={Object.entries(MAPS).map(([value, info]) => ({
+                value,
+                label: info.name,
+              }))}
+              onChange={(value) => act("settings", "mapId", value)}
+            />
             <NumberRule
               label="Crew capacity"
               value={r.capacity}

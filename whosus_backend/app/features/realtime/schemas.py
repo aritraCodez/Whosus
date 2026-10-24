@@ -2,7 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.features.appearance.catalog import Accessory, Boots, Hat, Outfit, Visor
+from app.features.appearance.catalog import Accessory, Boots, Character, Hat, Outfit, Visor
+from app.features.game.maps import MapId
 from app.features.game.types import ChatMessage, Snapshot
 from app.features.voice.types import IceServer, VoicePeer
 
@@ -38,6 +39,8 @@ class Message(BaseModel):
     visor: Visor = "none"
     accessory: Accessory = "none"
     boots: Boots = "original"
+    character: Character = "pip"
+    map_id: MapId = "cloudline"
     public: bool = False
     capacity: int = Field(default=8, ge=4, le=12)
     killers: int = Field(default=1, ge=1, le=3)

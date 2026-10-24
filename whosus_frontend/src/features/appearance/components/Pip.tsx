@@ -9,7 +9,15 @@ import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-export function Pip({
+import { Mosslight } from "@/features/appearance/components/Mosslight";
+export function Pip(props: React.ComponentProps<typeof PipExplorer>) {
+  return props.character === "mosslight" ? (
+    <Mosslight {...props} />
+  ) : (
+    <PipExplorer {...props} />
+  );
+}
+function PipExplorer({
   color,
   hat = "sprout",
   outfit = "none",

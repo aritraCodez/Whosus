@@ -3,6 +3,7 @@ import { Actors } from "@/features/scene/components/Actors";
 import { CameraRig } from "@/features/scene/components/CameraRig";
 import { MotionFrame } from "@/features/scene/components/MotionFrame";
 import { Station } from "@/features/scene/components/Station";
+import { MosslightMap } from "@/features/scene/components/MosslightMap";
 import { WaitingRoom } from "@/features/scene/components/WaitingRoom";
 import { ContactShadows, Float, OrthographicCamera } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
@@ -17,13 +18,16 @@ export function World({
 }) {
   const lobby = useGame((s) => s.room?.phase === "lobby");
   const quality = useGame((s) => s.quality);
+  const forest = useGame(
+    (s) => s.room?.mapId === "mosslight" && s.room.phase !== "lobby",
+  );
   const viewportWidth = useThree((s) => s.size.width);
   const touchControls =
     viewportWidth <= 700 || window.matchMedia("(pointer: coarse)").matches;
   return (
     <>
-      <color attach="background" args={["#152b35"]} />
-      <fog attach="fog" args={["#152b35", 42, 85]} />
+      <color attach="background" args={[forest ? "#1e382f" : "#152b35"]} />
+      <fog attach="fog" args={[forest ? "#1e382f" : "#152b35", 42, 85]} />
       <OrthographicCamera
         makeDefault
         position={[16, 22, 20]}
@@ -51,11 +55,14 @@ export function World({
       />
       {lobby ? (
         <WaitingRoom touchControls={touchControls} />
+      ) : forest ? (
+        <MosslightMap touchControls={touchControls} />
       ) : (
         <Station touchControls={touchControls} />
       )}
       <Actors menu={menu} color={color} hat={hat} />
       {quality === "high" &&
+        !forest &&
         Array.from({ length: 12 }, (_, i) => (
           <Float key={i} speed={0.4} floatIntensity={0.5}>
             <mesh
